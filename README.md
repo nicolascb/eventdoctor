@@ -33,6 +33,9 @@ Projeto de código aberto para gerenciamento e documentação de eventos em sist
 
 O eventdoctor-api é um serviço que expõe uma API REST para interagir com o EventDoctor. Ele permite que os usuários consultem informações sobre eventos, produtores e consumidores, além de fornecer endpoints para validação de eventos e geração de documentação.
 
+Rota de documentação HTML estática:
+- GET /docs: Lista tópicos, eventos, produtores e consumidores em tabela filtrável.
+
 
 ## Subscriber
 

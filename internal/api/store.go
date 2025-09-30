@@ -46,6 +46,7 @@ type TopicStore interface {
 	InsertTopic(topic Topic) error
 	Get(topicName string) (*Topic, error)
 	RemoveTopic(topicName string) error
+	ListTopics() ([]Topic, error) // novo
 }
 
 type EventStore interface {

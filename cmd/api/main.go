@@ -4,10 +4,13 @@ import (
 	"fmt"
 
 	"github.com/nicolascb/eventdoctor/internal/api"
+	"github.com/nicolascb/eventdoctor/internal/db"
 	"go.uber.org/zap"
 )
 
 func main() {
+
+	fmt.Println("EventDoctor")
 	fmt.Println("Starting EventDoctor API server...")
 
 	cfg, err := api.LoadConfig()
@@ -17,7 +20,13 @@ func main() {
 
 	logger, _ := zap.NewProduction()
 	logger.Info("Config loaded", zap.Any("config", cfg))
-	if err := api.NewAPI(cfg.Port, nil, logger).Run(); err != nil {
+
+	store, err := db.NewSQLiteStore(cfg.SQLitePath)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := api.NewAPI(cfg.Port, store, logger).Run(); err != nil {
 		panic(err)
 	}
 }
