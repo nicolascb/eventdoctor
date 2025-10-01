@@ -103,7 +103,6 @@ func (s *SQLiteStore) mockData() error {
 		{Name: "user.events", Owner: "user-service", CreatedAt: now},
 		{Name: "order.events", Owner: "order-service", CreatedAt: now},
 		{Name: "payment.events", Owner: "payment-service", CreatedAt: now},
-		{Name: "notification.events", Owner: "notification-service", CreatedAt: now},
 	}
 
 	topicIDs := make(map[string]int)
@@ -134,8 +133,6 @@ func (s *SQLiteStore) mockData() error {
 		{"order.events", api.Event{EventType: "OrderShipped", SchemaURL: "https://schemas.local/order-shipped.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
 		{"payment.events", api.Event{EventType: "PaymentAuthorized", SchemaURL: "https://schemas.local/payment-authorized.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
 		{"payment.events", api.Event{EventType: "PaymentCaptured", SchemaURL: "https://schemas.local/payment-captured.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"notification.events", api.Event{EventType: "NotificationEmailSent", SchemaURL: "https://schemas.local/notification-email-sent.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"notification.events", api.Event{EventType: "NotificationPushSent", SchemaURL: "https://schemas.local/notification-push-sent.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
 	}
 
 	for _, e := range eventsSeed {
@@ -170,8 +167,6 @@ func (s *SQLiteStore) mockData() error {
 		{"order.events:OrderShipped", api.Producer{Producer: "logistics-service", Repository: &fakeRepository, CreatedAt: now}},
 		{"payment.events:PaymentAuthorized", api.Producer{Producer: "payment-service", Repository: &fakeRepository, CreatedAt: now}},
 		{"payment.events:PaymentCaptured", api.Producer{Producer: "payment-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"notification.events:NotificationEmailSent", api.Producer{Producer: "notification-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"notification.events:NotificationPushSent", api.Producer{Producer: "notification-service", Repository: &fakeRepository, CreatedAt: now}},
 	}
 
 	for _, p := range producersSeed {
@@ -197,9 +192,6 @@ func (s *SQLiteStore) mockData() error {
 		{"order.events:OrderShipped", api.Consumer{Consumer: "notification-service", Repository: &fakeRepository, CreatedAt: now}},
 		{"payment.events:PaymentAuthorized", api.Consumer{Consumer: "fraud-service", Repository: &fakeRepository, CreatedAt: now}},
 		{"payment.events:PaymentCaptured", api.Consumer{Consumer: "billing-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"notification.events:NotificationEmailSent", api.Consumer{Consumer: "analytics-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"notification.events:NotificationEmailSent", api.Consumer{Consumer: "crm-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"notification.events:NotificationPushSent", api.Consumer{Consumer: "analytics-service", Repository: &fakeRepository, CreatedAt: now}},
 	}
 
 	for _, c := range consumersSeed {
