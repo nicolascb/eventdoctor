@@ -2,142 +2,294 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>EventDoctor - Catálogo de Eventos</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-body { font-family: system-ui, Arial, sans-serif; margin: 0; background:#121417; color:#e3e6eb; }
-header { background:#1e2530; padding:16px 32px; box-shadow:0 2px 4px rgba(0,0,0,.4); }
-h1 { margin:0; font-size:20px; }
-main { padding:24px 32px; }
-section.topic { margin-bottom:48px; }
-.topic-header { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
-.topic-header h2 { margin:0; font-size:18px; }
-.badge { background:#2d3b4d; padding:2px 8px; border-radius:12px; font-size:12px; }
-table { width:100%; border-collapse:collapse; margin-top:12px; font-size:14px; }
-th, td { padding:8px 10px; text-align:left; vertical-align:top; }
-th { background:#253041; position:sticky; top:0; }
-tbody tr:nth-child(even) { background:#1b222c; }
-tbody tr:nth-child(odd) { background:#171d26; }
-code { background:#253041; padding:2px 4px; border-radius:4px; font-size:12px; }
-.deprecated { text-decoration:line-through; opacity:.6; }
-.footer { margin-top:64px; font-size:12px; color:#8a949f; text-align:center; padding:24px 0; }
-a { color:#5fb0ff; text-decoration:none; }
-a:hover { text-decoration:underline; }
-.tag-deprecated { background:#5b2731; color:#ff9aa9; }
-.tag-owner { background:#254d2d; color:#87d79a; }
-small { color:#94a2b3; }
-ul.inline { list-style:none; margin:0; padding:0; display:flex; gap:6px; flex-wrap:wrap; }
-ul.inline li { background:#253041; padding:2px 6px; border-radius:6px; }
-.search-box { margin:12px 0 24px; }
-.search-box input { width:100%; padding:10px 14px; border:1px solid #2e3a49; border-radius:8px; background:#1b232d; color:#e3e6eb; }
-.hidden { display:none; }
-@media (max-width: 900px) {
-  table, thead, tbody, th, td, tr { display:block; }
-  thead { display:none; }
-  tbody tr { margin-bottom:16px; border:1px solid #253041; border-radius:8px; overflow:hidden; }
-  td { padding:6px 10px; }
-  td::before { font-weight:600; display:block; margin-bottom:2px; color:#94a2b3; }
-  td[data-label]::before { content:attr(data-label); }
-}
-</style>
+    <meta charset="UTF-8">
+    <title>EventDoctor - Catálogo de Eventos</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        body {
+            font-family: system-ui, Arial, sans-serif;
+            margin: 0;
+            background: #121417;
+            color: #e3e6eb;
+        }
+
+        header {
+            background: #1e2530;
+            padding: 16px 32px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .4);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        main {
+            padding: 24px 32px;
+        }
+
+        section.topic {
+            margin-bottom: 48px;
+        }
+
+        .topic-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .topic-header h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .badge {
+            background: #2d3b4d;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #253041;
+            position: sticky;
+            top: 0;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #1b222c;
+        }
+
+        tbody tr:nth-child(odd) {
+            background: #171d26;
+        }
+
+        code {
+            background: #253041;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .deprecated {
+            text-decoration: line-through;
+            opacity: .6;
+        }
+
+        .footer {
+            margin-top: 64px;
+            font-size: 12px;
+            color: #8a949f;
+            text-align: center;
+            padding: 24px 0;
+        }
+
+        a {
+            color: #5fb0ff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .tag-deprecated {
+            background: #5b2731;
+            color: #ff9aa9;
+        }
+
+        .tag-owner {
+            background: #254d2d;
+            color: #87d79a;
+        }
+
+        small {
+            color: #94a2b3;
+        }
+
+        ul.inline {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        ul.inline li {
+            background: #253041;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+
+        .search-box {
+            margin: 12px 0 24px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #2e3a49;
+            border-radius: 8px;
+            background: #1b232d;
+            color: #e3e6eb;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tbody tr {
+                margin-bottom: 16px;
+                border: 1px solid #253041;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+            td {
+                padding: 6px 10px;
+            }
+
+            td::before {
+                font-weight: 600;
+                display: block;
+                margin-bottom: 2px;
+                color: #94a2b3;
+            }
+
+            td[data-label]::before {
+                content: attr(data-label);
+            }
+        }
+    </style>
 </head>
+
 <body>
-<header>
-  <h1>EventDoctor - Catálogo de Eventos</h1>
-</header>
-<main>
-  <div class="search-box">
-    <input type="text" id="search" placeholder="Filtrar por evento, tópico, produtor ou consumidor...">
-  </div>
-  {{ if not .Topics }}
-    <p>Nenhum tópico cadastrado.</p>
-  {{ end }}
-  {{ range .Topics }}
-  <section class="topic" data-topic="{{ .Name }}">
-    <div class="topic-header">
-      <h2>{{ .Name }}</h2>
-      <span class="badge tag-owner">owner: {{ .Owner }}</span>
-      <small>{{ len .Events }} eventos</small>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th style="width:18%">Evento</th>
-            <th style="width:10%">Versão</th>
-          <th style="width:22%">Schema</th>
-          <th style="width:20%">Produtores</th>
-          <th style="width:20%">Consumidores</th>
-          <th style="width:10%">Flags</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{ range .Events }}
-        <tr class="row-event"
-            data-event="{{ .Type }}"
-            data-producers="{{ range .Producers }}{{ .Name }} {{ end }}"
-            data-consumers="{{ range .Consumers }}{{ .Name }} {{ end }}">
-          <td data-label="Evento">
-            <code class="{{ if .Deprecated }}deprecated{{ end }}">{{ .Type }}</code>
-          </td>
-          <td data-label="Versão">
-            {{ if .Version }}<code>{{ .Version }}</code>{{ else }}<small>-</small>{{ end }}
-          </td>
-          <td data-label="Schema">
-            <a href="{{ .SchemaURL }}" target="_blank" rel="noopener">{{ .SchemaURL }}</a>
-          </td>
-          <td data-label="Produtores">
-            {{ if .Producers }}
-              <ul class="inline">
-                {{ range .Producers }}
-                  <li title="{{ if .Repository }}{{ .Repository }}{{ end }}">{{ .Name }}</li>
-                {{ end }}
-              </ul>
-            {{ else }}<small>-</small>{{ end }}
-          </td>
-          <td data-label="Consumidores">
-            {{ if .Consumers }}
-              <ul class="inline">
-                {{ range .Consumers }}
-                  <li title="{{ if .Repository }}{{ .Repository }}{{ end }}">{{ .Name }}</li>
-                {{ end }}
-              </ul>
-            {{ else }}<small>-</small>{{ end }}
-          </td>
-          <td data-label="Flags">
-            {{ if .Deprecated }}<span class="badge tag-deprecated">deprecated</span>{{ end }}
-          </td>
-        </tr>
+    <header>
+        <h1>EventDoctor - Catálogo de Eventos</h1>
+    </header>
+    <main>
+        <div class="search-box">
+            <input type="text" id="search" placeholder="Filtrar por evento, tópico, produtor ou consumidor...">
+        </div>
+        {{ if not .Topics }}
+        <p>Nenhum tópico cadastrado.</p>
         {{ end }}
-      </tbody>
-    </table>
-  </section>
-  {{ end }}
-  <div class="footer">
-    Gerado pelo EventDoctor • Página estática
-  </div>
-</main>
-<script>
-const input = document.getElementById('search');
-input.addEventListener('input', () => {
-  const term = input.value.toLowerCase().trim();
-  document.querySelectorAll('.topic').forEach(topic => {
-    let anyVisible = false;
-    topic.querySelectorAll('.row-event').forEach(row => {
-      const text = [
-        topic.dataset.topic,
-        row.dataset.event,
-        row.dataset.producers,
-        row.dataset.consumers
-      ].join(' ').toLowerCase();
-      const show = !term || text.includes(term);
-      row.style.display = show ? '' : 'none';
-      if (show) anyVisible = true;
-    });
-    topic.style.display = anyVisible ? '' : 'none';
-  });
-});
-</script>
+        {{ range .Topics }}
+        <section class="topic" data-topic="{{ .Name }}">
+            <div class="topic-header">
+                <h2>{{ .Name }}</h2>
+                <span class="badge tag-owner">owner: {{ .Owner }}</span>
+                <small>{{ len .Events }} eventos</small>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:18%">Evento</th>
+                        <th style="width:10%">Versão</th>
+                        <th style="width:22%">Schema</th>
+                        <th style="width:20%">Produtores</th>
+                        <th style="width:20%">Consumidores</th>
+                        <th style="width:10%">Flags</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Events }}
+                    <tr class="row-event" data-event="{{ .Type }}"
+                        data-producers="{{ range .Producers }}{{ .Name }} {{ end }}"
+                        data-consumers="{{ range .Consumers }}{{ .Name }} {{ end }}">
+                        <td data-label="Evento">
+                            <code class="{{ if .Deprecated }}deprecated{{ end }}">{{ .Type }}</code>
+                        </td>
+                        <td data-label="Versão">
+                            {{ if .Version }}<code>{{ .Version }}</code>{{ else }}<small>-</small>{{ end }}
+                        </td>
+                        <td data-label="Schema">
+                            <a href="{{ .SchemaURL }}" target="_blank" rel="noopener">{{ .SchemaURL }}</a>
+                        </td>
+                        <td data-label="Produtores">
+                            {{ if .Producers }}
+                            <ul class="inline">
+                                {{ range .Producers }}
+                                <li title="{{ if .Repository }}{{ .Repository }}{{ end }}">{{ .Name }}</li>
+                                {{ end }}
+                            </ul>
+                            {{ else }}<small>-</small>{{ end }}
+                        </td>
+                        <td data-label="Consumidores">
+                            {{ if .Consumers }}
+                            <ul class="inline">
+                                {{ range .Consumers }}
+                                <li title="{{ if .Repository }}{{ .Repository }}{{ end }}">{{ .Name }}</li>
+                                {{ end }}
+                            </ul>
+                            {{ else }}<small>-</small>{{ end }}
+                        </td>
+                        <td data-label="Flags">
+                            {{ if .Deprecated }}<span class="badge tag-deprecated">deprecated</span>{{ end }}
+                        </td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </section>
+        {{ end }}
+        <div class="footer">
+            Gerado pelo EventDoctor • Página estática
+        </div>
+    </main>
+    <script>
+        const input = document.getElementById('search');
+        input.addEventListener('input', () => {
+            const term = input.value.toLowerCase().trim();
+            document.querySelectorAll('.topic').forEach(topic => {
+                let anyVisible = false;
+                topic.querySelectorAll('.row-event').forEach(row => {
+                    const text = [
+                        topic.dataset.topic,
+                        row.dataset.event,
+                        row.dataset.producers,
+                        row.dataset.consumers
+                    ].join(' ').toLowerCase();
+                    const show = !term || text.includes(term);
+                    row.style.display = show ? '' : 'none';
+                    if (show) anyVisible = true;
+                });
+                topic.style.display = anyVisible ? '' : 'none';
+            });
+        });
+    </script>
 </body>
+
 </html>
 {{ end }}
