@@ -1,22 +1,17 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/nicolascb/eventdoctor/internal/api"
+	"github.com/nicolascb/eventdoctor/internal/db/models"
 )
 
-type SQLiteStore struct {
-	db *sql.DB
-}
-
-func NewSQLiteStore(dbPath string) (*SQLiteStore, error) {
-
-	fmt.Println("Connecting to SQLite database...", dbPath)
-
+func NewSQLiteDB(dbPath string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, err
@@ -31,93 +26,57 @@ func NewSQLiteStore(dbPath string) (*SQLiteStore, error) {
 		return nil, err
 	}
 
-	store := &SQLiteStore{db: db}
-	if err := store.createTables(); err != nil {
+	if err := createTables(db); err != nil {
 		return nil, err
 	}
 
 	// Seed de dados fictícios (idempotente)
-	if err := store.mockData(); err != nil {
+	if err := mockData(context.Background(), db); err != nil {
 		return nil, err
 	}
 
 	fmt.Println("Connected to SQLite database successfully")
-	return store, nil
+	return db, nil
 }
 
-func (s *SQLiteStore) createTables() error {
-	queries := []string{
-		`CREATE TABLE IF NOT EXISTS topics (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT UNIQUE NOT NULL,
-			owner TEXT NOT NULL,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS events (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			topic_id INTEGER NOT NULL,
-			event_type TEXT NOT NULL,
-			schema_url TEXT NOT NULL,
-			schema_version TEXT,
-			deprecated BOOLEAN DEFAULT FALSE,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (topic_id) REFERENCES topics (id)
-		)`,
-		`CREATE TABLE IF NOT EXISTS producers (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			event_id INTEGER NOT NULL,
-			producer TEXT NOT NULL,
-			repository TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (event_id) REFERENCES events (id)
-		)`,
-		`CREATE TABLE IF NOT EXISTS consumers (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			event_id INTEGER NOT NULL,
-			consumer TEXT NOT NULL,
-			repository TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (event_id) REFERENCES events (id)
-		)`,
+func createTables(db *sql.DB) error {
+	migrationBytes, err := os.ReadFile("migration.sql")
+	if err != nil {
+		return fmt.Errorf("failed to read migration file: %w", err)
 	}
 
-	for _, query := range queries {
-		if _, err := s.db.Exec(query); err != nil {
-			return err
-		}
+	// Execute the migration script
+	_, err = db.Exec(string(migrationBytes))
+	if err != nil {
+		return fmt.Errorf("failed to execute migrations: %w", err)
 	}
 
 	return nil
 }
 
-func (s *SQLiteStore) mockData() error {
-	s.db.Exec(`DELETE FROM consumers`)
-	s.db.Exec(`DELETE FROM producers`)
-	s.db.Exec(`DELETE FROM events`)
-	s.db.Exec(`DELETE FROM topics`)
+func mockData(ctx context.Context, db *sql.DB) error {
+	db.Exec(`DELETE FROM consumers`)
+	db.Exec(`DELETE FROM producers`)
+	db.Exec(`DELETE FROM events`)
+	db.Exec(`DELETE FROM topics`)
 
 	now := time.Now()
 
 	// Tópicos fictícios
-	topics := []api.Topic{
+	topics := []models.Topic{
 		{Name: "user.events", Owner: "user-service", CreatedAt: now},
 		{Name: "order.events", Owner: "order-service", CreatedAt: now},
 		{Name: "payment.events", Owner: "payment-service", CreatedAt: now},
 	}
 
-	topicIDs := make(map[string]int)
+	topicIDs := make(map[string]int64)
 	for _, t := range topics {
-		if err := s.InsertTopic(t); err != nil {
-			return err
-		}
-		stored, err := s.Get(t.Name)
+		id, err := InsertTopic(ctx, db, t)
 		if err != nil {
 			return err
 		}
-		if stored == nil {
-			return fmt.Errorf("falha ao buscar tópico %s após inserção", t.Name)
-		}
-		topicIDs[t.Name] = stored.ID
+
+		topicIDs[t.Name] = id
 	}
 
 	schemaVersion := "1.0.0"
@@ -125,33 +84,24 @@ func (s *SQLiteStore) mockData() error {
 	// Eventos fictícios
 	eventsSeed := []struct {
 		topic string
-		event api.Event
+		event models.Event
 	}{
-		{"user.events", api.Event{EventType: "UserCreated", SchemaURL: "https://schemas.local/user-created.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"user.events", api.Event{EventType: "UserUpdated", SchemaURL: "https://schemas.local/user-updated.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"order.events", api.Event{EventType: "OrderPlaced", SchemaURL: "https://schemas.local/order-placed.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"order.events", api.Event{EventType: "OrderShipped", SchemaURL: "https://schemas.local/order-shipped.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"payment.events", api.Event{EventType: "PaymentAuthorized", SchemaURL: "https://schemas.local/payment-authorized.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"payment.events", api.Event{EventType: "PaymentCaptured", SchemaURL: "https://schemas.local/payment-captured.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"user.events", models.Event{EventType: "UserCreated", SchemaURL: "https://schemas.local/user-created.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"user.events", models.Event{EventType: "UserUpdated", SchemaURL: "https://schemas.local/user-updated.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"order.events", models.Event{EventType: "OrderPlaced", SchemaURL: "https://schemas.local/order-placed.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"order.events", models.Event{EventType: "OrderShipped", SchemaURL: "https://schemas.local/order-shipped.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"payment.events", models.Event{EventType: "PaymentAuthorized", SchemaURL: "https://schemas.local/payment-authorized.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"payment.events", models.Event{EventType: "PaymentCaptured", SchemaURL: "https://schemas.local/payment-captured.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
 	}
 
+	eventIDs := map[string]int64{}
 	for _, e := range eventsSeed {
 		e.event.TopicID = topicIDs[e.topic]
-		if err := s.InsertEvent(e.event); err != nil {
-			return err
-		}
-	}
-
-	// Mapeia IDs dos eventos para ligação com produtores/consumidores
-	eventIDs := map[string]int{}
-	for topicName, topicID := range topicIDs {
-		evts, err := s.GetEventsByTopic(topicID)
+		id, err := InsertEvent(ctx, db, e.event)
 		if err != nil {
 			return err
 		}
-		for _, ev := range evts {
-			eventIDs[fmt.Sprintf("%s:%s", topicName, ev.EventType)] = ev.ID
-		}
+		eventIDs[fmt.Sprintf("%s:%s", e.topic, e.event.EventType)] = id
 	}
 
 	fakeRepository := "https://github.com/org/fake-repo"
@@ -159,14 +109,14 @@ func (s *SQLiteStore) mockData() error {
 	// Produtores fictícios
 	producersSeed := []struct {
 		eventKey string
-		prod     api.Producer
+		prod     models.Producer
 	}{
-		{"user.events:UserCreated", api.Producer{Producer: "user-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"user.events:UserUpdated", api.Producer{Producer: "user-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"order.events:OrderPlaced", api.Producer{Producer: "checkout-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"order.events:OrderShipped", api.Producer{Producer: "logistics-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"payment.events:PaymentAuthorized", api.Producer{Producer: "payment-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"payment.events:PaymentCaptured", api.Producer{Producer: "payment-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"user.events:UserCreated", models.Producer{Service: "user-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"user.events:UserUpdated", models.Producer{Service: "user-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"order.events:OrderPlaced", models.Producer{Service: "checkout-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"order.events:OrderShipped", models.Producer{Service: "logistics-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"payment.events:PaymentAuthorized", models.Producer{Service: "payment-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"payment.events:PaymentCaptured", models.Producer{Service: "payment-service", Repository: &fakeRepository, CreatedAt: now}},
 	}
 
 	for _, p := range producersSeed {
@@ -175,7 +125,7 @@ func (s *SQLiteStore) mockData() error {
 			return fmt.Errorf("evento não encontrado para chave produtor %s", p.eventKey)
 		}
 		p.prod.EventID = id
-		if err := s.InsertProducer(p.prod); err != nil {
+		if _, err := InsertProducer(ctx, db, p.prod); err != nil {
 			return err
 		}
 	}
@@ -183,15 +133,15 @@ func (s *SQLiteStore) mockData() error {
 	// Consumidores fictícios
 	consumersSeed := []struct {
 		eventKey string
-		cons     api.Consumer
+		cons     models.Consumer
 	}{
-		{"user.events:UserCreated", api.Consumer{Consumer: "analytics-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"user.events:UserCreated", api.Consumer{Consumer: "email-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"user.events:UserUpdated", api.Consumer{Consumer: "notification-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"order.events:OrderPlaced", api.Consumer{Consumer: "inventory-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"order.events:OrderShipped", api.Consumer{Consumer: "notification-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"payment.events:PaymentAuthorized", api.Consumer{Consumer: "fraud-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"payment.events:PaymentCaptured", api.Consumer{Consumer: "billing-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"user.events:UserCreated", models.Consumer{ConsumerGroup: "analytics-service-group", Service: "analytics-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"user.events:UserCreated", models.Consumer{ConsumerGroup: "email-service-group", Service: "email-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"user.events:UserUpdated", models.Consumer{ConsumerGroup: "notification-service-group", Service: "notification-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"order.events:OrderPlaced", models.Consumer{ConsumerGroup: "inventory-service-group", Service: "inventory-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"order.events:OrderShipped", models.Consumer{ConsumerGroup: "notification-service-group", Service: "notification-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"payment.events:PaymentAuthorized", models.Consumer{ConsumerGroup: "fraud-service-group", Service: "fraud-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"payment.events:PaymentCaptured", models.Consumer{ConsumerGroup: "billing-service-group", Service: "billing-service", Repository: &fakeRepository, CreatedAt: now}},
 	}
 
 	for _, c := range consumersSeed {
@@ -200,7 +150,7 @@ func (s *SQLiteStore) mockData() error {
 			return fmt.Errorf("evento não encontrado para chave consumidor %s", c.eventKey)
 		}
 		c.cons.EventID = id
-		if err := s.InsertConsumer(c.cons); err != nil {
+		if _, err := InsertConsumer(ctx, db, c.cons); err != nil {
 			return err
 		}
 	}
@@ -215,19 +165,30 @@ func ensureCreatedAt(t *time.Time) {
 	}
 }
 
-// TopicStore methods
-func (s *SQLiteStore) InsertTopic(topic api.Topic) error {
+// InsertTopic insere um novo tópico no banco de dados
+func InsertTopic(ctx context.Context, executor SQLExecutor, topic models.Topic) (int64, error) {
 	ensureCreatedAt(&topic.CreatedAt)
 	query := `INSERT INTO topics (name, owner, created_at) VALUES (?, ?, ?)`
-	_, err := s.db.Exec(query, topic.Name, topic.Owner, topic.CreatedAt)
-	return err
+
+	res, err := executor.ExecContext(ctx, query, topic.Name, topic.Owner, topic.CreatedAt)
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }
 
-func (s *SQLiteStore) Get(topicName string) (*api.Topic, error) {
+// GetTopic busca um tópico pelo nome
+func GetTopic(ctx context.Context, executor SQLExecutor, topicName string) (*models.Topic, error) {
 	query := `SELECT id, name, owner, created_at FROM topics WHERE name = ?`
-	row := s.db.QueryRow(query, topicName)
+	row := executor.QueryRowContext(ctx, query, topicName)
 
-	var topic api.Topic
+	var topic models.Topic
 	err := row.Scan(&topic.ID, &topic.Name, &topic.Owner, &topic.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -239,23 +200,25 @@ func (s *SQLiteStore) Get(topicName string) (*api.Topic, error) {
 	return &topic, nil
 }
 
-func (s *SQLiteStore) RemoveTopic(topicName string) error {
+// RemoveTopic remove um tópico pelo nome
+func RemoveTopic(ctx context.Context, executor SQLExecutor, topicName string) error {
 	query := `DELETE FROM topics WHERE name = ?`
-	_, err := s.db.Exec(query, topicName)
+	_, err := executor.ExecContext(ctx, query, topicName)
 	return err
 }
 
-func (s *SQLiteStore) ListTopics() ([]api.Topic, error) {
+// ListTopics retorna todos os tópicos ordenados por nome
+func ListTopics(ctx context.Context, executor SQLExecutor) ([]models.Topic, error) {
 	query := `SELECT id, name, owner, created_at FROM topics ORDER BY name`
-	rows, err := s.db.Query(query)
+	rows, err := executor.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var topics []api.Topic
+	var topics []models.Topic
 	for rows.Next() {
-		var t api.Topic
+		var t models.Topic
 		if err := rows.Scan(&t.ID, &t.Name, &t.Owner, &t.CreatedAt); err != nil {
 			return nil, err
 		}
@@ -264,31 +227,37 @@ func (s *SQLiteStore) ListTopics() ([]api.Topic, error) {
 	return topics, nil
 }
 
-// EventStore methods
-func (s *SQLiteStore) InsertEvent(event api.Event) error {
+// InsertEvent insere um novo evento no banco de dados
+func InsertEvent(ctx context.Context, executor SQLExecutor, event models.Event) (int64, error) {
 	ensureCreatedAt(&event.CreatedAt)
 	query := `INSERT INTO events (topic_id, event_type, schema_url, schema_version, deprecated, created_at) VALUES (?, ?, ?, ?, ?, ?)`
-	_, err := s.db.Exec(query, event.TopicID, event.EventType, event.SchemaURL, event.SchemaVersion, event.Deprecated, event.CreatedAt)
-	return err
+	result, err := executor.ExecContext(ctx, query, event.TopicID, event.EventType, event.SchemaURL, event.SchemaVersion, event.Deprecated, event.CreatedAt)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
 }
 
-func (s *SQLiteStore) RemoveEvent(eventID int) error {
+// RemoveEvent remove um evento pelo ID
+func RemoveEvent(ctx context.Context, executor SQLExecutor, eventID int64) error {
 	query := `DELETE FROM events WHERE id = ?`
-	_, err := s.db.Exec(query, eventID)
+	_, err := executor.ExecContext(ctx, query, eventID)
 	return err
 }
 
-func (s *SQLiteStore) GetEventsByTopic(topicID int) ([]api.Event, error) {
+// GetEventsByTopic retorna todos os eventos de um tópico
+func GetEventsByTopic(ctx context.Context, executor SQLExecutor, topicID int64) ([]models.Event, error) {
 	query := `SELECT id, topic_id, event_type, schema_url, schema_version, deprecated, created_at FROM events WHERE topic_id = ?`
-	rows, err := s.db.Query(query, topicID)
+	rows, err := executor.QueryContext(ctx, query, topicID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var events []api.Event
+	var events []models.Event
 	for rows.Next() {
-		var event api.Event
+		var event models.Event
 		err := rows.Scan(&event.ID, &event.TopicID, &event.EventType, &event.SchemaURL, &event.SchemaVersion, &event.Deprecated, &event.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -299,32 +268,38 @@ func (s *SQLiteStore) GetEventsByTopic(topicID int) ([]api.Event, error) {
 	return events, nil
 }
 
-// ProducerStore methods
-func (s *SQLiteStore) InsertProducer(producer api.Producer) error {
+// InsertProducer insere um novo produtor no banco de dados
+func InsertProducer(ctx context.Context, executor SQLExecutor, producer models.Producer) (int64, error) {
 	ensureCreatedAt(&producer.CreatedAt)
-	query := `INSERT INTO producers (event_id, producer, repository, created_at) VALUES (?, ?, ?, ?)`
-	_, err := s.db.Exec(query, producer.EventID, producer.Producer, producer.Repository, producer.CreatedAt)
-	return err
+	query := `INSERT INTO producers (event_id, service, repository, created_at) VALUES (?, ?, ?, ?)`
+	result, err := executor.ExecContext(ctx, query, producer.EventID, producer.Service, producer.Repository, producer.CreatedAt)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
 }
 
-func (s *SQLiteStore) RemoveProducer(producerID int) error {
+// RemoveProducer remove um produtor pelo ID
+func RemoveProducer(ctx context.Context, executor SQLExecutor, producerID int64) error {
 	query := `DELETE FROM producers WHERE id = ?`
-	_, err := s.db.Exec(query, producerID)
+	_, err := executor.ExecContext(ctx, query, producerID)
 	return err
 }
 
-func (s *SQLiteStore) GetProducersByEvent(eventID int) ([]api.Producer, error) {
-	query := `SELECT id, event_id, producer, repository, created_at FROM producers WHERE event_id = ?`
-	rows, err := s.db.Query(query, eventID)
+// GetProducersByEvent retorna todos os produtores de um evento
+func GetProducersByEvent(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.Producer, error) {
+	query := `SELECT id, event_id, service, repository, created_at FROM producers WHERE event_id = ?`
+	rows, err := executor.QueryContext(ctx, query, eventID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var producers []api.Producer
+	var producers []models.Producer
 	for rows.Next() {
-		var producer api.Producer
-		err := rows.Scan(&producer.ID, &producer.EventID, &producer.Producer, &producer.Repository, &producer.CreatedAt)
+		var producer models.Producer
+		err := rows.Scan(&producer.ID, &producer.EventID, &producer.Service, &producer.Repository, &producer.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -334,32 +309,38 @@ func (s *SQLiteStore) GetProducersByEvent(eventID int) ([]api.Producer, error) {
 	return producers, nil
 }
 
-// ConsumerStore methods
-func (s *SQLiteStore) InsertConsumer(consumer api.Consumer) error {
+// InsertConsumer insere um novo consumidor no banco de dados
+func InsertConsumer(ctx context.Context, executor SQLExecutor, consumer models.Consumer) (int64, error) {
 	ensureCreatedAt(&consumer.CreatedAt)
-	query := `INSERT INTO consumers (event_id, consumer, repository, created_at) VALUES (?, ?, ?, ?)`
-	_, err := s.db.Exec(query, consumer.EventID, consumer.Consumer, consumer.Repository, consumer.CreatedAt)
-	return err
+	query := `INSERT INTO consumers (event_id, service, consumer_group, repository, created_at) VALUES (?, ?, ?, ?, ?)`
+	result, err := executor.ExecContext(ctx, query, consumer.EventID, consumer.Service, consumer.ConsumerGroup, consumer.Repository, consumer.CreatedAt)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
 }
 
-func (s *SQLiteStore) RemoveConsumer(consumerID int) error {
+// RemoveConsumer remove um consumidor pelo ID
+func RemoveConsumer(ctx context.Context, executor SQLExecutor, consumerID int64) error {
 	query := `DELETE FROM consumers WHERE id = ?`
-	_, err := s.db.Exec(query, consumerID)
+	_, err := executor.ExecContext(ctx, query, consumerID)
 	return err
 }
 
-func (s *SQLiteStore) GetConsumersByEvent(eventID int) ([]api.Consumer, error) {
-	query := `SELECT id, event_id, consumer, repository, created_at FROM consumers WHERE event_id = ?`
-	rows, err := s.db.Query(query, eventID)
+// GetConsumersByEvent retorna todos os consumidores de um evento
+func GetConsumersByEvent(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.Consumer, error) {
+	query := `SELECT id, event_id, service, consumer_group, repository, created_at FROM consumers WHERE event_id = ?`
+	rows, err := executor.QueryContext(ctx, query, eventID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var consumers []api.Consumer
+	var consumers []models.Consumer
 	for rows.Next() {
-		var consumer api.Consumer
-		err := rows.Scan(&consumer.ID, &consumer.EventID, &consumer.Consumer, &consumer.Repository, &consumer.CreatedAt)
+		var consumer models.Consumer
+		err := rows.Scan(&consumer.ID, &consumer.EventID, &consumer.Service, &consumer.ConsumerGroup, &consumer.Repository, &consumer.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -367,4 +348,118 @@ func (s *SQLiteStore) GetConsumersByEvent(eventID int) ([]api.Consumer, error) {
 	}
 
 	return consumers, nil
+}
+
+// GetOrCreateTopic busca um tópico pelo nome ou cria um novo se não existir
+func GetOrCreateTopic(ctx context.Context, executor SQLExecutor, topicName string, owner string) (models.Topic, error) {
+	// Primeiro tenta encontrar o tópico existente
+	topic, err := GetTopic(ctx, executor, topicName)
+	if err != nil {
+		return models.Topic{}, err
+	}
+
+	// Se o tópico já existe
+	if topic != nil {
+		// Verifica se precisa atualizar o owner
+		if owner != "" && owner != topic.Owner {
+			if err := updateTopicOwner(ctx, executor, topicName, owner); err != nil {
+				return models.Topic{}, err
+			}
+
+			updatedTopic := models.Topic{
+				ID:        topic.ID,
+				Name:      topic.Name,
+				Owner:     owner,
+				CreatedAt: topic.CreatedAt,
+			}
+
+			return updatedTopic, nil
+		}
+		return *topic, nil
+	}
+
+	// Caso contrário, crie um novo tópico
+	newTopic := models.Topic{
+		Name:      topicName,
+		Owner:     owner,
+		CreatedAt: time.Now(),
+	}
+
+	id, err := InsertTopic(ctx, executor, newTopic)
+	if err != nil {
+		return models.Topic{}, err
+	}
+
+	return models.Topic{
+		ID:        id,
+		Name:      topicName,
+		Owner:     owner,
+		CreatedAt: newTopic.CreatedAt,
+	}, nil
+}
+
+// updateTopicOwner atualiza o owner de um tópico existente
+func updateTopicOwner(ctx context.Context, executor SQLExecutor, topicName, newOwner string) error {
+	query := `UPDATE topics SET owner = ? WHERE name = ?`
+	_, err := executor.ExecContext(ctx, query, newOwner, topicName)
+	if err != nil {
+		return fmt.Errorf("erro ao atualizar owner do tópico: %w", err)
+	}
+	return nil
+}
+
+// GetOrCreateEvent busca um evento por tipo em um tópico ou cria um novo se não existir
+func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, eventType string, schemaVersion *string, schemaURL string) (models.Event, error) {
+	// Primeiro tenta encontrar o evento existente
+	query := `SELECT id, topic_id, event_type, schema_url, schema_version, deprecated, created_at 
+              FROM events 
+              WHERE topic_id = ? AND event_type = ?`
+
+	row := executor.QueryRowContext(ctx, query, topicID, eventType)
+
+	var event models.Event
+	err := row.Scan(
+		&event.ID,
+		&event.TopicID,
+		&event.EventType,
+		&event.SchemaURL,
+		&event.SchemaVersion,
+		&event.Deprecated,
+		&event.CreatedAt,
+	)
+
+	if err == nil {
+		// Se o evento existe, retorne-o
+		return event, nil
+	}
+
+	if err != sql.ErrNoRows {
+		// Se houver um erro que não seja ErrNoRows, retorne o erro
+		return models.Event{}, err
+	}
+
+	// Se o evento não existe, crie um novo
+	newEvent := models.Event{
+		TopicID:       topicID,
+		EventType:     eventType,
+		SchemaURL:     schemaURL,
+		SchemaVersion: schemaVersion,
+		Deprecated:    false,
+		CreatedAt:     time.Now(),
+	}
+
+	id, err := InsertEvent(ctx, executor, newEvent)
+	if err != nil {
+		return models.Event{}, err
+	}
+
+	return models.Event{
+		ID:            id,
+		TopicID:       topicID,
+		EventType:     eventType,
+		SchemaURL:     schemaURL,
+		SchemaVersion: schemaVersion,
+		Deprecated:    false,
+		CreatedAt:     newEvent.CreatedAt,
+	}, nil
 }

@@ -27,7 +27,22 @@
   - [8. Módulo Subscriber - Fluxo](#8-módulo-subscriber---fluxo)
   - [9. Edge Cases e Decisões](#9-edge-cases-e-decisões)
   - [10. Roadmap (Milestones)](#10-roadmap-milestones)
-  - [11. Próximos Passos Concretos](#11-próximos-passos-concretos)
+  - [11. Módulo CLI](#11-módulo-cli)
+    - [Visão Geral](#visão-geral)
+    - [Comandos Principais](#comandos-principais)
+    - [Parâmetros/Flags](#parâmetrosflags)
+    - [Exemplo de Uso](#exemplo-de-uso)
+    - [Considerações](#considerações)
+  - [12. Módulo de Notificações Slack](#12-módulo-de-notificações-slack)
+    - [Visão Geral](#visão-geral-1)
+    - [Gatilhos de Notificação](#gatilhos-de-notificação)
+    - [Pontos de Integração](#pontos-de-integração)
+    - [Integração com Slack](#integração-com-slack)
+    - [Formato das Mensagens](#formato-das-mensagens)
+    - [Configuração](#configuração)
+    - [Exemplo de Payload](#exemplo-de-payload)
+    - [Roadmap de Integração](#roadmap-de-integração)
+  - [13. Próximos Passos Concretos](#13-próximos-passos-concretos)
 
 ---
 
@@ -250,7 +265,85 @@ M8 - Hardening (retry/backoff schema fetch, circuit breaker, paginação)
 
 ---
 
-## 11. Próximos Passos Concretos
+## 11. Módulo CLI
+
+### Visão Geral
+A CLI do EventDoctor será responsável por facilitar a integração dos clientes (usuários e pipelines CI/CD) com a API do EventDoctor, permitindo o envio e validação de arquivos de configuração YAML de forma simples e automatizável.
+
+### Comandos Principais
+- `validate`           : Valida o arquivo localmente (opcional, se houver lógica local)
+- `validate-remote`    : Envia o arquivo para a API `/config/validate` e exibe o resultado
+- `apply`              : Envia o arquivo para a API `/config/apply` para aplicar a configuração
+- `revisions`          : Lista revisões aplicadas (`GET /config/revisions`)
+
+### Parâmetros/Flags
+- `--file`, `-f`       : Caminho do arquivo YAML (default: `eventdoctor.yaml`)
+- `--api-url`          : URL da API (pode ler de env ou config)
+- `--token`            : Token de autenticação (opcional)
+- `--json`             : Saída em formato JSON (para uso em scripts/pipelines)
+
+### Exemplo de Uso
+```bash
+eventdoctor apply -f ./eventdoctor.yaml --api-url http://localhost:8080
+```
+
+### Considerações
+- A CLI deve ser fácil de instalar (binário Go, sem dependências extras)
+- Saída amigável para humanos e scripts
+- Ideal para uso em pipelines CI/CD
+- Estrutura sugerida: `/cmd/cli/`
+- Frameworks Go sugeridos: `cobra` ou `urfave/cli`
+
+---
+
+## 12. Módulo de Notificações Slack
+
+### Visão Geral
+Notificações automáticas no Slack para eventos relevantes do catálogo: criação, remoção, alteração de schema e eventos não documentados. Facilita visibilidade e resposta rápida a mudanças.
+
+### Gatilhos de Notificação
+- Criação de tópico, evento, consumer ou producer
+- Remoção de tópico, evento, consumer ou producer
+- Alteração de schema de evento
+- Detecção de evento não documentado (missing_events)
+
+### Pontos de Integração
+- Hooks/disparadores após operações de apply/config (CRUD)
+- Após detecção de missing_events pelo Subscriber
+
+### Integração com Slack
+- Utilizar Slack Webhook (configurável via env, arquivo ou banco)
+- Mensagens customizadas por tipo de evento
+- Permitir ativar/desativar notificações por tipo
+
+### Formato das Mensagens
+- Criação: "Novo [tipo] criado: [nome] ([detalhes])"
+- Remoção: "[Tipo] removido: [nome] em [data]"
+- Alteração de schema: "Schema alterado para evento [topic/type/version]"
+- Evento não documentado: "Evento não documentado detectado: [topic/type]"
+- Incluir links para docs quando possível
+
+### Configuração
+- Endpoint do webhook configurável
+- Flags para ativar/desativar tipos de notificação
+- Possível extensão futura: múltiplos canais
+
+### Exemplo de Payload
+```json
+{
+  "text": "Novo evento criado: order.created (topic: orders)"
+}
+```
+
+### Roadmap de Integração
+- Adicionar hooks após apply/config e detecção de missing_events
+- Implementar função utilitária para envio ao Slack
+- Adicionar configuração de webhook e flags
+- Testes de integração
+
+---
+
+## 13. Próximos Passos Concretos
 1. Ajustar migration.sql com novas tabelas
 2. Definir structs Go (internal/config/spec.go, internal/store/models.go)
 3. Implementar parser + validator

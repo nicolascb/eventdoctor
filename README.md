@@ -8,7 +8,8 @@ Projeto de código aberto para gerenciamento e documentação de eventos em sist
   - [Plataformas suportadas](#plataformas-suportadas)
   - [API Server](#api-server)
   - [Subscriber](#subscriber)
-  - [Produtores e Consumidores](#produtores-e-consumidores)
+  - [CLI](#cli)
+  - [Como funciona o arquivo de configuração](#como-funciona-o-arquivo-de-configuração)
     - [Visão Geral](#visão-geral)
     - [Estrutura do Arquivo](#estrutura-do-arquivo)
     - [Especificação Detalhada dos Campos](#especificação-detalhada-dos-campos)
@@ -22,7 +23,6 @@ Projeto de código aberto para gerenciamento e documentação de eventos em sist
     - [Validações](#validações)
     - [Casos de Uso Avançados](#casos-de-uso-avançados)
       - [Versionamento de Eventos](#versionamento-de-eventos)
-  - [CI/CD](#cicd)
 
 
 ## Plataformas suportadas
@@ -41,7 +41,11 @@ Rota de documentação HTML estática:
 
 O eventdoctor-subscriber é um serviço que consome mensagens de um broker (como Kafka) e valida os eventos recebidos contra os schemas definidos no arquivo de configuração `eventdoctor.yml`. Ele registra logs detalhados sobre a conformidade dos eventos, ajudando a garantir que todos os eventos estejam em conformidade com as especificações definidas.
 
-## Produtores e Consumidores
+## CLI
+
+O eventdoctor-cli é uma ferramenta de linha de comando que permite aos desenvolvedores interagir com o EventDoctor diretamente do terminal. Ele oferece comandos para validar e enviar arquivos de configuração.
+
+## Como funciona o arquivo de configuração
 
 ### Visão Geral
 
@@ -55,12 +59,16 @@ Cada projeto que produz ou consome eventos deve ter um arquivo `eventdoctor.yml`
 # eventdoctor.yml
 version: "1.0"
 metadata:
-  server_url: "https://eventdoctor.empresa.com/api"
+  servers:
+    - environment: "development"
+      url: "http://localhost:8080"
+    - environment: "production"
+      url: "https://eventdoctor.empresa.com"
   repository: "https://github.com/empresa/chat-microservice"
+  service: "chat-microservice"
 
 producers:
-  - name: "chat-microservice"
-    topic: "chat-microservice.events"
+  - topic: "chat-microservice.events"
     owner: true
     title: "Chat Events"
     description: "Eventos relacionados ao sistema de chat"
@@ -75,8 +83,7 @@ producers:
         schema_url: "https://gitlab.com/nicolascorrea/eventdoctor/schemas/chat_deleted.json"
 
 consumers:
-  - service: "notification-microservice"
-    group: "notification-group"
+  - group: "notification-group"
     description: "Serviço responsável por notificações push"
     topics: 
       - name: "chat-microservice.events"
@@ -95,9 +102,11 @@ consumers:
 | Campo                | Tipo   | Descrição                              | Obrigatório | Padrão |
 | -------------------- | ------ | -------------------------------------- | ----------- | ------ |
 | version              | string | Versão da especificação                | sim         | -      |
-| metadata             | object | Metadados do projeto                   | não         | -      |
+| metadata             | object | Metadados do projeto                   | sim         | -      |
 | metadata.repository  | string | URL do repositório                     | sim         | -      |
-| metadata.server      | string | URL do servidor EventDoctor            | sim         | -      |
+| metadata.servers     | array  | Lista de servidores EventDoctor        | sim         | -      |
+| metadata.servers[].environment | string | Ambiente do servidor (ex: development, production) | sim | - |
+| metadata.servers[].url | string | URL do servidor EventDoctor          | sim         | -      |
 
 #### Producers
 
@@ -193,5 +202,3 @@ producers:
         schema_url: "https://schemas.empresa.com/order_created_v1.json"
         deprecated: true
 ```
-
-## CI/CD

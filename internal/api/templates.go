@@ -2,5 +2,5 @@ package api
 
 import _ "embed"
 
-//go:embed templates/docs.tmpl
-var templateDocs string
+//go:embed templates/web.tmpl
+var templateWeb string
