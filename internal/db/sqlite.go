@@ -30,12 +30,11 @@ func NewSQLiteDB(dbPath string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	// Seed de dados fictícios (idempotente)
-	if err := mockData(context.Background(), db); err != nil {
-		return nil, err
-	}
+	// // Seed de dados fictícios (idempotente)
+	// if err := mockData(context.Background(), db); err != nil {
+	// 	return nil, err
+	// }
 
-	fmt.Println("Connected to SQLite database successfully")
 	return db, nil
 }
 
@@ -111,12 +110,12 @@ func mockData(ctx context.Context, db *sql.DB) error {
 		eventKey string
 		prod     models.Producer
 	}{
-		{"user.events:UserCreated", models.Producer{Service: "user-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"user.events:UserUpdated", models.Producer{Service: "user-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"order.events:OrderPlaced", models.Producer{Service: "checkout-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"order.events:OrderShipped", models.Producer{Service: "logistics-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"payment.events:PaymentAuthorized", models.Producer{Service: "payment-service", Repository: &fakeRepository, CreatedAt: now}},
-		{"payment.events:PaymentCaptured", models.Producer{Service: "payment-service", Repository: &fakeRepository, CreatedAt: now}},
+		{"user.events:UserCreated", models.Producer{Service: "user-service", Writes: true, Repository: &fakeRepository, CreatedAt: now}},
+		{"user.events:UserUpdated", models.Producer{Service: "user-service", Writes: true, Repository: &fakeRepository, CreatedAt: now}},
+		{"order.events:OrderPlaced", models.Producer{Service: "checkout-service", Writes: true, Repository: &fakeRepository, CreatedAt: now}},
+		{"order.events:OrderShipped", models.Producer{Service: "logistics-service", Writes: true, Repository: &fakeRepository, CreatedAt: now}},
+		{"payment.events:PaymentAuthorized", models.Producer{Service: "payment-service", Writes: true, Repository: &fakeRepository, CreatedAt: now}},
+		{"payment.events:PaymentCaptured", models.Producer{Service: "payment-service", Writes: true, Repository: &fakeRepository, CreatedAt: now}},
 	}
 
 	for _, p := range producersSeed {
@@ -271,8 +270,8 @@ func GetEventsByTopic(ctx context.Context, executor SQLExecutor, topicID int64) 
 // InsertProducer insere um novo produtor no banco de dados
 func InsertProducer(ctx context.Context, executor SQLExecutor, producer models.Producer) (int64, error) {
 	ensureCreatedAt(&producer.CreatedAt)
-	query := `INSERT INTO producers (event_id, service, repository, created_at) VALUES (?, ?, ?, ?)`
-	result, err := executor.ExecContext(ctx, query, producer.EventID, producer.Service, producer.Repository, producer.CreatedAt)
+	query := `INSERT INTO producers (event_id, service, writes, repository, created_at) VALUES (?, ?, ?, ?, ?)`
+	result, err := executor.ExecContext(ctx, query, producer.EventID, producer.Service, producer.Writes, producer.Repository, producer.CreatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -289,7 +288,7 @@ func RemoveProducer(ctx context.Context, executor SQLExecutor, producerID int64)
 
 // GetProducersByEvent retorna todos os produtores de um evento
 func GetProducersByEvent(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.Producer, error) {
-	query := `SELECT id, event_id, service, repository, created_at FROM producers WHERE event_id = ?`
+	query := `SELECT id, event_id, service, writes, repository, created_at FROM producers WHERE event_id = ?`
 	rows, err := executor.QueryContext(ctx, query, eventID)
 	if err != nil {
 		return nil, err
@@ -299,7 +298,7 @@ func GetProducersByEvent(ctx context.Context, executor SQLExecutor, eventID int6
 	var producers []models.Producer
 	for rows.Next() {
 		var producer models.Producer
-		err := rows.Scan(&producer.ID, &producer.EventID, &producer.Service, &producer.Repository, &producer.CreatedAt)
+		err := rows.Scan(&producer.ID, &producer.EventID, &producer.Service, &producer.Writes, &producer.Repository, &producer.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -312,8 +311,8 @@ func GetProducersByEvent(ctx context.Context, executor SQLExecutor, eventID int6
 // InsertConsumer insere um novo consumidor no banco de dados
 func InsertConsumer(ctx context.Context, executor SQLExecutor, consumer models.Consumer) (int64, error) {
 	ensureCreatedAt(&consumer.CreatedAt)
-	query := `INSERT INTO consumers (event_id, service, consumer_group, repository, created_at) VALUES (?, ?, ?, ?, ?)`
-	result, err := executor.ExecContext(ctx, query, consumer.EventID, consumer.Service, consumer.ConsumerGroup, consumer.Repository, consumer.CreatedAt)
+	query := `INSERT INTO consumers (event_id, service, consumer_group, event_version, repository, created_at) VALUES (?, ?, ?, ?, ?, ?)`
+	result, err := executor.ExecContext(ctx, query, consumer.EventID, consumer.Service, consumer.ConsumerGroup, consumer.EventVersion, consumer.Repository, consumer.CreatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -330,7 +329,7 @@ func RemoveConsumer(ctx context.Context, executor SQLExecutor, consumerID int64)
 
 // GetConsumersByEvent retorna todos os consumidores de um evento
 func GetConsumersByEvent(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.Consumer, error) {
-	query := `SELECT id, event_id, service, consumer_group, repository, created_at FROM consumers WHERE event_id = ?`
+	query := `SELECT id, event_id, service, consumer_group, event_version, repository, created_at FROM consumers WHERE event_id = ?`
 	rows, err := executor.QueryContext(ctx, query, eventID)
 	if err != nil {
 		return nil, err
@@ -340,7 +339,7 @@ func GetConsumersByEvent(ctx context.Context, executor SQLExecutor, eventID int6
 	var consumers []models.Consumer
 	for rows.Next() {
 		var consumer models.Consumer
-		err := rows.Scan(&consumer.ID, &consumer.EventID, &consumer.Service, &consumer.ConsumerGroup, &consumer.Repository, &consumer.CreatedAt)
+		err := rows.Scan(&consumer.ID, &consumer.EventID, &consumer.Service, &consumer.ConsumerGroup, &consumer.EventVersion, &consumer.Repository, &consumer.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -462,4 +461,43 @@ func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, 
 		Deprecated:    false,
 		CreatedAt:     newEvent.CreatedAt,
 	}, nil
+}
+
+// InsertEventHeader insere um novo header para um evento
+func InsertEventHeader(ctx context.Context, executor SQLExecutor, header models.EventHeader) (int64, error) {
+	ensureCreatedAt(&header.CreatedAt)
+	query := `INSERT INTO event_headers (event_id, name, description, created_at) VALUES (?, ?, ?, ?)`
+	result, err := executor.ExecContext(ctx, query, header.EventID, header.Name, header.Description, header.CreatedAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+// GetEventHeaders retorna todos os headers de um evento
+func GetEventHeaders(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.EventHeader, error) {
+	query := `SELECT id, event_id, name, description, created_at FROM event_headers WHERE event_id = ? ORDER BY name`
+	rows, err := executor.QueryContext(ctx, query, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var headers []models.EventHeader
+	for rows.Next() {
+		var header models.EventHeader
+		err := rows.Scan(&header.ID, &header.EventID, &header.Name, &header.Description, &header.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		headers = append(headers, header)
+	}
+	return headers, nil
+}
+
+// DeleteEventHeaders remove todos os headers de um evento
+func DeleteEventHeaders(ctx context.Context, executor SQLExecutor, eventID int64) error {
+	query := `DELETE FROM event_headers WHERE event_id = ?`
+	_, err := executor.ExecContext(ctx, query, eventID)
+	return err
 }

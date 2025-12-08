@@ -1,0 +1,27 @@
+version: "1.0"
+
+service: "basic-service-2"
+config:
+  servers:
+    - environment: "development"
+      url: "http://localhost:8087"
+    - environment: "production"
+      url: "https://eventdoctor.empresa.com"
+  repository: "https://github.com/empresa/consumer-service-2"
+
+consumers:
+  - group: "basic-group"
+    description: "Serviço responsável por notificações push"
+    topics:
+      - name: "chat-microservice.events"
+        events:
+          - type: "ChatCreated"
+            version: "1.0.0"
+          - type: "ChatDeleted"
+            version: "1.0.0"
+      - name: "push.commands"
+        events:
+          - type: "BasicCreated"
+            version: "1.0.0"
+          - type: "BasicDeleted"
+            version: "1.0.0"

@@ -38,7 +38,12 @@ func (a *API) Shutdown(ctx context.Context) error {
 }
 
 func (a *API) parseTemplates() {
-	tpl := template.Must(template.New("web").Parse(templateWeb))
+	funcMap := template.FuncMap{
+		"subtract": func(a, b int) int {
+			return a - b
+		},
+	}
+	tpl := template.Must(template.New("web").Funcs(funcMap).Parse(templateWeb))
 	a.tpl = tpl
 }
 
@@ -54,36 +59,27 @@ func (a *API) Run() error {
 
 func (a *API) routes() {
 	a.router = gin.Default()
-	a.router.POST("/config", a.handleUploadConfig)
-	a.router.GET("/", a.handleWeb)
+
+	ui := a.router.Group("/ui")
+	ui.GET("/", a.handlerUI)
+
+	api := a.router.Group("/api/v1")
+	api.POST("/config", a.handlerApplyConfig)
 }
 
-func (a *API) handleUploadConfig(c *gin.Context) {
-	fileHeader, err := c.FormFile("file")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "field 'file' is required"})
-		return
-	}
+func (a *API) handlerApplyConfig(c *gin.Context) {
+	body := c.Request.Body
 
-	f, err := fileHeader.Open()
+	cfg, err := eventdoctor.LoadSpecFromReader(body)
 	if err != nil {
-		a.logger.Error("failed to open uploaded file", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open file"})
-		return
-	}
-
-	defer f.Close()
-
-	cfg, err := eventdoctor.LoadSpecFromReader(f)
-	if err != nil {
-		a.logger.Error("failed to parse YAML config", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse YAML configuration", "details": err.Error()})
+		a.logger.Error("failed to load config", zap.Error(err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid configuration", "details": err.Error()})
 		return
 	}
 
 	if err := cfg.Validate(); err != nil {
 		a.logger.Error("invalid config", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid configuration", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "configuration validation failed", "details": err.Error()})
 		return
 	}
 
@@ -93,8 +89,7 @@ func (a *API) handleUploadConfig(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"message": "config uploaded successfully",
-		"size":    c.Request.ContentLength,
 	})
 }

@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (a *API) handleWeb(c *gin.Context) {
+func (a *API) handlerUI(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	data, err := a.service.WebDocs(ctx)

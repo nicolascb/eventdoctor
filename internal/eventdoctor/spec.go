@@ -18,7 +18,8 @@ var (
 
 type EventDoctorSpec struct {
 	Version   string     `yaml:"version" validate:"required"`
-	Metadata  Metadata   `yaml:"metadata" validate:"required"`
+	Service   string     `yaml:"service" validate:"required"`
+	Config    Config     `yaml:"config" validate:"required"`
 	Producers []Producer `yaml:"producers" validate:"dive"`
 	Consumers []Consumer `yaml:"consumers" validate:"dive"`
 }
@@ -28,29 +29,43 @@ type Server struct {
 	URL         string `yaml:"url" validate:"required,url"`
 }
 
+type Config struct {
+	Servers    []Server `yaml:"servers" validate:"required,min=1,dive"`
+	Repository string   `yaml:"repository" validate:"required,url"`
+}
+
+// Metadata mantido para compatibilidade retroativa
 type Metadata struct {
 	Servers    []Server `yaml:"servers" validate:"required,min=1,dive"`
 	Repository string   `yaml:"repository" validate:"required,url"`
 	Service    string   `yaml:"service" validate:"required"`
 }
 
+type EventHeader struct {
+	Name        string `yaml:"name" validate:"required"`
+	Description string `yaml:"description"`
+}
+
 type Event struct {
-	Type        string  `yaml:"type" validate:"required"`
-	Version     *string `yaml:"version" validate:"omitempty,semver"`
-	Description string  `yaml:"description"`
-	SchemaURL   string  `yaml:"schema_url" validate:"required_if=Owner true,omitempty,url"`
+	Type        string        `yaml:"type" validate:"required"`
+	Version     *string       `yaml:"version" validate:"omitempty,semver"`
+	Description string        `yaml:"description"`
+	SchemaURL   string        `yaml:"schema_url" validate:"required_if=Owner true,omitempty,url"`
+	Headers     []EventHeader `yaml:"headers"`
 }
 
 type Producer struct {
 	Topic       string  `yaml:"topic" validate:"required"`
-	Owner       bool    `yaml:"owner"`
 	Title       string  `yaml:"title" validate:"required_if=Owner true"`
+	Owner       bool    `yaml:"owner"`
+	Writes      bool    `yaml:"writes"`
 	Description string  `yaml:"description"`
 	Events      []Event `yaml:"events" validate:"required,dive"`
 }
 
 type ConsumerEvent struct {
-	Type string `yaml:"type" validate:"required"`
+	Type    string  `yaml:"type" validate:"required"`
+	Version *string `yaml:"version" validate:"omitempty,semver"`
 }
 
 type Topic struct {
@@ -91,7 +106,7 @@ func (c *EventDoctorSpec) Validate() error {
 	}
 
 	// Validação de ambientes únicos por servidor
-	if err := validateUniqueEnvironments(c.Metadata.Servers); err != nil {
+	if err := validateUniqueEnvironments(c.Config.Servers); err != nil {
 		return err
 	}
 
@@ -130,4 +145,14 @@ func validateUniqueEnvironments(servers []Server) error {
 	}
 
 	return nil
+}
+
+// GetServerURL retorna a URL do servidor para o ambiente especificado
+func (c *EventDoctorSpec) GetServerURL(env string) (string, error) {
+	for _, srv := range c.Config.Servers {
+		if srv.Environment == env {
+			return srv.URL, nil
+		}
+	}
+	return "", fmt.Errorf("no server found for environment %q", env)
 }

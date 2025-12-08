@@ -16,10 +16,21 @@ CREATE TABLE IF NOT EXISTS events (
     FOREIGN KEY (topic_id) REFERENCES topics(id)
 );
 
+CREATE TABLE IF NOT EXISTS event_headers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES events(id),
+    UNIQUE(event_id, name)
+);
+
 CREATE TABLE IF NOT EXISTS producers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id INTEGER NOT NULL,
     service TEXT NOT NULL,
+    writes BOOLEAN DEFAULT TRUE,
     repository TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (event_id) REFERENCES events(id)
@@ -30,6 +41,7 @@ CREATE TABLE IF NOT EXISTS consumers (
     event_id INTEGER NOT NULL,
     service TEXT NOT NULL,
     consumer_group TEXT NOT NULL,
+    event_version TEXT,
     repository TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (event_id) REFERENCES events(id)

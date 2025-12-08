@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/nicolascb/eventdoctor/internal/db"
 	"github.com/nicolascb/eventdoctor/internal/db/models"
@@ -20,8 +21,8 @@ func NewService(db *sql.DB) *Service {
 
 func (s *Service) SaveSpec(ctx context.Context, spec eventdoctor.EventDoctorSpec) error {
 	return db.WithTransaction(ctx, s.db, func(ctx context.Context, tx db.SQLExecutor) error {
-		repository := spec.Metadata.Repository
-		service := spec.Metadata.Service
+		repository := spec.Config.Repository
+		service := spec.Service
 
 		if err := s.cleanExistingData(ctx, tx, repository); err != nil {
 			return err
@@ -71,9 +72,24 @@ func (s *Service) insertProducers(ctx context.Context, tx db.SQLExecutor, produc
 				return fmt.Errorf("insertProducers: failed to get/create event: %w", err)
 			}
 
+			// Inserir headers do evento se houver
+			for _, h := range e.Headers {
+				header := models.EventHeader{
+					EventID:     ev.ID,
+					Name:        h.Name,
+					Description: h.Description,
+					CreatedAt:   time.Now(),
+				}
+				if _, err := db.InsertEventHeader(ctx, tx, header); err != nil {
+					// Ignorar erro de constraint única (header já existe)
+					// Seria melhor fazer um upsert, mas por enquanto ignoramos
+				}
+			}
+
 			producer := models.Producer{
 				EventID:    ev.ID,
 				Service:    service,
+				Writes:     p.Writes,
 				Repository: &repository,
 			}
 
@@ -103,6 +119,7 @@ func (s *Service) insertConsumers(ctx context.Context, tx db.SQLExecutor, consum
 					EventID:       ev.ID,
 					Service:       service,
 					ConsumerGroup: c.Group,
+					EventVersion:  e.Version,
 					Repository:    &repository,
 				}
 

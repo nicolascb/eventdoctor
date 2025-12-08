@@ -68,6 +68,11 @@ func (s *Service) processEvent(ctx context.Context, ev models.Event) (eventdocto
 		return eventdoctor.EventView{}, fmt.Errorf("failed to list consumers: %w", err)
 	}
 
+	headers, err := db.GetEventHeaders(ctx, s.db, ev.ID)
+	if err != nil {
+		return eventdoctor.EventView{}, fmt.Errorf("failed to list headers: %w", err)
+	}
+
 	evv := eventdoctor.EventView{
 		Type:       ev.EventType,
 		Version:    ev.SchemaVersion,
@@ -75,12 +80,30 @@ func (s *Service) processEvent(ctx context.Context, ev models.Event) (eventdocto
 		Deprecated: ev.Deprecated,
 	}
 
-	for _, p := range prods {
-		evv.Producers = append(evv.Producers, eventdoctor.ProducerView{Name: p.Service, Repository: p.Repository})
+	// Adicionar headers
+	for _, h := range headers {
+		evv.Headers = append(evv.Headers, eventdoctor.HeaderView{
+			Name:        h.Name,
+			Description: h.Description,
+		})
 	}
 
+	// Adicionar produtores
+	for _, p := range prods {
+		evv.Producers = append(evv.Producers, eventdoctor.ProducerView{
+			Name:       p.Service,
+			Writes:     p.Writes,
+			Repository: p.Repository,
+		})
+	}
+
+	// Adicionar consumidores
 	for _, cn := range cons {
-		evv.Consumers = append(evv.Consumers, eventdoctor.ConsumerView{Name: cn.Service, Repository: cn.Repository})
+		evv.Consumers = append(evv.Consumers, eventdoctor.ConsumerView{
+			Name:         cn.Service,
+			EventVersion: cn.EventVersion,
+			Repository:   cn.Repository,
+		})
 	}
 
 	return evv, nil
