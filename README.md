@@ -4,6 +4,69 @@ Projeto de código aberto para gerenciamento e documentação de eventos em sist
 
 É capaz de gerar documentação automática, validar conformidade de eventos e facilitar a comunicação entre produtores e consumidores de eventos.
 
+## Arquitetura
+
+```mermaid
+flowchart TB
+    subgraph Microservices["🏢 Microserviços"]
+        MS1["📦 user-service<br/>eventdoctor.yaml"]
+        MS2["📦 order-service<br/>eventdoctor.yaml"]
+        MS3["📦 payment-service<br/>eventdoctor.yaml"]
+    end
+
+    subgraph CLI["🖥️ EventDoctor CLI"]
+        VALIDATE["config validate"]
+        APPLY["config apply"]
+    end
+
+    subgraph EventDoctorAPI["☁️ EventDoctor API"]
+        API["REST API<br/>/api/v1/*"]
+        DOCS["📄 /docs<br/>Documentação HTML"]
+        DB[(SQLite)]
+        API --> DB
+        DOCS --> DB
+    end
+
+    subgraph Kafka["📨 Apache Kafka"]
+        TOPIC1["user-service.events"]
+        TOPIC2["order-service.events"]
+        TOPIC3["payment-service.events"]
+    end
+
+    subgraph Consumer["🔄 EventDoctor Consumer"]
+        SUBSCRIBER["Kafka Subscriber<br/>Monitora tópicos"]
+    end
+
+    %% Fluxo CLI
+    MS1 & MS2 & MS3 --> |"1️⃣ eventdoctor.yaml"| CLI
+    CLI --> |"2️⃣ POST /services"| API
+
+    %% Fluxo Consumer
+    SUBSCRIBER --> |"3️⃣ Verifica tópicos/consumers"| Kafka
+    SUBSCRIBER --> |"4️⃣ Reporta status"| API
+
+    %% Fluxo Documentação
+    API --> |"5️⃣ Gera documentação"| DOCS
+
+    %% Kafka
+    MS1 -.-> |"produz"| TOPIC1
+    MS2 -.-> |"produz"| TOPIC2
+    MS3 -.-> |"produz"| TOPIC3
+
+    style EventDoctorAPI fill:#e1f5fe
+    style CLI fill:#fff3e0
+    style Consumer fill:#f3e5f5
+    style Kafka fill:#ffebee
+    style Microservices fill:#e8f5e9
+```
+
+### Fluxo Principal
+
+1. **Configuração**: Cada microserviço define seu `eventdoctor.yaml` com produtores e consumidores
+2. **Registro**: A CLI valida e envia as configurações para a API
+3. **Monitoramento**: O Consumer verifica periodicamente os tópicos no Kafka
+4. **Documentação**: A API gera documentação automática de todos os eventos do ecossistema
+
 - [EventDoctor](#eventdoctor)
   - [Plataformas suportadas](#plataformas-suportadas)
   - [API Server](#api-server)
