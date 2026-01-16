@@ -1,43 +1,43 @@
 # EventDoctor CLI
 
-- Validar/Enviar configuração para a API
-- Buscar informações da API
+- Validate/Send configuration to the API
+- Fetch information from the API
 
 
-Construir a documentação em https://github.com/imfing/hextra.
+Build documentation at https://github.com/imfing/hextra.
 
-## Comandos
+## Commands
 
-| Comando                           | Descrição                                          |
+| Command                           | Description                                        |
 | --------------------------------- | -------------------------------------------------- |
-| `eventdoctor-cli config validate` | Valida o arquivo de configuração `eventdoctor.yml` |
-| `eventdoctor-cli config apply`    | Aplica as configurações definidas no arquivo       |
-| `eventdoctor-cli get`             | Recupera informações da API do EventDoctor         |
+| `eventdoctor-cli config validate` | Validates the `eventdoctor.yml` configuration file |
+| `eventdoctor-cli config apply`    | Applies the configurations defined in the file     |
+| `eventdoctor-cli get`             | Retrieves information from the EventDoctor API     |
 
-**Flags globais:**
+**Global flags:**
 
-| Flag                      | Descrição                                               | Obrigatório |
-| ------------------------- | ------------------------------------------------------- | ----------- |
-| `-h, --help`              | Exibe a ajuda para o comando especificado               | Não         |
-| `-v, --version`           | Exibe a versão do EventDoctor CLI                       | Não         |
-| `-e, --env <environment>` | Especifica o ambiente (desenvolvimento, produção, etc.) | Sim         |
-
-
-### Comando: `config`
-
-| Comando    | Opções              | Descrição                                                                                                                                                     |
-| ---------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `validate` | `-f, --file <path>` | Valida o arquivo de configuração `eventdoctor.yml`. Se nenhum arquivo for especificado, o padrão é `./eventdoctor.yml`.                                       |
-| `apply`    | `-f, --file <path>` | Aplica as configurações definidas no arquivo `eventdoctor.yml` para a API do EventDoctor. Se nenhum arquivo for especificado, o padrão é `./eventdoctor.yml`. |
+| Flag                      | Description                                               | Required |
+| ------------------------- | --------------------------------------------------------- | -------- |
+| `-h, --help`              | Displays help for the specified command                   | No       |
+| `-v, --version`           | Displays the EventDoctor CLI version                      | No       |
+| `-e, --env <environment>` | Specifies the environment (development, production, etc.) | Yes      |
 
 
-### Comando: `get`
+### Command: `config`
 
-O comando `eventdoctor-cli get` permite recuperar informações da API do EventDoctor. Ele pode ser usado para listar eventos, tópicos ou outras entidades gerenciadas pela API.
+| Command    | Options             | Description                                                                                                                                           |
+| ---------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `validate` | `-f, --file <path>` | Validates the `eventdoctor.yml` configuration file. If no file is specified, the default is `./eventdoctor.yml`.                                      |
+| `apply`    | `-f, --file <path>` | Applies the configurations defined in the `eventdoctor.yml` file to the EventDoctor API. If no file is specified, the default is `./eventdoctor.yml`. |
 
-Ao menos um filtro deve ser fornecido para que a busca seja efetivada.
 
-A URL da API do EventDoctor deve ser configurada previamente no arquivo de configuração `~/.eventdoctor`.
+### Command: `get`
+
+The `eventdoctor-cli get` command allows retrieving information from the EventDoctor API. It can be used to list events, topics, or other entities managed by the API.
+
+At least one filter must be provided for the search to be performed.
+
+The EventDoctor API URL must be previously configured in the `~/.eventdoctor` configuration file.
 
 ```yaml
   servers:
@@ -48,7 +48,7 @@ A URL da API do EventDoctor deve ser configurada previamente no arquivo de confi
 ```
 
 
-| Flag          | Descrição           | Obrigatório | Exemplo                                                        |
-| ------------- | ------------------- | ----------- | -------------------------------------------------------------- |
-| `--topics `   | Filtro por tópicos  | Não         | `eventdoctor-cli get --topics=user.events,payments.events `    |
-| `--services ` | Filtro por serviços | Não         | `eventdoctor-cli get --services=user-service,payment-service ` |
+| Flag          | Description        | Required | Example                                                        |
+| ------------- | ------------------ | -------- | -------------------------------------------------------------- |
+| `--topics `   | Filter by topics   | No       | `eventdoctor-cli get --topics=user.events,payments.events `    |
+| `--services ` | Filter by services | No       | `eventdoctor-cli get --services=user-service,payment-service ` |

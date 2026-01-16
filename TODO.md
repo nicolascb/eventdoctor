@@ -51,7 +51,6 @@
 ## Documentação
 
 - [ ] Criar repositório eventdoctor-docs
-- [ ] Documentar instalação da API com Helm
 - [ ] Adicionar CONTRIBUTING.md
 - [ ] Adicionar CHANGELOG.md
 - [ ] Documentar variáveis de ambiente

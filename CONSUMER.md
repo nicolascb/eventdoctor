@@ -1,21 +1,23 @@
 # EventDoctor Consumer
 
-O `eventdoctor-consumer` é uma ferramenta de linha de comando que atua como um consumidor de eventos Kafka.
+The `eventdoctor-consumer` is a command line tool that acts as a Kafka event consumer.
 
-Roadmap de funcionalidades planejadas:
+Planned features roadmap:
 
-| Funcionalidade                        | Descrição                                                                          | Status |
-| ------------------------------------- | ---------------------------------------------------------------------------------- | ------ |
-| Base de tópicos não documentados      | Enriquecimento da base de tópicos não documentados no EventDoctor                  | -      |
-| Base de eventos não documentados      | Enriquecimento da base de eventos não documentados no EventDoctor                  | -      |
-| Base de consumidores não documentados | Enriquecimento da base de consumidores não documentados no EventDoctor             | -      |
-| Validação de eventos Kafka            | Consome eventos de tópicos Kafka e valida contra esquemas definidos no EventDoctor | -      |
+| Feature                         | Description                                                                    | Status |
+| ------------------------------- | ------------------------------------------------------------------------------ | ------ |
+| Undocumented topics database    | Enrichment of undocumented topics database in EventDoctor                      | -      |
+| Undocumented events database    | Enrichment of undocumented events database in EventDoctor                      | -      |
+| Undocumented consumers database | Enrichment of undocumented consumers database in EventDoctor                   | -      |
+| Kafka event validation          | Consumes events from Kafka topics and validates against schemas in EventDoctor | -      |
 
 
-## Consumidores/Eventos/Tópicos não documentados
+## Undocumented Consumers/Events/Topics
 
-É considerado:
+Considered as undocumented:
 
-- Tópico sem `owner` definido no arquivo de configuração do EventDoctor.
-- Evento publicado em um tópico que não está documentado no EventDoctor.
-- Consumidor que consome de um tópico que não está documentado no EventDoctor.
+- Topic without `owner` defined in the EventDoctor configuration file.
+- Event published to a topic that is not documented in EventDoctor.
+- Consumer that consumes from a topic that is not documented in EventDoctor.
+
+When the consumer identifies any of these situations, it will report them to the EventDoctor API to enrich its database.

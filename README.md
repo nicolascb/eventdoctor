@@ -1,14 +1,14 @@
 # EventDoctor
 
-Projeto de código aberto para gerenciamento e documentação de eventos em sistemas distribuídos.
+Open source project for managing and documenting events in distributed systems.
 
-É capaz de gerar documentação automática, validar conformidade de eventos e facilitar a comunicação entre produtores e consumidores de eventos.
+It can generate automatic documentation, validate event compliance, and facilitate communication between event producers and consumers.
 
-## Arquitetura
+## Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Microservices["🏢 Microserviços"]
+    subgraph Microservices["🏢 Microservices"]
         MS1["📦 user-service<br/>eventdoctor.yaml"]
         MS2["📦 order-service<br/>eventdoctor.yaml"]
         MS3["📦 payment-service<br/>eventdoctor.yaml"]
@@ -21,7 +21,7 @@ flowchart TB
 
     subgraph EventDoctorAPI["☁️ EventDoctor API"]
         API["REST API<br/>/api/v1/*"]
-        DOCS["📄 /docs<br/>Documentação HTML"]
+        DOCS["📄 /docs<br/>HTML Documentation"]
         DB[(SQLite)]
         API --> DB
         DOCS --> DB
@@ -34,24 +34,24 @@ flowchart TB
     end
 
     subgraph Consumer["🔄 EventDoctor Consumer"]
-        SUBSCRIBER["Kafka Subscriber<br/>Monitora tópicos"]
+        SUBSCRIBER["Kafka Subscriber<br/>Monitors topics"]
     end
 
-    %% Fluxo CLI
+    %% CLI Flow
     MS1 & MS2 & MS3 --> |"1️⃣ eventdoctor.yaml"| CLI
     CLI --> |"2️⃣ POST /services"| API
 
-    %% Fluxo Consumer
-    SUBSCRIBER --> |"3️⃣ Verifica tópicos/consumers"| Kafka
-    SUBSCRIBER --> |"4️⃣ Reporta status"| API
+    %% Consumer Flow
+    SUBSCRIBER --> |"3️⃣ Checks topics/consumers"| Kafka
+    SUBSCRIBER --> |"4️⃣ Reports status"| API
 
-    %% Fluxo Documentação
-    API --> |"5️⃣ Gera documentação"| DOCS
+    %% Documentation Flow
+    API --> |"5️⃣ Generates documentation"| DOCS
 
     %% Kafka
-    MS1 -.-> |"produz"| TOPIC1
-    MS2 -.-> |"produz"| TOPIC2
-    MS3 -.-> |"produz"| TOPIC3
+    MS1 -.-> |"produces"| TOPIC1
+    MS2 -.-> |"produces"| TOPIC2
+    MS3 -.-> |"produces"| TOPIC3
 
     style EventDoctorAPI fill:#e1f5fe
     style CLI fill:#fff3e0
@@ -60,102 +60,102 @@ flowchart TB
     style Microservices fill:#e8f5e9
 ```
 
-### Fluxo Principal
+### Main Flow
 
-1. **Configuração**: Cada microserviço define seu `eventdoctor.yaml` com produtores e consumidores
-2. **Registro**: A CLI valida e envia as configurações para a API
-3. **Monitoramento**: O Consumer verifica periodicamente os tópicos no Kafka
-4. **Documentação**: A API gera documentação automática de todos os eventos do ecossistema
+1. **Configuration**: Each microservice defines its `eventdoctor.yaml` with producers and consumers
+2. **Registration**: The CLI validates and sends configurations to the API
+3. **Monitoring**: The Consumer periodically checks topics in Kafka
+4. **Documentation**: The API generates automatic documentation for all events in the ecosystem
 
 - [EventDoctor](#eventdoctor)
-  - [Plataformas suportadas](#plataformas-suportadas)
+  - [Supported Platforms](#supported-platforms)
   - [API Server](#api-server)
   - [Consumer](#consumer)
   - [CLI](#cli)
-  - [Como funciona o arquivo de configuração](#como-funciona-o-arquivo-de-configuração)
-    - [Visão Geral](#visão-geral)
-    - [Estrutura do Arquivo](#estrutura-do-arquivo)
-    - [Especificação Detalhada dos Campos](#especificação-detalhada-dos-campos)
-      - [Campos Globais](#campos-globais)
+  - [How the Configuration File Works](#how-the-configuration-file-works)
+    - [Overview](#overview)
+    - [File Structure](#file-structure)
+    - [Detailed Field Specification](#detailed-field-specification)
+      - [Global Fields](#global-fields)
       - [Producers](#producers)
       - [Consumers](#consumers)
-    - [Exemplos de Uso](#exemplos-de-uso)
-      - [Produtor Simples](#produtor-simples)
-      - [Consumidor Múltiplos Tópicos](#consumidor-múltiplos-tópicos)
-      - [Produtor Não-Owner](#produtor-não-owner)
-    - [Validações](#validações)
-    - [Casos de Uso Avançados](#casos-de-uso-avançados)
-      - [Versionamento de Eventos](#versionamento-de-eventos)
+    - [Usage Examples](#usage-examples)
+      - [Simple Producer](#simple-producer)
+      - [Multiple Topics Consumer](#multiple-topics-consumer)
+      - [Non-Owner Producer](#non-owner-producer)
+    - [Validations](#validations)
+    - [Advanced Use Cases](#advanced-use-cases)
+      - [Event Versioning](#event-versioning)
 
 
-## Plataformas suportadas
+## Supported Platforms
 
 - Kafka
 
 ## API Server
 
-O eventdoctor-api é um serviço que expõe uma API REST para interagir com o EventDoctor. Ele permite que os usuários consultem informações sobre eventos, produtores e consumidores, além de fornecer endpoints para validação de eventos e geração de documentação.
+The eventdoctor-api is a service that exposes a REST API to interact with EventDoctor. It allows users to query information about events, producers, and consumers, as well as providing endpoints for event validation and documentation generation.
 
-Rota de documentação HTML estática:
-- GET /docs: Lista tópicos, eventos, produtores e consumidores em tabela filtrável.
+Static HTML documentation route:
+- GET /docs: Lists topics, events, producers, and consumers in a filterable table.
 
 
 ## Consumer
 
-Informações sobre o consumidor de eventos Kafka estão em [CONSUMER.md](CONSUMER.md).
+Information about the Kafka event consumer is available in [CONSUMER.md](CONSUMER.md).
 
 ## CLI
 
-Ferramenta de linha de comando para interagir com o EventDoctor. Documentação em [CLI.md](CLI.md).
+Command line tool to interact with EventDoctor. Documentation in [CLI.md](CLI.md).
 
-## Como funciona o arquivo de configuração
+## How the Configuration File Works
 
-### Visão Geral
+### Overview
 
-O EventDoctor utiliza um arquivo de configuração YAML para definir produtores e consumidores de eventos. Este arquivo serve como um registro central de todos os eventos em seu sistema, permitindo rastreamento, versionamento e documentação automática.
+EventDoctor uses a YAML configuration file to define event producers and consumers. This file serves as a central registry of all events in your system, enabling tracking, versioning, and automatic documentation.
 
-Cada projeto que produz ou consome eventos deve ter um arquivo `eventdoctor.yml`.
+Each project that produces or consumes events should have an `eventdoctor.yml` file.
 
-### Estrutura do Arquivo
+### File Structure
 
 ```yaml
 # eventdoctor.yml
 version: "1.0"
 
-service: "chat-microservice"
+service: "payment-microservice"
 config:
   servers:
     - environment: "development"
       url: "http://localhost:8080"
     - environment: "production"
       url: "https://eventdoctor.empresa.com"
-  repository: "https://github.com/empresa/chat-microservice"
+  repository: "https://github.com/empresa/payment-microservice"
 
 producers:
-  - topic: "chat-microservice.events"
+  - topic: "payment-microservice.events"
     owner: true
     writes: true
-    title: "Chat Events"
-    description: "Eventos relacionados ao sistema de chat"
+    title: "Payment Events"
+    description: "Events related to the payment system"
     events:
-      - type: "ChatCreated"
+      - type: "PaymentCreated"
         version: "1.0.0"
-        description: "Disparado quando um novo chat é criado"
-        schema_url: "https://gitlab.com/nicolascorrea/eventdoctor/schemas/chat_created.json"
-      - type: "ChatDeleted"
+        description: "Fired when a new payment is created"
+        schema_url: "https://gitlab.com/nicolascorrea/eventdoctor/schemas/payment_created.json"
+      - type: "PaymentRefunded"
         version: "1.0.0"
-        description: "Disparado quando um chat é removido"
-        schema_url: "https://gitlab.com/nicolascorrea/eventdoctor/schemas/chat_deleted.json"
+        description: "Fired when a payment is refunded"
+        schema_url: "https://gitlab.com/nicolascorrea/eventdoctor/schemas/payment_refunded.json"
 
 consumers:
   - group: "notification-group"
-    description: "Serviço responsável por notificações push"
+    description: "Service responsible for push notifications"
     topics:
-      - name: "chat-microservice.events"
+      - name: "payment-microservice.events"
         events:
-          - type: "ChatCreated"
+          - type: "PaymentCreated"
             version: "1.0.0"
-          - type: "ChatDeleted"
+          - type: "PaymentRefunded"
             version: "1.0.0"
       - name: "user-microservice.events"
         events:
@@ -163,53 +163,53 @@ consumers:
             version: "1.0.0"
 ```
 
-### Especificação Detalhada dos Campos
+### Detailed Field Specification
 
-#### Campos Globais
+#### Global Fields
 
-| Campo                        | Tipo   | Descrição                                          | Obrigatório | Padrão |
-| ---------------------------- | ------ | -------------------------------------------------- | ----------- | ------ |
-| version                      | string | Versão da especificação                            | sim         | -      |
-| service                      | string | Nome do serviço que define esta configuração       | sim         | -      |
-| config                       | object | Configuração global do projeto                     | sim         | -      |
-| config.repository            | string | URL do repositório                                 | sim         | -      |
-| config.servers               | array  | Lista de servidores EventDoctor                    | sim         | -      |
-| config.servers[].environment | string | Ambiente do servidor (ex: development, production) | sim         | -      |
-| config.servers[].url         | string | URL do servidor EventDoctor                        | sim         | -      |
+| Field                        | Type   | Description                                        | Required | Default |
+| ---------------------------- | ------ | -------------------------------------------------- | -------- | ------- |
+| version                      | string | Specification version                              | yes      | -       |
+| service                      | string | Service name defining this configuration           | yes      | -       |
+| config                       | object | Global project configuration                       | yes      | -       |
+| config.repository            | string | Repository URL                                     | yes      | -       |
+| config.servers               | array  | List of EventDoctor servers                        | yes      | -       |
+| config.servers[].environment | string | Server environment (e.g.: development, production) | yes      | -       |
+| config.servers[].url         | string | EventDoctor server URL                             | yes      | -       |
 
 #### Producers
 
-| Campo                          | Tipo    | Descrição                                           | Obrigatório           | Exemplo / Padrão           |
-| ------------------------------ | ------- | --------------------------------------------------- | --------------------- | -------------------------- |
-| topic                          | string  | Nome do tópico                                      | sim                   | "chat-microservice.events" |
-| title                          | string  | Título legível do tópico                            | sim se owner for true | "Chat Events"              |
-| owner                          | boolean | Define se este serviço é responsável pelo schema    | sim                   | true                       |
-| writes                         | boolean | Define se este serviço escreve eventos neste tópico | não                   | true                       |
-| description                    | string  | Descrição do propósito do tópico                    | não                   | "Eventos do sistema..."    |
-| events                         | array   | Lista de eventos produzidos ou documentados         | sim                   | -                          |
-| events[].type                  | string  | Tipo/nome do evento                                 | sim                   | "ChatCreated"              |
-| events[].version               | string  | Versão do schema do evento (semantic versioning)    | sim                   | "1.0.0"                    |
-| events[].description           | string  | Descrição do evento                                 | não                   | "Disparado quando..."      |
-| events[].schema_url            | string  | URL do JSON Schema do evento                        | sim se owner for true | "https://..."              |
-| events[].headers               | array   | Headers HTTP opcionais para o evento                | não                   | -                          |
-| events[].headers[].name        | string  | Nome do header                                      | sim                   | "X-Request-ID"             |
-| events[].headers[].description | string  | Descrição do header                                 | não                   | "Identificador único..."   |
+| Field                          | Type    | Description                                           | Required             | Example / Default             |
+| ------------------------------ | ------- | ----------------------------------------------------- | -------------------- | ----------------------------- |
+| topic                          | string  | Topic name                                            | yes                  | "payment-microservice.events" |
+| title                          | string  | Human-readable topic title                            | yes if owner is true | "Payment Events"              |
+| owner                          | boolean | Defines if this service is responsible for the schema | yes                  | true                          |
+| writes                         | boolean | Defines if this service writes events to this topic   | no                   | true                          |
+| description                    | string  | Description of the topic's purpose                    | no                   | "System events..."            |
+| events                         | array   | List of produced or documented events                 | yes                  | -                             |
+| events[].type                  | string  | Event type/name                                       | yes                  | "PaymentCreated"              |
+| events[].version               | string  | Event schema version (semantic versioning)            | yes                  | "1.0.0"                       |
+| events[].description           | string  | Event description                                     | no                   | "Fired when..."               |
+| events[].schema_url            | string  | Event JSON Schema URL                                 | yes if owner is true | "https://..."                 |
+| events[].headers               | array   | Optional HTTP headers for the event                   | no                   | -                             |
+| events[].headers[].name        | string  | Header name                                           | yes                  | "X-Request-ID"                |
+| events[].headers[].description | string  | Header description                                    | no                   | "Unique identifier..."        |
 
 #### Consumers
 
-| Campo                     | Tipo   | Descrição                                    | Obrigatório | Exemplo                      |
-| ------------------------- | ------ | -------------------------------------------- | ----------- | ---------------------------- |
-| group                     | string | Grupo de consumidores (Kafka consumer group) | sim         | "notification-group"         |
-| description               | string | Descrição do consumidor                      | não         | "Serviço de notificações..." |
-| topics                    | array  | Lista de tópicos consumidos                  | sim         | -                            |
-| topics[].name             | string | Nome do tópico                               | sim         | "chat-microservice.events"   |
-| topics[].events           | array  | Lista de eventos consumidos                  | sim         | -                            |
-| topics[].events[].type    | string | Tipo do evento                               | sim         | "ChatCreated"                |
-| topics[].events[].version | string | Versão do evento que será consumida          | não         | "1.0.0"                      |
+| Field                     | Type   | Description                           | Required | Example                       |
+| ------------------------- | ------ | ------------------------------------- | -------- | ----------------------------- |
+| group                     | string | Consumer group (Kafka consumer group) | yes      | "notification-group"          |
+| description               | string | Consumer description                  | no       | "Notification service..."     |
+| topics                    | array  | List of consumed topics               | yes      | -                             |
+| topics[].name             | string | Topic name                            | yes      | "payment-microservice.events" |
+| topics[].events           | array  | List of consumed events               | yes      | -                             |
+| topics[].events[].type    | string | Event type                            | yes      | "PaymentCreated"              |
+| topics[].events[].version | string | Event version to be consumed          | no       | "1.0.0"                       |
 
-### Exemplos de Uso
+### Usage Examples
 
-#### Produtor Simples
+#### Simple Producer
 ```yaml
 service: "user-service"
 config:
@@ -229,7 +229,7 @@ producers:
         schema_url: "https://schemas.empresa.com/user_registered.json"
 ```
 
-#### Consumidor Múltiplos Tópicos
+#### Multiple Topics Consumer
 ```yaml
 service: "analytics-service"
 config:
@@ -240,7 +240,7 @@ config:
 
 consumers:
   - group: "analytics-group"
-    description: "Analytics de eventos"
+    description: "Event analytics"
     topics:
       - name: "user-service.events"
         events:
@@ -248,13 +248,13 @@ consumers:
             version: "1.0.0"
           - type: "UserDeleted"
             version: "1.0.0"
-      - name: "chat-service.events"
+      - name: "order-service.events"
         events:
-          - type: "ChatCreated"
+          - type: "OrderCreated"
             version: "1.0.0"
 ```
 
-#### Produtor Não-Owner (escreve mas não é dono do schema)
+#### Non-Owner Producer (writes but doesn't own the schema)
 ```yaml
 service: "gateway-service"
 config:
@@ -264,15 +264,15 @@ config:
       url: "https://eventdoctor.empresa.com"
 
 producers:
-  - topic: "user-service.events"  # Tópico de outro serviço
+  - topic: "user-service.events"  # Topic from another service
     owner: false
     writes: true
     events:
-      - type: "UserLoggedIn"  # Escreve mas não define schema
+      - type: "UserLoggedIn"  # Writes but doesn't define schema
         version: "1.0.0"
 ```
 
-#### Produtor que apenas documenta schema (não escreve)
+#### Schema-only Producer (doesn't write)
 ```yaml
 service: "schema-registry-service"
 config:
@@ -284,7 +284,7 @@ config:
 producers:
   - topic: "user-service.events"
     owner: true
-    writes: false  # Define o schema mas não produz eventos
+    writes: false  # Defines the schema but doesn't produce events
     title: "User Events"
     events:
       - type: "UserRegistered"
@@ -292,20 +292,20 @@ producers:
         schema_url: "https://schemas.empresa.com/user_registered.json"
 ```
 
-### Validações
+### Validations
 
-1. **Tópicos únicos por owner**: Apenas um serviço pode ser owner (`owner: true`) de um tópico
-2. **Schema obrigatório para owners**: Serviços com `owner: true` devem fornecer `schema_url`
-3. **Versões em tudo**: Todos os eventos devem ter versão seguindo semantic versioning (x.y.z)
-4. **Referências válidas**: Eventos consumidos devem existir em algum produtor
-5. **Consistência writes/owner**: 
-   - Se `owner: true` e `writes: false`, é um provider de schema apenas
-   - Se `owner: false` e `writes: true`, apenas produz sem responsabilidade do schema
-   - Se `owner: true` e `writes: true`, é o produtor completo (padrão)
+1. **Unique topics per owner**: Only one service can be owner (`owner: true`) of a topic
+2. **Schema required for owners**: Services with `owner: true` must provide `schema_url`
+3. **Versions everywhere**: All events must have a version following semantic versioning (x.y.z)
+4. **Valid references**: Consumed events must exist in some producer
+5. **writes/owner consistency**: 
+   - If `owner: true` and `writes: false`, it's a schema provider only
+   - If `owner: false` and `writes: true`, it only produces without schema responsibility
+   - If `owner: true` and `writes: true`, it's the complete producer (default)
 
-### Casos de Uso Avançados
+### Advanced Use Cases
 
-#### Versionamento de Eventos
+#### Event Versioning
 ```yaml
 service: "order-service"
 config:
@@ -322,15 +322,15 @@ producers:
     events:
       - type: "OrderCreated"
         version: "2.0.0"
-        description: "Nova versão com campo adicional 'priority'"
+        description: "New version with additional 'priority' field"
         schema_url: "https://schemas.empresa.com/order_created_v2.json"
       - type: "OrderCreated"
         version: "1.0.0"
-        description: "Versão legada"
+        description: "Legacy version"
         schema_url: "https://schemas.empresa.com/order_created_v1.json"
 ```
 
-#### Eventos com Headers HTTP
+#### Events with HTTP Headers
 ```yaml
 service: "payment-service"
 config:
@@ -347,15 +347,15 @@ producers:
     events:
       - type: "PaymentProcessed"
         version: "1.0.0"
-        description: "Disparado quando um pagamento é processado"
+        description: "Fired when a payment is processed"
         schema_url: "https://schemas.empresa.com/payment_processed.json"
         headers:
           - name: "X-Request-ID"
-            description: "Identificador único da requisição"
+            description: "Unique request identifier"
           - name: "X-Correlation-ID"
-            description: "ID de correlação para rastreamento"
+            description: "Correlation ID for tracing"
           - name: "X-User-ID"
-            description: "ID do usuário que realizou o pagamento"
+            description: "ID of the user who made the payment"
 ```
         schema_url: "https://schemas.empresa.com/order_created_v1.json"
 ```

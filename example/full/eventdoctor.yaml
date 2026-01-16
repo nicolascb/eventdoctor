@@ -1,0 +1,50 @@
+version: "1.0"
+
+service: "order-microservice"
+config:
+  servers:
+    - environment: "development"
+      url: "http://localhost:8087"
+    - environment: "production"
+      url: "https://eventdoctor.empresa.com"
+  repository: "https://github.com/empresa/order-microservice"
+
+producers:
+  - topic: "order-microservice.events"
+    title: "Order Events"
+    owner: true
+    writes: true
+    description: "Events related to the order system"
+    events:
+      - type: "OrderCreated"
+        version: "1.0.0"
+        description: "Fired when a new order is created"
+        schema_url: "https://gitlab.com/nicolascorrea/eventdoctor/schemas/order_created.json"
+        headers:
+          - name: "X-Request-ID"
+            description: "Unique request identifier"
+          - name: "X-Customer-ID"
+            description: "Identifier of the customer who placed the order"
+      - type: "OrderCancelled"
+        version: "1.0.0"
+        description: "Fired when an order is cancelled"
+        schema_url: "https://gitlab.com/nicolascorrea/eventdoctor/schemas/order_cancelled.json"
+      - type: "OrderShipped"
+        version: "1.0.0"
+        description: "Fired when an order is shipped for delivery"
+        schema_url: "https://gitlab.com/nicolascorrea/eventdoctor/schemas/order_shipped.json"
+
+consumers:
+  - group: "notification-group"
+    description: "Service responsible for push notifications"
+    topics:
+      - name: "order-microservice.events"
+        events:
+          - type: "OrderCreated"
+            version: "1.0.0"
+          - type: "OrderCancelled"
+            version: "1.0.0"
+      - name: "inventory-microservice.events"
+        events:
+          - type: "StockUpdated"
+            version: "1.0.0"

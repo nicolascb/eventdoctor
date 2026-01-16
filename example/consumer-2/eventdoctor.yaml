@@ -11,13 +11,13 @@ config:
 
 consumers:
   - group: "basic-group"
-    description: "Serviço responsável por notificações push"
+    description: "Service responsible for push notifications"
     topics:
-      - name: "chat-microservice.events"
+      - name: "order-microservice.events"
         events:
-          - type: "ChatCreated"
+          - type: "OrderCreated"
             version: "1.0.0"
-          - type: "ChatDeleted"
+          - type: "OrderCancelled"
             version: "1.0.0"
       - name: "push.commands"
         events:
