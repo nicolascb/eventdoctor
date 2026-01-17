@@ -3,9 +3,9 @@ package commands
 import (
 	"fmt"
 	"io"
-	"log/slog"
 
 	"github.com/nicolascb/eventdoctor/internal/eventdoctor"
+	"github.com/nicolascb/eventdoctor/internal/logger"
 )
 
 // SpecUploader é a interface para enviar o spec para a API
@@ -44,9 +44,9 @@ func (c *ConfigCommand) Validate(file io.Reader) error {
 		return err
 	}
 
-	slog.Info("Configuration file is valid!")
-	slog.Info(fmt.Sprintf("Producers: %d", len(spec.Producers)))
-	slog.Info(fmt.Sprintf("Consumers: %d", len(spec.Consumers)))
+	logger.Get().Info("Configuration file is valid!")
+	logger.Get().Info(fmt.Sprintf("Producers: %d", len(spec.Producers)))
+	logger.Get().Info(fmt.Sprintf("Consumers: %d", len(spec.Consumers)))
 
 	return nil
 }
@@ -63,12 +63,12 @@ func (c *ConfigCommand) Apply(env string, file io.Reader) error {
 		return err
 	}
 
-	slog.Info(fmt.Sprintf("Applying configuration to environment: %s (%s)", env, serverURL))
+	logger.Get().Info(fmt.Sprintf("Applying configuration to environment: %s (%s)", env, serverURL))
 
 	if err := c.uploader.UploadSpec(serverURL, spec); err != nil {
 		return fmt.Errorf("failed to apply configuration: %w", err)
 	}
 
-	slog.Info("Configuration applied successfully!")
+	logger.Get().Info("Configuration applied successfully!")
 	return nil
 }

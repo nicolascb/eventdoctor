@@ -10,7 +10,6 @@ require (
 	github.com/lmittmann/tint v1.1.2
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/urfave/cli/v3 v3.5.0
-	go.uber.org/zap v1.27.0
 )
 
 require (
@@ -34,7 +33,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect
 	go.uber.org/mock v0.5.0 // indirect
-	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/arch v0.20.0 // indirect
 	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/mod v0.25.0 // indirect

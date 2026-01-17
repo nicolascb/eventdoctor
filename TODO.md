@@ -2,7 +2,7 @@
 
 ## Projeto
 
-- [ ] Criar pacote de logger usando slog
+- [x] Criar pacote de logger usando slog
 - [ ] Criar `Makefile` para comandos comuns (build, test, lint, etc.)
 - [ ] Configurar linter (golangci-lint)
 - [ ] Definir política de versionamento (semver)
@@ -22,7 +22,7 @@
 ## API
 
 - [ ] Substituir o Gin pelo net/http
-- [ ] Substituir o zap.Logger pelo slog
+- [x] Substituir o zap.Logger pelo slog
 - [ ] Expor métricas prometheus
 - [ ] Adicionar health check endpoints (`/health`, `/ready`)
 - [ ] Adicionar autenticação/autorização (API keys)
