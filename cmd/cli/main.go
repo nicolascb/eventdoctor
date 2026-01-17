@@ -3,19 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"strings"
 
-	"github.com/lmittmann/tint"
+	"github.com/nicolascb/eventdoctor/internal/logger"
 	"github.com/urfave/cli/v3"
 )
 
 const Version = "0.1.0"
 
 func main() {
-	w := os.Stderr
-	slog.SetDefault(slog.New(tint.NewHandler(w, nil)))
+	logger.Init(logger.Config{
+		Level:  logger.LevelInfo,
+		Format: logger.FormatTint,
+		Output: os.Stderr,
+	})
+	log := logger.Get()
 
 	cmd := &cli.Command{
 		Name:    "eventdoctor-cli",
@@ -34,7 +37,7 @@ func main() {
 	}
 
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
-		slog.Error(fmt.Sprintf("Error: %s", err.Error()))
+		log.Error(fmt.Sprintf("Error: %s", err.Error()))
 		os.Exit(1)
 	}
 }

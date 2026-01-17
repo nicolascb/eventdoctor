@@ -4,23 +4,23 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nicolascb/eventdoctor/internal/eventdoctor"
-	"go.uber.org/zap"
 )
 
 type API struct {
 	service Service
 	router  *gin.Engine
 	http    *http.Server
-	logger  *zap.Logger
+	logger  *slog.Logger
 	port    string
 	tpl     *template.Template
 }
 
-func NewAPI(port string, svc Service, logger *zap.Logger) *API {
+func NewAPI(port string, svc Service, logger *slog.Logger) *API {
 	api := &API{service: svc, logger: logger, port: port}
 	api.parseTemplates()
 	api.routes()
@@ -48,7 +48,7 @@ func (a *API) parseTemplates() {
 }
 
 func (a *API) Run() error {
-	a.logger.Info("starting API server", zap.String("port", a.port))
+	a.logger.Info("starting API server", slog.String("port", a.port))
 	a.http = &http.Server{
 		Addr:    a.port,
 		Handler: a.router,
@@ -72,19 +72,19 @@ func (a *API) handlerApplyConfig(c *gin.Context) {
 
 	cfg, err := eventdoctor.LoadSpecFromReader(body)
 	if err != nil {
-		a.logger.Error("failed to load config", zap.Error(err))
+		a.logger.Error("failed to load config", slog.Any("error", err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid configuration", "details": err.Error()})
 		return
 	}
 
 	if err := cfg.Validate(); err != nil {
-		a.logger.Error("invalid config", zap.Error(err))
+		a.logger.Error("invalid config", slog.Any("error", err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "configuration validation failed", "details": err.Error()})
 		return
 	}
 
 	if err := a.service.SaveSpec(c.Request.Context(), cfg); err != nil {
-		a.logger.Error("failed to save config", zap.Error(err))
+		a.logger.Error("failed to save config", slog.Any("error", err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to persist configuration", "details": err.Error()})
 		return
 	}

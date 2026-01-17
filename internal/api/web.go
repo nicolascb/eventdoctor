@@ -1,10 +1,10 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 func (a *API) handlerUI(c *gin.Context) {
@@ -12,7 +12,7 @@ func (a *API) handlerUI(c *gin.Context) {
 
 	data, err := a.service.WebDocs(ctx)
 	if err != nil {
-		a.logger.Error("failed to get topics data", zap.Error(err))
+		a.logger.Error("failed to get topics data", slog.Any("error", err))
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -21,11 +21,11 @@ func (a *API) handlerUI(c *gin.Context) {
 		"Topics": data.Topics,
 	}
 
-	a.logger.Info("rendering web template", zap.Int("topics", len(data.Topics)))
+	a.logger.Info("rendering web template", slog.Int("topics", len(data.Topics)))
 
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	if err := a.tpl.ExecuteTemplate(c.Writer, "web", tplData); err != nil {
-		a.logger.Error("failed to render template", zap.Error(err))
+		a.logger.Error("failed to render template", slog.Any("error", err))
 		c.String(http.StatusInternalServerError, "error rendering template")
 	}
 }

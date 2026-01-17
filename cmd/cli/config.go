@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/nicolascb/eventdoctor/internal/client"
 	"github.com/nicolascb/eventdoctor/internal/commands"
+	"github.com/nicolascb/eventdoctor/internal/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -62,7 +62,7 @@ func configCommand() *cli.Command {
 }
 
 func cmdConfigValidate(filePath string) error {
-	slog.Info(fmt.Sprintf("Validating configuration file: %s", filePath))
+	logger.Get().Info(fmt.Sprintf("Validating configuration file: %s", filePath))
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -78,7 +78,7 @@ func cmdConfigValidate(filePath string) error {
 }
 
 func cmdConfigApply(environment string, filePath string) error {
-	slog.Info(fmt.Sprintf("Applying config file: %s", filePath))
+	logger.Get().Info(fmt.Sprintf("Applying config file: %s", filePath))
 
 	file, err := os.Open(filePath)
 	if err != nil {
