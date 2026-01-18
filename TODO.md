@@ -21,7 +21,7 @@
 
 ## API
 
-- [ ] Substituir o Gin pelo net/http
+- [x] Substituir o Gin pelo net/http
 - [x] Substituir o zap.Logger pelo slog
 - [ ] Expor métricas prometheus
 - [ ] Adicionar health check endpoints (`/health`, `/ready`)
