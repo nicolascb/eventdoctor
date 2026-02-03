@@ -43,7 +43,12 @@ func getServer(log *slog.Logger) (*api.API, *sql.DB, error) {
 		return nil, nil, err
 	}
 
-	database, err := db.NewSQLiteDB(cfg.SQLitePath)
+	dbCfg := db.DBConfig{
+		Driver:     cfg.DBDriver,
+		Connection: cfg.DBConnection,
+	}
+
+	database, err := db.NewDB(dbCfg)
 	if err != nil {
 		return nil, nil, err
 	}

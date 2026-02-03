@@ -30,6 +30,7 @@
 - [ ] Documentação OpenAPI/Swagger
 - [ ] Criar testes unitários
 - [ ] Criar testes de integração
+- [x] Criar drivers para outros bancos de dados (PostgreSQL, MySQL, etc.)
 
 ## Observabilidade
 

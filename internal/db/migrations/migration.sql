@@ -64,3 +64,18 @@ CREATE TABLE IF NOT EXISTS missing_events (
     last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(topic, event_type)
 );
+
+-- Indexes para otimizar queries
+CREATE INDEX IF NOT EXISTS idx_events_topic_id ON events(topic_id);
+CREATE INDEX IF NOT EXISTS idx_events_topic_event_type ON events(topic_id, event_type);
+CREATE INDEX IF NOT EXISTS idx_event_headers_event_id ON event_headers(event_id);
+CREATE INDEX IF NOT EXISTS idx_producers_event_id ON producers(event_id);
+CREATE INDEX IF NOT EXISTS idx_producers_repository ON producers(repository);
+CREATE INDEX IF NOT EXISTS idx_producers_service ON producers(service);
+CREATE INDEX IF NOT EXISTS idx_consumers_event_id ON consumers(event_id);
+CREATE INDEX IF NOT EXISTS idx_consumers_repository ON consumers(repository);
+CREATE INDEX IF NOT EXISTS idx_consumers_service ON consumers(service);
+CREATE INDEX IF NOT EXISTS idx_consumers_consumer_group ON consumers(consumer_group);
+CREATE INDEX IF NOT EXISTS idx_topics_name ON topics(name);
+CREATE INDEX IF NOT EXISTS idx_missing_topics_name ON missing_topics(name);
+CREATE INDEX IF NOT EXISTS idx_missing_events_topic_event ON missing_events(topic, event_type);

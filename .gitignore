@@ -36,3 +36,6 @@ go.work.sum
 .vscode
 TASKS.md
 TODO.md
+api
+DB_CONFIG.md
+TESTING_DATABASES.md

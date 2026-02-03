@@ -63,6 +63,7 @@ func (a *API) Run() error {
 func (a *API) routes() {
 	a.mux = http.NewServeMux()
 
+	a.mux.HandleFunc("GET /", a.handlerUI)
 	a.mux.HandleFunc("GET /ui/", a.handlerUI)
 	a.mux.HandleFunc("POST /api/v1/config", a.handlerApplyConfig)
 }

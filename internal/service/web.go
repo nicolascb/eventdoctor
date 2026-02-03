@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nicolascb/eventdoctor/internal/db"
 	"github.com/nicolascb/eventdoctor/internal/db/models"
+	"github.com/nicolascb/eventdoctor/internal/db/repositories"
 	"github.com/nicolascb/eventdoctor/internal/eventdoctor"
 )
 
@@ -21,7 +21,7 @@ func (s *Service) WebDocs(ctx context.Context) (eventdoctor.WebData, error) {
 }
 
 func (s *Service) getTopicsData(ctx context.Context) ([]eventdoctor.TopicView, error) {
-	topics, err := db.ListTopics(ctx, s.db)
+	topics, err := repositories.ListTopics(ctx, s.db)
 	if err != nil {
 		return nil, fmt.Errorf("error listing topics: %w", err)
 	}
@@ -41,7 +41,7 @@ func (s *Service) getTopicsData(ctx context.Context) ([]eventdoctor.TopicView, e
 func (s *Service) processTopicEvents(ctx context.Context, t models.Topic) (eventdoctor.TopicView, error) {
 	tv := eventdoctor.TopicView{Name: t.Name, Owner: t.Owner}
 
-	evs, err := db.GetEventsByTopic(ctx, s.db, t.ID)
+	evs, err := repositories.GetEventsByTopic(ctx, s.db, t.ID)
 	if err != nil {
 		return eventdoctor.TopicView{}, fmt.Errorf("error listing events by topic: %w", err)
 	}
@@ -58,17 +58,17 @@ func (s *Service) processTopicEvents(ctx context.Context, t models.Topic) (event
 }
 
 func (s *Service) processEvent(ctx context.Context, ev models.Event) (eventdoctor.EventView, error) {
-	prods, err := db.GetProducersByEvent(ctx, s.db, ev.ID)
+	prods, err := repositories.GetProducersByEvent(ctx, s.db, ev.ID)
 	if err != nil {
 		return eventdoctor.EventView{}, fmt.Errorf("failed to list producers: %w", err)
 	}
 
-	cons, err := db.GetConsumersByEvent(ctx, s.db, ev.ID)
+	cons, err := repositories.GetConsumersByEvent(ctx, s.db, ev.ID)
 	if err != nil {
 		return eventdoctor.EventView{}, fmt.Errorf("failed to list consumers: %w", err)
 	}
 
-	headers, err := db.GetEventHeaders(ctx, s.db, ev.ID)
+	headers, err := repositories.GetEventHeaders(ctx, s.db, ev.ID)
 	if err != nil {
 		return eventdoctor.EventView{}, fmt.Errorf("failed to list headers: %w", err)
 	}

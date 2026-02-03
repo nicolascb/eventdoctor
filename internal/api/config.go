@@ -7,8 +7,9 @@ import (
 var conf *APIConfig
 
 type APIConfig struct {
-	Port       string `env:"PORT,default=:8087"`
-	SQLitePath string `env:"SQLITE_PATH,default=./data.db"`
+	Port         string `env:"PORT,default=:8087"`
+	DBDriver     string `env:"DB_DRIVER,default=sqlite3"`
+	DBConnection string `env:"DB_CONNECTION,default=./data.db"`
 }
 
 func LoadConfig() (*APIConfig, error) {
@@ -20,6 +21,7 @@ func LoadConfig() (*APIConfig, error) {
 	if err := envdecode.Decode(&cfg); err != nil {
 		return nil, err
 	}
+
 	conf = &cfg
 	return conf, nil
 }
