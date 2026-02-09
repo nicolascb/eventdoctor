@@ -36,3 +36,4 @@ go.work.sum
 .vscode
 TASKS.md
 TODO.md
+node_modules
