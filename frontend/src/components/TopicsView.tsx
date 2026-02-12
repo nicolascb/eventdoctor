@@ -291,8 +291,9 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                         return (
                                             <Dialog key={`${topicData.topic}-${event.name}`}>
                                                 <DialogTrigger asChild>
-                                                    <div
-                                                        className="group relative rounded-xl border border-border bg-background/60 p-4 md:p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer"
+                                                    <button
+                                                        type="button"
+                                                        className="group relative rounded-xl border border-border bg-background/60 p-4 md:p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer text-left w-full"
                                                         style={{
                                                             animationDelay: `${(topicIndex * 0.05) + (eventIndex * 0.03)}s`,
                                                             animationFillMode: 'backwards'
@@ -413,7 +414,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </button>
                                                 </DialogTrigger>
                                                 <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
                                                     <DialogHeader>
