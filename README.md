@@ -38,7 +38,7 @@ Each submodule ships its own README with setup and usage details.
 
 ## Run demo lab
 
-1. Start API with `WITH_MOCK=1 go run backend/cmd/api/main.go`.
+1. Start API with `cd backend && WITH_MOCK=1 go run ./cmd/api/main.go`.
 2. Start UI with `cd frontend && npm install && npm run dev`.
 3. Open the web UI to explore live documentation.
 
