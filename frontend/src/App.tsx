@@ -1,33 +1,35 @@
 import { ConfigValidator } from '@/components/ConfigValidator';
 import { ConsumersView } from '@/components/ConsumersView';
+import { OverviewView } from '@/components/OverviewView';
 import { ProducersView } from '@/components/ProducersView';
 import { ErrorState, LoadingState } from '@/components/shared';
-import { StatCard } from '@/components/shared/StatCard';
 import { TopicsView } from '@/components/TopicsView';
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useConsumers } from '@/hooks/useConsumers';
 import { useEvents } from '@/hooks/useEvents';
+import { useOverview } from '@/hooks/useOverview';
 import { useProducers } from '@/hooks/useProducers';
-import { Activity, Database, Layers, Network, RefreshCw, Stethoscope, Zap } from "lucide-react";
+import { Database, Eye, Network, RefreshCw, Stethoscope, Zap } from "lucide-react";
 
 // Get the API URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8087/v1';
 
 function App() {
   const { producers, loading: producersLoading, error: producersError, refetch: refetchProducers } = useProducers();
-  const { topics, totalEvents, loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents();
+  const { topics, loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents();
   const { consumers, loading: consumersLoading, error: consumersError, refetch: refetchConsumers } = useConsumers();
+  const { overview, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useOverview();
 
-  const isLoading = producersLoading || eventsLoading || consumersLoading;
-  const hasError = producersError || eventsError || consumersError;
+  const isLoading = producersLoading || eventsLoading || consumersLoading || overviewLoading;
+  const hasError = producersError || eventsError || consumersError || overviewError;
 
   const handleRetry = () => {
     refetchProducers();
     refetchEvents();
     refetchConsumers();
+    refetchOverview();
   };
 
   return (
@@ -98,7 +100,7 @@ function App() {
             <Tabs defaultValue="overview" className="space-y-8">
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
-                  <Activity className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                   Overview
                 </TabsTrigger>
                 <TabsTrigger value="producers" className="flex items-center gap-2">
@@ -135,106 +137,7 @@ function App() {
               </TabsList>
 
               <TabsContent value="overview" className="space-y-8">
-                {/* Stats Grid */}
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                  <StatCard
-                    label="Producers"
-                    value={producers.length}
-                    description="Services publishing events"
-                    icon={<Database className="h-4 w-4 text-muted-foreground" />}
-                    iconClassName="bg-transparent"
-                  />
-                  <StatCard
-                    label="Topics"
-                    value={topics.length}
-                    description="Active message channels"
-                    icon={<Layers className="h-4 w-4 text-muted-foreground" />}
-                    iconClassName="bg-transparent"
-                  />
-                  <StatCard
-                    label="Events"
-                    value={totalEvents}
-                    description="Event types available"
-                    icon={<Zap className="h-4 w-4 text-muted-foreground" />}
-                    iconClassName="bg-transparent"
-                  />
-                  <StatCard
-                    label="Consumers"
-                    value={consumers.length}
-                    description="Services consuming events"
-                    icon={<Network className="h-4 w-4 text-muted-foreground" />}
-                    iconClassName="bg-transparent"
-                  />
-                </div>
-
-                {/* Event Flow Summary */}
-                {(producers.length > 0 || consumers.length > 0) && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Activity className="h-5 w-5" />
-                        Event Flow Summary
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid md:grid-cols-3 gap-6">
-                        {/* Top Producers */}
-                        <div>
-                          <h4 className="text-sm font-medium mb-3 text-muted-foreground">Top Producers</h4>
-                          <div className="space-y-2">
-                            {producers.slice(0, 5).map((p) => (
-                              <div key={p.name} className="flex items-center justify-between text-sm">
-                                <span className="truncate font-mono">{p.name}</span>
-                                <Badge variant="outline" className="ml-2 shrink-0">
-                                  {p.events?.length ?? 0} events
-                                </Badge>
-                              </div>
-                            ))}
-                            {producers.length === 0 && (
-                              <p className="text-sm text-muted-foreground">No producers registered</p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Active Topics */}
-                        <div>
-                          <h4 className="text-sm font-medium mb-3 text-muted-foreground">Topics</h4>
-                          <div className="space-y-2">
-                            {topics.slice(0, 5).map((t) => (
-                              <div key={t.topic} className="flex items-center justify-between text-sm">
-                                <span className="truncate font-mono">{t.topic}</span>
-                                <Badge variant="outline" className="ml-2 shrink-0">
-                                  {t.events.length} events
-                                </Badge>
-                              </div>
-                            ))}
-                            {topics.length === 0 && (
-                              <p className="text-sm text-muted-foreground">No topics found</p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Top Consumers */}
-                        <div>
-                          <h4 className="text-sm font-medium mb-3 text-muted-foreground">Top Consumers</h4>
-                          <div className="space-y-2">
-                            {consumers.slice(0, 5).map((c) => (
-                              <div key={c.group} className="flex items-center justify-between text-sm">
-                                <span className="truncate font-mono">{c.group}</span>
-                                <Badge variant="outline" className="ml-2 shrink-0">
-                                  {c.topics.length} topics
-                                </Badge>
-                              </div>
-                            ))}
-                            {consumers.length === 0 && (
-                              <p className="text-sm text-muted-foreground">No consumers registered</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                <OverviewView overview={overview} />
               </TabsContent>
 
               <TabsContent value="producers">

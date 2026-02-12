@@ -1,6 +1,6 @@
 import { EmptyState, PageHeader, SearchInput, StatCard } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import type { Consumer } from "@/types";
@@ -19,7 +19,7 @@ export function ConsumersView({ consumers }: ConsumersViewProps) {
 
         return consumers.filter(consumer =>
             consumer.group.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            consumer.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            consumer.service?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             consumer.topics.some(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 t.events.some(e => e.name?.toLowerCase().includes(searchQuery.toLowerCase()))
             )
@@ -108,9 +108,22 @@ export function ConsumersView({ consumers }: ConsumersViewProps) {
                                         <CardTitle className="text-lg font-semibold text-foreground mb-2 truncate">
                                             {consumer.group}
                                         </CardTitle>
-                                        <CardDescription className="text-sm line-clamp-2 leading-relaxed">
-                                            {consumer.description || "No description provided"}
-                                        </CardDescription>
+                                        <div className="text-sm text-muted-foreground space-y-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <Server className="h-3.5 w-3.5" />
+                                                <span className="truncate">{consumer.service}</span>
+                                            </div>
+                                            {consumer.repository && (
+                                                <a
+                                                    href={consumer.repository}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs text-primary/70 hover:text-primary truncate block"
+                                                >
+                                                    {consumer.repository}
+                                                </a>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </CardHeader>

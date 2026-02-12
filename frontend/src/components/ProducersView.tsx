@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { Producer } from "@/types";
-import { Activity, Box, Database, FileText, Zap } from "lucide-react";
+import { Activity, Box, Database, Server, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface ProducersViewProps {
@@ -17,8 +17,7 @@ export function ProducersView({ producers }: ProducersViewProps) {
         if (!searchQuery) return producers;
 
         return producers.filter(producer =>
-            producer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            producer.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            producer.service.toLowerCase().includes(searchQuery.toLowerCase()) ||
             producer.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
             producer.events.some(e => e.name?.toLowerCase().includes(searchQuery.toLowerCase()))
         );
@@ -88,7 +87,7 @@ export function ProducersView({ producers }: ProducersViewProps) {
                 ) : (
                     filteredProducers.map((producer, index) => (
                         <Card
-                            key={`${producer.name}-${producer.topic}`}
+                            key={`${producer.service}-${producer.topic}`}
                             className="event-card flex flex-col h-full hover:shadow-lg transition-all border-2"
                             style={{
                                 animationDelay: `${index * 0.05}s`,
@@ -103,8 +102,24 @@ export function ProducersView({ producers }: ProducersViewProps) {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <CardTitle className="text-lg font-semibold text-foreground mb-1 truncate">
-                                                {producer.name}
+                                                {producer.service}
                                             </CardTitle>
+                                            <div className="text-sm text-muted-foreground space-y-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Server className="h-3.5 w-3.5" />
+                                                    <span className="truncate">{producer.service}</span>
+                                                </div>
+                                                {producer.repository && (
+                                                    <a
+                                                        href={producer.repository}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs text-primary/70 hover:text-primary truncate block"
+                                                    >
+                                                        {producer.repository}
+                                                    </a>
+                                                )}
+                                            </div>
                                             <div className="flex items-center gap-2 mt-2">
                                                 <Box className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                                                 <code className="text-xs font-mono bg-muted/50 px-2 py-1 rounded-md border border-border truncate flex-1">
@@ -131,21 +146,6 @@ export function ProducersView({ producers }: ProducersViewProps) {
                             </CardHeader>
 
                             <CardContent className="flex-1 flex flex-col gap-4 pt-0">
-                                {producer.description && (
-                                    <>
-                                        <Separator />
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="h-4 w-4 text-muted-foreground" />
-                                                <span className="text-sm font-semibold text-foreground">Description</span>
-                                            </div>
-                                            <p className="text-sm text-muted-foreground leading-relaxed pl-6">
-                                                {producer.description}
-                                            </p>
-                                        </div>
-                                    </>
-                                )}
-
                                 {(producer.events && producer.events.length > 0) && (
                                     <>
                                         <Separator />
@@ -164,7 +164,7 @@ export function ProducersView({ producers }: ProducersViewProps) {
                                             <div className="flex flex-wrap gap-2 pl-6">
                                                 {producer.events.slice(0, 4).map((ev, eventIndex) => (
                                                     <Badge
-                                                        key={`${producer.name}-${producer.topic}-${ev.name || eventIndex}${ev.version ? `-${ev.version}` : ''}`}
+                                                        key={`${producer.service}-${producer.topic}-${ev.name || eventIndex}${ev.version ? `-${ev.version}` : ''}`}
                                                         variant="outline"
                                                         className="text-[10px] font-medium border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors"
                                                     >

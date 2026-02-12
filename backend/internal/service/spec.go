@@ -55,13 +55,18 @@ func (s *Service) cleanExistingData(ctx context.Context, tx db.SQLExecutor, repo
 }
 
 func (s *Service) insertProducers(ctx context.Context, tx db.SQLExecutor, producers []eventdoctor.Producer, repository, service string) error {
+	svc, err := db.GetOrCreateService(ctx, tx, service, repository)
+	if err != nil {
+		return fmt.Errorf("insertProducers: failed to get/create service: %w", err)
+	}
+
 	for _, p := range producers {
-		owner := ""
+		var ownerServiceID *int64
 		if p.Owner {
-			owner = service
+			ownerServiceID = &svc.ID
 		}
 
-		topic, err := db.GetOrCreateTopic(ctx, tx, p.Topic, owner)
+		topic, err := db.GetOrCreateTopic(ctx, tx, p.Topic, ownerServiceID)
 		if err != nil {
 			return fmt.Errorf("insertProducers: failed to get/create topic: %w", err)
 		}
@@ -87,10 +92,9 @@ func (s *Service) insertProducers(ctx context.Context, tx db.SQLExecutor, produc
 			}
 
 			producer := models.Producer{
-				EventID:    ev.ID,
-				Service:    service,
-				Writes:     p.Writes,
-				Repository: &repository,
+				EventID:   ev.ID,
+				ServiceID: svc.ID,
+				Writes:    p.Writes,
 			}
 
 			if _, err := db.InsertProducer(ctx, tx, producer); err != nil {
@@ -102,9 +106,14 @@ func (s *Service) insertProducers(ctx context.Context, tx db.SQLExecutor, produc
 }
 
 func (s *Service) insertConsumers(ctx context.Context, tx db.SQLExecutor, consumers []eventdoctor.Consumer, repository string, service string) error {
+	svc, err := db.GetOrCreateService(ctx, tx, service, repository)
+	if err != nil {
+		return fmt.Errorf("insertConsumers: failed to get/create service: %w", err)
+	}
+
 	for _, c := range consumers {
 		for _, t := range c.Topics {
-			topic, err := db.GetOrCreateTopic(ctx, tx, t.Name, "")
+			topic, err := db.GetOrCreateTopic(ctx, tx, t.Name, nil)
 			if err != nil {
 				return fmt.Errorf("insertConsumers: failed to get/create topic: %w", err)
 			}
@@ -117,10 +126,9 @@ func (s *Service) insertConsumers(ctx context.Context, tx db.SQLExecutor, consum
 
 				consumer := models.Consumer{
 					EventID:       ev.ID,
-					Service:       service,
+					ServiceID:     svc.ID,
 					ConsumerGroup: c.Group,
 					EventVersion:  e.Version,
-					Repository:    &repository,
 				}
 
 				if _, err := db.InsertConsumer(ctx, tx, consumer); err != nil {
@@ -130,22 +138,4 @@ func (s *Service) insertConsumers(ctx context.Context, tx db.SQLExecutor, consum
 		}
 	}
 	return nil
-}
-
-func (s *Service) ListProducers(ctx context.Context) ([]eventdoctor.Producer, error) {
-	// For now, return empty slice. In a real implementation,
-	// this would query the database and aggregate the data
-	return []eventdoctor.Producer{}, nil
-}
-
-func (s *Service) ListConsumers(ctx context.Context) ([]eventdoctor.Consumer, error) {
-	// For now, return empty slice. In a real implementation,
-	// this would query the database and aggregate the data
-	return []eventdoctor.Consumer{}, nil
-}
-
-func (s *Service) ListEvents(ctx context.Context) ([]eventdoctor.Event, error) {
-	// For now, return empty slice. In a real implementation,
-	// this would query the database and aggregate the data
-	return []eventdoctor.Event{}, nil
 }

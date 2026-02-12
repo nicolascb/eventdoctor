@@ -1,8 +1,17 @@
 CREATE TABLE IF NOT EXISTS topics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    owner TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    owner_service_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_service_id) REFERENCES services(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS services (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    repository TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(name, repository)
 );
 
 CREATE TABLE IF NOT EXISTS events (
@@ -13,7 +22,8 @@ CREATE TABLE IF NOT EXISTS events (
     schema_version TEXT,
     deprecated BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (topic_id) REFERENCES topics(id)
+    FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE,
+    UNIQUE(topic_id, event_name)
 );
 
 CREATE TABLE IF NOT EXISTS event_headers (
@@ -22,29 +32,31 @@ CREATE TABLE IF NOT EXISTS event_headers (
     name TEXT NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (event_id) REFERENCES events(id),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     UNIQUE(event_id, name)
 );
 
 CREATE TABLE IF NOT EXISTS producers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id INTEGER NOT NULL,
-    service TEXT NOT NULL,
+    service_id INTEGER NOT NULL,
     writes BOOLEAN DEFAULT TRUE,
-    repository TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (event_id) REFERENCES events(id)
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
+    UNIQUE(event_id, service_id)
 );
 
 CREATE TABLE IF NOT EXISTS consumers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id INTEGER NOT NULL,
-    service TEXT NOT NULL,
+    service_id INTEGER NOT NULL,
     consumer_group TEXT NOT NULL,
     event_version TEXT,
-    repository TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (event_id) REFERENCES events(id)
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
+    UNIQUE(event_id, service_id, consumer_group)
 );
 
 -- Tópicos vistos no cluster mas ausentes em config
