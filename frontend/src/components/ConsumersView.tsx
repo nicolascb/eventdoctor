@@ -92,7 +92,7 @@ export function ConsumersView({ consumers }: ConsumersViewProps) {
                 ) : (
                     filteredConsumers.map((consumer, index) => (
                         <Card
-                            key={index}
+                            key={consumer.group}
                             className="event-card flex flex-col h-full hover:shadow-lg transition-all border-2"
                             style={{
                                 animationDelay: `${index * 0.05}s`,
