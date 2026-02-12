@@ -164,7 +164,7 @@ export function ProducersView({ producers }: ProducersViewProps) {
                                             <div className="flex flex-wrap gap-2 pl-6">
                                                 {producer.events.slice(0, 4).map((ev, eventIndex) => (
                                                     <Badge
-                                                        key={ev.name || `event-${eventIndex}`}
+                                                        key={`${producer.name}-${producer.topic}-${ev.name || eventIndex}${ev.version ? `-${ev.version}` : ''}`}
                                                         variant="outline"
                                                         className="text-[10px] font-medium border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors"
                                                     >
