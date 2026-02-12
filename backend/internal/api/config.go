@@ -7,7 +7,7 @@ import (
 var conf *APIConfig
 
 type APIConfig struct {
-	Port       string `env:"PORT,default=:8087"`
+	Port       string `env:"PORT,default=:8080"`
 	SQLitePath string `env:"SQLITE_PATH,default=./data.db"`
 }
 
