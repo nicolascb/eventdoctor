@@ -590,7 +590,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                         {eventProducers.length > 0 ? (
                                                                             <div className="space-y-2">
                                                                                 {eventProducers.map(p => (
-                                                                                    <div key={p.service} className="p-4 bg-card rounded-lg border-2 border-border hover:border-primary/50 transition-colors flex flex-col gap-2">
+                                                                                    <div key={`${p.service}-${p.topic}`} className="p-4 bg-card rounded-lg border-2 border-border hover:border-primary/50 transition-colors flex flex-col gap-2">
                                                                                         <span className="font-semibold text-sm">{p.service}</span>
                                                                                         <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded inline-block">
                                                                                             {p.topic}
