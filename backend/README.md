@@ -21,7 +21,7 @@ go mod download
 go run ./cmd/api/main.go
 ```
 
-The API will be available at `http://localhost:8080`.
+The API will be available at `http://localhost:8087`.
 
 ### Running the Consumer
 
