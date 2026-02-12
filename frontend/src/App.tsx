@@ -21,6 +21,9 @@ function App() {
   const isLoading = producersLoading || eventsLoading || consumersLoading;
   const hasError = producersError || eventsError || consumersError;
 
+  // Get the API URL from environment variable
+  const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8087/v1';
+
   const handleRetry = () => {
     refetchProducers();
     refetchEvents();
@@ -79,7 +82,7 @@ function App() {
         {/* Error State */}
         {hasError && (
           <ErrorState
-            message="Make sure the EventDoctor API is running on port 8087."
+            message={`Make sure the EventDoctor API is running at ${apiUrl}.`}
             details={{
               Producers: producersError,
               Events: eventsError,
