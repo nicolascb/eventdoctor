@@ -30,10 +30,12 @@ func (s *Service) Overview(ctx context.Context) (*response.OverviewResponse, err
 		totalEvents += len(t.Events)
 		for _, e := range t.Events {
 			for _, p := range e.Producers {
-				producers[p.Service] = struct{}{}
+				producerKey := p.Service + ":" + p.Repository
+				producers[producerKey] = struct{}{}
 			}
 			for _, c := range e.Consumers {
-				consumers[c.Service+":"+c.Group] = struct{}{}
+				consumerKey := c.Service + ":" + c.Repository + ":" + c.Group
+				consumers[consumerKey] = struct{}{}
 			}
 		}
 	}
