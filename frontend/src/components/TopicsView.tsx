@@ -366,7 +366,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                     ) : (
                                                                         <div className="flex flex-wrap gap-2">
                                                                             {eventProducers.slice(0, 3).map(p => (
-                                                                                <div key={p.service} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
+                                                                                <div key={`${p.service}-${p.repository}`} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
                                                                                     <span className="text-xs text-foreground font-medium truncate max-w-[140px]">
                                                                                         {p.service}
                                                                                     </span>
@@ -398,7 +398,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                     ) : (
                                                                         <div className="flex flex-wrap gap-2">
                                                                             {eventConsumers.slice(0, 3).map(c => (
-                                                                                <div key={c.service} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
+                                                                                <div key={`${c.service}-${c.repository}-${c.group}`} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
                                                                                     <span className="text-xs text-foreground font-medium truncate max-w-[140px]">
                                                                                         {c.service}
                                                                                     </span>
@@ -590,7 +590,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                         {eventProducers.length > 0 ? (
                                                                             <div className="space-y-2">
                                                                                 {eventProducers.map(p => (
-                                                                                    <div key={`${p.service}-${p.topic}`} className="p-4 bg-card rounded-lg border-2 border-border hover:border-primary/50 transition-colors flex flex-col gap-2">
+                                                                                    <div key={`${p.service}-${p.repository}-${p.topic}`} className="p-4 bg-card rounded-lg border-2 border-border hover:border-primary/50 transition-colors flex flex-col gap-2">
                                                                                         <span className="font-semibold text-sm">{p.service}</span>
                                                                                         <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded inline-block">
                                                                                             {p.topic}
@@ -617,7 +617,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                         {eventConsumers.length > 0 ? (
                                                                             <div className="space-y-2">
                                                                                 {eventConsumers.map(c => (
-                                                                                    <div key={c.group} className="p-4 bg-card rounded-lg border-2 border-border hover:border-primary/50 transition-colors flex flex-col gap-2">
+                                                                                    <div key={`${c.service}-${c.repository}-${c.group}`} className="p-4 bg-card rounded-lg border-2 border-border hover:border-primary/50 transition-colors flex flex-col gap-2">
                                                                                         <span className="font-semibold text-sm">{c.service}</span>
                                                                                         <span className="text-xs text-muted-foreground">{c.group}</span>
                                                                                     </div>
