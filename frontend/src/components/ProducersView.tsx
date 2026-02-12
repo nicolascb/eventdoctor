@@ -88,7 +88,7 @@ export function ProducersView({ producers }: ProducersViewProps) {
                 ) : (
                     filteredProducers.map((producer, index) => (
                         <Card
-                            key={index}
+                            key={`${producer.name}-${producer.topic}`}
                             className="event-card flex flex-col h-full hover:shadow-lg transition-all border-2"
                             style={{
                                 animationDelay: `${index * 0.05}s`,
@@ -164,7 +164,7 @@ export function ProducersView({ producers }: ProducersViewProps) {
                                             <div className="flex flex-wrap gap-2 pl-6">
                                                 {producer.events.slice(0, 4).map((ev, eventIndex) => (
                                                     <Badge
-                                                        key={eventIndex}
+                                                        key={ev.name || `event-${eventIndex}`}
                                                         variant="outline"
                                                         className="text-[10px] font-medium border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors"
                                                     >
