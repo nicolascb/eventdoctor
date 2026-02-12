@@ -8,10 +8,11 @@ type TopicEventsView struct {
 
 // EventView representa um evento com seus headers
 type EventView struct {
-	Name      string            `json:"name"`
-	Version   *string           `json:"version,omitempty"`
-	SchemaURL string            `json:"schema_url,omitempty"`
-	Headers   []EventHeaderView `json:"headers,omitempty"`
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
+	Version     *string           `json:"version,omitempty"`
+	SchemaURL   string            `json:"schema_url,omitempty"`
+	Headers     []EventHeaderView `json:"headers,omitempty"`
 }
 
 // EventHeaderView representa um header de evento
