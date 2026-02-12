@@ -7,7 +7,6 @@ const emptyOverview: OverviewResponse = {
     total_events: 0,
     total_producers: 0,
     total_consumers: 0,
-    topics: [],
 };
 
 export function useOverview() {
