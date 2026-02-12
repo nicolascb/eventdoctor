@@ -79,7 +79,7 @@ function App() {
         {/* Error State */}
         {hasError && (
           <ErrorState
-            message="Make sure the EventDoctor API is running on port 8080."
+            message="Make sure the EventDoctor API is running on port 8087."
             details={{
               Producers: producersError,
               Events: eventsError,
