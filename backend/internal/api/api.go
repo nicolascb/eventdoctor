@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/nicolascb/eventdoctor/internal/eventdoctor"
 )
@@ -39,9 +40,9 @@ func (a *API) Run() error {
 	a.httpServer = &http.Server{
 		Addr:         a.port,
 		Handler:      a.mux,
-		ReadTimeout:  15 * 1000000000, // 15 seconds in nanoseconds
-		WriteTimeout: 15 * 1000000000, // 15 seconds in nanoseconds
-		IdleTimeout:  60 * 1000000000, // 60 seconds in nanoseconds
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	return a.httpServer.ListenAndServe()
