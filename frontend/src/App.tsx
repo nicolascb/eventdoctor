@@ -13,6 +13,9 @@ import { useEvents } from '@/hooks/useEvents';
 import { useProducers } from '@/hooks/useProducers';
 import { Activity, Database, Layers, Network, RefreshCw, Stethoscope, Zap } from "lucide-react";
 
+// Get the API URL from environment variable
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8087/v1';
+
 function App() {
   const { producers, loading: producersLoading, error: producersError, refetch: refetchProducers } = useProducers();
   const { topics, totalEvents, loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents();
@@ -79,7 +82,7 @@ function App() {
         {/* Error State */}
         {hasError && (
           <ErrorState
-            message="Make sure the EventDoctor API is running on port 8080."
+            message={`Make sure the EventDoctor API is running at ${API_URL}.`}
             details={{
               Producers: producersError,
               Events: eventsError,
