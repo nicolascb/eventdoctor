@@ -20,14 +20,19 @@ func (s *Service) ListConsumers(ctx context.Context) ([]response.ConsumerView, e
 
 func aggregateConsumers(rows []models.ConsumerRow) []response.ConsumerView {
 	type consumerKey struct {
-		Service string
-		Group   string
+		Service    string
+		Repository string
+		Group      string
 	}
 
 	consumers := newOrderedMap[consumerKey, response.ConsumerView]()
 
 	for _, row := range rows {
-		key := consumerKey{Service: row.ServiceName, Group: row.ConsumerGroup}
+		key := consumerKey{
+			Service:    row.ServiceName,
+			Repository: row.Repository,
+			Group:      row.ConsumerGroup,
+		}
 
 		cv := consumers.getOrCreate(key, func() response.ConsumerView {
 			return response.ConsumerView{
