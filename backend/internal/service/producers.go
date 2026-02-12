@@ -22,14 +22,19 @@ func (s *Service) ListProducers(ctx context.Context) ([]response.ProducerView, e
 // agrupando por (service, topic) -> events -> headers
 func aggregateProducers(rows []models.ProducerRow) []response.ProducerView {
 	type producerKey struct {
-		Service string
-		Topic   string
+		Service    string
+		Repository string
+		Topic      string
 	}
 
 	producers := newOrderedMap[producerKey, response.ProducerView]()
 
 	for _, row := range rows {
-		key := producerKey{Service: row.ServiceName, Topic: row.TopicName}
+		key := producerKey{
+			Service:    row.ServiceName,
+			Repository: row.Repository,
+			Topic:      row.TopicName,
+		}
 
 		pv := producers.getOrCreate(key, func() response.ProducerView {
 			return response.ProducerView{
