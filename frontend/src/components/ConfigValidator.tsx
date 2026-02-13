@@ -1,4 +1,4 @@
-import { PageHeader, StatCard } from "@/components/shared";
+import { StatCard } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -172,62 +172,45 @@ events:
     }, []);
 
     return (
-        <div className="space-y-8 animate-in">
-            {/* Header */}
-            <div className="flex flex-col gap-6">
-                <PageHeader
-                    title="Config Validator"
-                    badge="YAML"
-                    description="Validate your EventDoctor YAML configuration. Check syntax, structure, and required fields before deploying."
-                />
-
-                {/* Stats Cards — only shown after validation */}
-                {result?.details && result.valid && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <StatCard
-                            label="Producers"
-                            value={result.details.producers ?? 0}
-                            description="Detected in config"
-                            icon={<FileCode className="h-6 w-6 text-primary" />}
-                        />
-                        <StatCard
-                            label="Consumers"
-                            value={result.details.consumers ?? 0}
-                            description="Detected in config"
-                            icon={<Shield className="h-6 w-6 text-accent" />}
-                            iconClassName="bg-accent/10"
-                        />
-                        <StatCard
-                            label="Events"
-                            value={result.details.events ?? 0}
-                            description="Detected in config"
-                            icon={<Shield className="h-6 w-6 text-primary" />}
-                        />
-                    </div>
-                )}
-            </div>
+        <div className="space-y-6 animate-in">
+            {/* Stats Cards — only shown after validation */}
+            {result?.details && result.valid && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <StatCard
+                        label="Producers"
+                        value={result.details.producers ?? 0}
+                        description="Detected in config"
+                        icon={<FileCode className="h-4 w-4 text-muted-foreground" />}
+                    />
+                    <StatCard
+                        label="Consumers"
+                        value={result.details.consumers ?? 0}
+                        description="Detected in config"
+                        icon={<Shield className="h-4 w-4 text-muted-foreground" />}
+                    />
+                    <StatCard
+                        label="Events"
+                        value={result.details.events ?? 0}
+                        description="Detected in config"
+                        icon={<Shield className="h-4 w-4 text-muted-foreground" />}
+                    />
+                </div>
+            )}
 
             {/* Main content */}
-            <div className="grid gap-6 lg:grid-cols-5">
+            <div className="grid gap-4 lg:grid-cols-5">
                 {/* Input panel — takes 3/5 */}
-                <Card className="lg:col-span-3 border-2">
+                <Card className="lg:col-span-3">
                     <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <FileCode className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-lg font-semibold">Configuration Input</CardTitle>
-                                <CardDescription className="text-sm">
-                                    Paste your YAML configuration below to validate
-                                </CardDescription>
-                            </div>
-                        </div>
+                        <CardTitle className="text-sm font-medium">Configuration Input</CardTitle>
+                        <CardDescription className="text-xs">
+                            Paste your YAML configuration below to validate
+                        </CardDescription>
                     </CardHeader>
 
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="config" className="text-sm font-semibold">
+                            <Label htmlFor="config" className="text-xs font-medium">
                                 YAML Configuration
                             </Label>
                             <Textarea
@@ -239,7 +222,7 @@ events:
                                     setConfig(e.target.value);
                                     if (result) setResult(null);
                                 }}
-                                className="min-h-[350px] font-mono text-sm resize-y"
+                                className="min-h-[320px] font-mono text-xs resize-y"
                                 spellCheck={false}
                                 autoComplete="off"
                             />
@@ -287,36 +270,32 @@ events:
 
                         {/* Validation Result */}
                         {result && (
-                            <Card className={`border-2 ${result.valid
-                                ? 'border-primary bg-primary/5'
-                                : 'border-destructive bg-destructive/5'
+                            <Card className={`${result.valid
+                                ? 'border-foreground/20 bg-muted/50'
+                                : 'border-destructive/30 bg-destructive/5'
                                 }`}>
-                                <CardContent className="pt-6">
+                                <CardContent className="pt-4">
                                     <div className="flex items-start gap-3">
                                         {result.valid ? (
-                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                <CheckCircle className="h-5 w-5 text-primary" />
-                                            </div>
+                                            <CheckCircle className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                                         ) : (
-                                            <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                                                <XCircle className="h-5 w-5 text-destructive" />
-                                            </div>
+                                            <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
                                         )}
                                         <div className="flex-1">
-                                            <h4 className="font-semibold text-sm mb-1">
+                                            <h4 className="font-medium text-sm mb-0.5">
                                                 {result.valid ? 'Validation Passed' : 'Validation Failed'}
                                             </h4>
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="text-xs text-muted-foreground">
                                                 {result.message}
                                             </p>
                                         </div>
                                     </div>
 
                                     {result.details?.errors && result.details.errors.length > 0 && (
-                                        <div className="space-y-2 mt-4 ml-[52px]">
+                                        <div className="space-y-1.5 mt-3 ml-8">
                                             {result.details.errors.map((error, index) => (
-                                                <div key={index} className="flex items-start gap-2 text-sm">
-                                                    <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                                                <div key={index} className="flex items-start gap-2 text-xs">
+                                                    <AlertCircle className="h-3.5 w-3.5 text-destructive mt-0.5 flex-shrink-0" />
                                                     <span className="text-muted-foreground">{error}</span>
                                                 </div>
                                             ))}
@@ -329,47 +308,40 @@ events:
                 </Card>
 
                 {/* Reference panel — takes 2/5 */}
-                <Card className="lg:col-span-2 border-2">
+                <Card className="lg:col-span-2">
                     <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                                <Shield className="h-5 w-5 text-accent" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-lg font-semibold">Reference</CardTitle>
-                                <CardDescription className="text-sm">
-                                    Required structure and fields
-                                </CardDescription>
-                            </div>
-                        </div>
+                        <CardTitle className="text-sm font-medium">Reference</CardTitle>
+                        <CardDescription className="text-xs">
+                            Required structure and fields
+                        </CardDescription>
                     </CardHeader>
 
                     <CardContent className="space-y-4">
                         <Card className="border">
                             <CardContent className="pt-4">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <FileCode className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm font-semibold">Required Fields</span>
+                                    <FileCode className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <span className="text-xs font-medium">Required Fields</span>
                                 </div>
-                                <div className="space-y-2.5 text-sm text-muted-foreground">
+                                <div className="space-y-2 text-xs text-muted-foreground">
                                     <div className="flex items-start gap-2">
-                                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">version</code>
+                                        <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">version</code>
                                         <span>Spec version (e.g. "2.1.7")</span>
                                     </div>
                                     <div className="flex items-start gap-2">
-                                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">service</code>
+                                        <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">service</code>
                                         <span>Service name identifier</span>
                                     </div>
                                     <div className="flex items-start gap-2">
-                                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">producers</code>
+                                        <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">producers</code>
                                         <span>At least one producer with topic</span>
                                     </div>
                                     <div className="flex items-start gap-2">
-                                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">consumers</code>
+                                        <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">consumers</code>
                                         <span>At least one consumer group</span>
                                     </div>
                                     <div className="flex items-start gap-2">
-                                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">events</code>
+                                        <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">events</code>
                                         <span>At least one event type definition</span>
                                     </div>
                                 </div>
@@ -379,32 +351,26 @@ events:
                         <Card className="border">
                             <CardContent className="pt-4">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <FileCode className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm font-semibold">Sections Guide</span>
+                                    <FileCode className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <span className="text-xs font-medium">Sections Guide</span>
                                 </div>
-                                <div className="space-y-2 text-sm text-muted-foreground">
+                                <div className="space-y-2 text-xs text-muted-foreground">
                                     <div className="flex items-start gap-2">
-                                        <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                            <span className="text-xs font-bold text-primary">P</span>
-                                        </div>
+                                        <span className="text-[10px] font-bold bg-muted rounded px-1.5 py-0.5 mt-0.5">P</span>
                                         <div>
-                                            <span className="font-semibold text-foreground">Producers:</span> Services that publish events to topics
+                                            <span className="font-medium text-foreground">Producers:</span> Services that publish events to topics
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-2">
-                                        <div className="h-5 w-5 rounded bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                            <span className="text-xs font-bold text-accent">C</span>
-                                        </div>
+                                        <span className="text-[10px] font-bold bg-muted rounded px-1.5 py-0.5 mt-0.5">C</span>
                                         <div>
-                                            <span className="font-semibold text-foreground">Consumers:</span> Services that subscribe to topics
+                                            <span className="font-medium text-foreground">Consumers:</span> Services that subscribe to topics
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-2">
-                                        <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                            <span className="text-xs font-bold text-primary">E</span>
-                                        </div>
+                                        <span className="text-[10px] font-bold bg-muted rounded px-1.5 py-0.5 mt-0.5">E</span>
                                         <div>
-                                            <span className="font-semibold text-foreground">Events:</span> Event type schemas and metadata
+                                            <span className="font-medium text-foreground">Events:</span> Event type schemas and metadata
                                         </div>
                                     </div>
                                 </div>

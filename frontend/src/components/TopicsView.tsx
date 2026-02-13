@@ -1,4 +1,4 @@
-import { PageHeader, SearchInput, StatCard } from "@/components/shared";
+import { SearchInput, StatCard } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,91 +141,77 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
 
 
     return (
-        <div className="space-y-8 animate-in">
-            {/* Header Section */}
-            <div className="relative">
-                <div className="flex flex-col gap-6">
-                    <PageHeader
-                        title="Topics"
-                        badge={`${topics.length} topics · ${totalEvents} events`}
+        <div className="space-y-6 animate-in">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <StatCard
+                    label="Active Events"
+                    value={statsData.activeCount}
+                    description="With producers & consumers"
+                    icon={<CheckCircle2 className="h-4 w-4 text-muted-foreground" />}
+                    onClick={() => setFilterMode(filterMode === 'active' ? 'all' : 'active')}
+                    active={filterMode === 'active'}
+                />
+                <StatCard
+                    label="Unconsumed"
+                    value={statsData.unconsumedCount}
+                    description="No active consumers"
+                    icon={<AlertCircle className="h-4 w-4 text-muted-foreground" />}
+                    onClick={() => setFilterMode(filterMode === 'unconsumed' ? 'all' : 'unconsumed')}
+                    active={filterMode === 'unconsumed'}
+                />
+                <StatCard
+                    label="Orphaned"
+                    value={statsData.orphanedCount}
+                    description="No producers defined"
+                    icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
+                    onClick={() => setFilterMode(filterMode === 'orphaned' ? 'all' : 'orphaned')}
+                    active={filterMode === 'orphaned'}
+                />
+            </div>
+
+            {/* Search and Filter Bar */}
+            <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                    <SearchInput
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        placeholder="Search topics, event types, or descriptions..."
+                        resultCount={searchQuery || filterMode !== 'all'
+                            ? filteredEventsCount
+                            : undefined}
+                        totalCount={searchQuery || filterMode !== 'all' ? totalEvents : undefined}
                     />
-
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <StatCard
-                            label="Active Events"
-                            value={statsData.activeCount}
-                            description="With producers & consumers"
-                            icon={<CheckCircle2 className="h-6 w-6 text-primary" />}
-                            onClick={() => setFilterMode(filterMode === 'active' ? 'all' : 'active')}
-                            active={filterMode === 'active'}
-                        />
-                        <StatCard
-                            label="Unconsumed"
-                            value={statsData.unconsumedCount}
-                            description="No active consumers"
-                            icon={<AlertCircle className="h-6 w-6 text-accent" />}
-                            iconClassName="bg-accent/10"
-                            onClick={() => setFilterMode(filterMode === 'unconsumed' ? 'all' : 'unconsumed')}
-                            active={filterMode === 'unconsumed'}
-                        />
-                        <StatCard
-                            label="Orphaned"
-                            value={statsData.orphanedCount}
-                            description="No producers defined"
-                            icon={<XCircle className="h-6 w-6 text-destructive" />}
-                            iconClassName="bg-destructive/10"
-                            onClick={() => setFilterMode(filterMode === 'orphaned' ? 'all' : 'orphaned')}
-                            active={filterMode === 'orphaned'}
-                        />
-                    </div>
-
-                    {/* Search and Filter Bar */}
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1">
-                            <SearchInput
-                                value={searchQuery}
-                                onChange={setSearchQuery}
-                                placeholder="Search topics, event types, or descriptions..."
-                                resultCount={searchQuery || filterMode !== 'all'
-                                    ? filteredEventsCount
-                                    : undefined}
-                                totalCount={searchQuery || filterMode !== 'all' ? totalEvents : undefined}
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <Button
-                                variant={filterMode !== 'all' ? 'default' : 'outline'}
-                                size="default"
-                                onClick={() => setFilterMode('all')}
-                                className="gap-2"
-                            >
-                                <Filter className="h-4 w-4" />
-                                {filterMode === 'all' ? 'All Events' : `Filter: ${filterMode}`}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="default"
-                                onClick={toggleAllTopics}
-                                className="gap-2"
-                            >
-                                {expandAll ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                {expandAll ? 'Collapse All' : 'Expand All'}
-                            </Button>
-                        </div>
-                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <Button
+                        variant={filterMode !== 'all' ? 'default' : 'outline'}
+                        size="default"
+                        onClick={() => setFilterMode('all')}
+                        className="gap-2"
+                    >
+                        <Filter className="h-4 w-4" />
+                        {filterMode === 'all' ? 'All Events' : `Filter: ${filterMode}`}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="default"
+                        onClick={toggleAllTopics}
+                        className="gap-2"
+                    >
+                        {expandAll ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        {expandAll ? 'Collapse' : 'Expand'}
+                    </Button>
                 </div>
             </div>
 
             {/* Events Layout */}
-            <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
                 {filteredTopics.length === 0 ? (
                     <div className="flex flex-col items-center justify-center p-10 text-muted-foreground">
-                        <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                            <SearchIcon className="h-8 w-8" />
-                        </div>
-                        <p className="font-semibold text-lg">No events found</p>
-                        <p className="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                        <SearchIcon className="h-8 w-8 mb-3" />
+                        <p className="font-medium text-sm">No events found</p>
+                        <p className="text-xs mt-1">Try adjusting your search or filter criteria</p>
                     </div>
                 ) : (
                     filteredTopics.map((topicData, topicIndex) => (
@@ -240,19 +226,17 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                             <button
                                 type="button"
                                 onClick={() => toggleTopic(topicData.topic)}
-                                className="w-full flex items-center justify-between px-4 py-4 md:px-6 bg-muted/20 hover:bg-muted/40 transition-colors"
+                                className="w-full flex items-center justify-between px-4 py-3 md:px-5 hover:bg-accent/30 transition-colors"
                             >
-                                <div className="flex items-center gap-3 font-medium text-left">
-                                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                        {openTopics[topicData.topic] ? (
-                                            <ChevronDown className="h-5 w-5 text-primary" />
-                                        ) : (
-                                            <ChevronRight className="h-5 w-5 text-primary" />
-                                        )}
-                                    </div>
-                                    <Box className="h-5 w-5 text-primary" />
-                                    <span className="font-mono text-base font-semibold">{topicData.topic}</span>
-                                    <Badge variant="secondary" className="ml-2 text-xs h-6 px-2.5 font-medium">
+                                <div className="flex items-center gap-2.5 font-medium text-left">
+                                    {openTopics[topicData.topic] ? (
+                                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                    ) : (
+                                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                    <Box className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-mono text-sm font-medium">{topicData.topic}</span>
+                                    <Badge variant="secondary" className="ml-1 text-[10px] font-normal">
                                         {topicData.events.length} {topicData.events.length === 1 ? 'event' : 'events'}
                                     </Badge>
                                 </div>
@@ -264,7 +248,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                             </button>
 
                             {openTopics[topicData.topic] && (
-                                <div className="px-4 pb-6 md:px-6 space-y-3 bg-card">
+                                <div className="px-4 pb-4 md:px-5 space-y-2 bg-muted/20">
                                     {topicData.events.map((event, eventIndex) => {
                                         const eventProducers = getEventProducers(topicData.topic, event.name);
                                         const eventConsumers = getEventConsumers(topicData.topic, event.name);
@@ -272,20 +256,16 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
 
                                         let statusIcon;
                                         let statusColor;
-                                        let statusBg;
 
                                         if (status === 'orphaned') {
                                             statusIcon = <XCircle className="h-3.5 w-3.5" />;
                                             statusColor = 'text-destructive';
-                                            statusBg = 'bg-destructive/10';
                                         } else if (status === 'unconsumed') {
                                             statusIcon = <AlertCircle className="h-3.5 w-3.5" />;
-                                            statusColor = 'text-accent';
-                                            statusBg = 'bg-accent/10';
+                                            statusColor = 'text-muted-foreground';
                                         } else {
                                             statusIcon = <Zap className="h-3.5 w-3.5" />;
-                                            statusColor = 'text-primary';
-                                            statusBg = 'bg-primary/10';
+                                            statusColor = 'text-foreground';
                                         }
 
                                         return (
@@ -293,41 +273,39 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                 <DialogTrigger asChild>
                                                     <button
                                                         type="button"
-                                                        className="group relative rounded-xl border border-border bg-background/60 p-4 md:p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer text-left w-full"
+                                                        className="group rounded-lg border border-border bg-card p-4 hover:bg-accent/30 transition-colors cursor-pointer text-left w-full"
                                                         style={{
                                                             animationDelay: `${(topicIndex * 0.05) + (eventIndex * 0.03)}s`,
                                                             animationFillMode: 'backwards'
                                                         }}
                                                     >
-                                                        <div className="flex flex-col gap-3">
+                                                        <div className="flex flex-col gap-2.5">
                                                             <div className="flex items-start justify-between gap-4">
-                                                                <div className="flex flex-col gap-2">
+                                                                <div className="flex flex-col gap-1.5">
                                                                     <div className="flex items-center gap-2">
-                                                                        <div className={`h-8 w-8 rounded-lg ${statusBg} flex items-center justify-center ${statusColor}`}>
-                                                                            {statusIcon}
-                                                                        </div>
+                                                                        <span className={statusColor}>{statusIcon}</span>
                                                                         <div className="flex flex-wrap items-center gap-2">
-                                                                            <span className="font-mono text-sm font-semibold">{event.name}</span>
+                                                                            <span className="font-mono text-sm font-medium">{event.name}</span>
                                                                             {event.version && (
-                                                                                <Badge variant="outline" className="font-mono text-xs font-medium px-2.5 py-1">
+                                                                                <Badge variant="outline" className="font-mono text-[10px] font-normal px-2 py-0.5">
                                                                                     v{event.version}
                                                                                 </Badge>
                                                                             )}
                                                                         </div>
                                                                     </div>
-                                                                    <span className="text-sm text-muted-foreground leading-relaxed">
+                                                                    <span className="text-xs text-muted-foreground">
                                                                         {event.description}
                                                                     </span>
                                                                 </div>
 
-                                                                <div className="flex items-center gap-2">
+                                                                <div className="flex items-center gap-1.5">
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="sm"
-                                                                        className="h-9 w-9 p-0 opacity-60 group-hover:opacity-100 transition-opacity hover:bg-primary/10"
+                                                                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                                                         title="View Details"
                                                                     >
-                                                                        <FileJson className="h-4 w-4" />
+                                                                        <FileJson className="h-3.5 w-3.5" />
                                                                     </Button>
 
                                                                     {event.schema_url && (
@@ -335,7 +313,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                             <Button
                                                                                 variant="ghost"
                                                                                 size="sm"
-                                                                                className="h-9 w-9 p-0 hover:bg-primary/10"
+                                                                                className="h-7 w-7 p-0"
                                                                                 asChild
                                                                                 title="Open Schema URL"
                                                                             >
@@ -344,7 +322,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                                     target="_blank"
                                                                                     rel="noopener noreferrer"
                                                                                 >
-                                                                                    <Code className="h-4 w-4" />
+                                                                                    <Code className="h-3.5 w-3.5" />
                                                                                 </a>
                                                                             </Button>
                                                                         </div>
@@ -352,28 +330,22 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] items-start pt-1">
-                                                                <div className="flex flex-col gap-2">
-                                                                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                                                        <Box className="h-3.5 w-3.5 text-primary" />
+                                                            <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] items-start pt-1">
+                                                                <div className="flex flex-col gap-1.5">
+                                                                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                                                                         Producers
-                                                                    </div>
+                                                                    </span>
                                                                     {eventProducers.length === 0 ? (
-                                                                        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-destructive/5 border border-destructive/20">
-                                                                            <XCircle className="h-3.5 w-3.5 text-destructive" />
-                                                                            <span className="text-xs text-destructive font-medium italic">No producers</span>
-                                                                        </div>
+                                                                        <span className="text-xs text-destructive italic">No producers</span>
                                                                     ) : (
-                                                                        <div className="flex flex-wrap gap-2">
+                                                                        <div className="flex flex-wrap gap-1.5">
                                                                             {eventProducers.slice(0, 3).map(p => (
-                                                                                <div key={`${p.service}-${p.repository}`} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
-                                                                                    <span className="text-xs text-foreground font-medium truncate max-w-[140px]">
-                                                                                        {p.service}
-                                                                                    </span>
-                                                                                </div>
+                                                                                <span key={`${p.service}-${p.repository}`} className="text-xs bg-muted px-2 py-0.5 rounded font-medium">
+                                                                                    {p.service}
+                                                                                </span>
                                                                             ))}
                                                                             {eventProducers.length > 3 && (
-                                                                                <Badge variant="secondary" className="text-[10px] h-5 px-2">
+                                                                                <Badge variant="secondary" className="text-[10px] font-normal">
                                                                                     +{eventProducers.length - 3}
                                                                                 </Badge>
                                                                             )}
@@ -382,30 +354,24 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                 </div>
 
                                                                 <div className="hidden md:flex items-center justify-center">
-                                                                    <ArrowRight className="h-4 w-4 text-primary" />
+                                                                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                                                                 </div>
 
-                                                                <div className="flex flex-col gap-2">
-                                                                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                                                        <Layers className="h-3.5 w-3.5 text-primary" />
+                                                                <div className="flex flex-col gap-1.5">
+                                                                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                                                                         Consumers
-                                                                    </div>
+                                                                    </span>
                                                                     {eventConsumers.length === 0 ? (
-                                                                        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-accent/5 border border-accent/20">
-                                                                            <AlertCircle className="h-3.5 w-3.5 text-accent" />
-                                                                            <span className="text-xs text-accent font-medium italic">No consumers</span>
-                                                                        </div>
+                                                                        <span className="text-xs text-muted-foreground italic">No consumers</span>
                                                                     ) : (
-                                                                        <div className="flex flex-wrap gap-2">
+                                                                        <div className="flex flex-wrap gap-1.5">
                                                                             {eventConsumers.slice(0, 3).map(c => (
-                                                                                <div key={`${c.service}-${c.repository}-${c.group}`} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
-                                                                                    <span className="text-xs text-foreground font-medium truncate max-w-[140px]">
-                                                                                        {c.service}
-                                                                                    </span>
-                                                                                </div>
+                                                                                <span key={`${c.service}-${c.repository}-${c.group}`} className="text-xs bg-muted px-2 py-0.5 rounded font-medium">
+                                                                                    {c.service}
+                                                                                </span>
                                                                             ))}
                                                                             {eventConsumers.length > 3 && (
-                                                                                <Badge variant="secondary" className="text-[10px] h-5 px-2">
+                                                                                <Badge variant="secondary" className="text-[10px] font-normal">
                                                                                     +{eventConsumers.length - 3}
                                                                                 </Badge>
                                                                             )}
@@ -418,71 +384,67 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                 </DialogTrigger>
                                                 <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
                                                     <DialogHeader>
-                                                        <div className="flex items-center gap-3 mb-2">
-                                                            <div className={`h-10 w-10 rounded-lg ${statusBg} flex items-center justify-center ${statusColor}`}>
-                                                                {statusIcon}
-                                                            </div>
-                                                            <div>
-                                                                <DialogTitle className="font-mono flex items-center gap-2 text-lg">
-                                                                    <span className="text-muted-foreground font-normal">{topicData.topic}</span>
-                                                                    <span className="text-muted-foreground/30">/</span>
-                                                                    <span className="font-semibold">{event.name}</span>
-                                                                    {event.version && (
-                                                                        <Badge variant="outline" className="font-mono text-xs ml-1">
-                                                                            v{event.version}
-                                                                        </Badge>
-                                                                    )}
-                                                                </DialogTitle>
-                                                                <DialogDescription className="text-sm mt-1.5">
-                                                                    {event.description}
-                                                                </DialogDescription>
-                                                            </div>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className={statusColor}>{statusIcon}</span>
+                                                            <DialogTitle className="font-mono flex items-center gap-2 text-base">
+                                                                <span className="text-muted-foreground font-normal">{topicData.topic}</span>
+                                                                <span className="text-muted-foreground/30">/</span>
+                                                                <span className="font-semibold">{event.name}</span>
+                                                                {event.version && (
+                                                                    <Badge variant="outline" className="font-mono text-[10px] font-normal ml-1">
+                                                                        v{event.version}
+                                                                    </Badge>
+                                                                )}
+                                                            </DialogTitle>
                                                         </div>
+                                                        <DialogDescription className="text-sm">
+                                                            {event.description}
+                                                        </DialogDescription>
                                                     </DialogHeader>
 
-                                                    <div className="py-6">
+                                                    <div className="py-4">
                                                         <Tabs defaultValue="structure" className="w-full">
-                                                            <TabsList className="mb-6 grid w-full grid-cols-2">
-                                                                <TabsTrigger value="structure" className="flex items-center gap-2">
-                                                                    <Code className="h-4 w-4" />
+                                                            <TabsList className="mb-4 grid w-full grid-cols-2">
+                                                                <TabsTrigger value="structure" className="flex items-center gap-2 text-xs">
+                                                                    <Code className="h-3.5 w-3.5" />
                                                                     Schema & Structure
                                                                 </TabsTrigger>
-                                                                <TabsTrigger value="flow" className="flex items-center gap-2">
-                                                                    <Workflow className="h-4 w-4" />
+                                                                <TabsTrigger value="flow" className="flex items-center gap-2 text-xs">
+                                                                    <Workflow className="h-3.5 w-3.5" />
                                                                     Service Flow
                                                                 </TabsTrigger>
                                                             </TabsList>
 
-                                                            <TabsContent value="structure" className="space-y-6">
+                                                            <TabsContent value="structure" className="space-y-4">
                                                                 <div className="grid grid-cols-2 gap-4">
-                                                                    <Card className="border-2">
-                                                                        <CardHeader className="pb-3">
-                                                                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                                                                                <FileJson className="h-4 w-4 text-primary" />
+                                                                    <Card>
+                                                                        <CardHeader className="pb-2">
+                                                                            <CardTitle className="text-xs font-medium flex items-center gap-2">
+                                                                                <FileJson className="h-3.5 w-3.5 text-muted-foreground" />
                                                                                 Schema Overview
                                                                             </CardTitle>
                                                                         </CardHeader>
-                                                                        <CardContent className="space-y-3">
-                                                                            <div className="flex justify-between items-center py-2 border-b border-border">
-                                                                                <span className="text-sm text-muted-foreground">Headers</span>
-                                                                                <Badge variant="secondary" className="font-mono">
+                                                                        <CardContent className="space-y-2">
+                                                                            <div className="flex justify-between items-center py-1.5 border-b border-border text-xs">
+                                                                                <span className="text-muted-foreground">Headers</span>
+                                                                                <span className="font-mono">
                                                                                     {event.headers ? event.headers.length : 0}
-                                                                                </Badge>
+                                                                                </span>
                                                                             </div>
                                                                             {event.properties && (
-                                                                                <div className="flex justify-between items-center py-2 border-b border-border">
-                                                                                    <span className="text-sm text-muted-foreground">Properties</span>
-                                                                                    <Badge variant="secondary" className="font-mono">
+                                                                                <div className="flex justify-between items-center py-1.5 border-b border-border text-xs">
+                                                                                    <span className="text-muted-foreground">Properties</span>
+                                                                                    <span className="font-mono">
                                                                                         {Object.keys(event.properties).length}
-                                                                                    </Badge>
+                                                                                    </span>
                                                                                 </div>
                                                                             )}
                                                                             {event.schema_url && (
-                                                                                <div className="pt-2">
+                                                                                <div className="pt-1">
                                                                                     <Button
                                                                                         variant="outline"
                                                                                         size="sm"
-                                                                                        className="w-full gap-2"
+                                                                                        className="w-full gap-2 text-xs"
                                                                                         asChild
                                                                                     >
                                                                                         <a
@@ -490,7 +452,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                                             target="_blank"
                                                                                             rel="noopener noreferrer"
                                                                                         >
-                                                                                            <Code className="h-4 w-4" />
+                                                                                            <Code className="h-3.5 w-3.5" />
                                                                                             View External Schema
                                                                                         </a>
                                                                                     </Button>
@@ -498,32 +460,29 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                             )}
                                                                         </CardContent>
                                                                     </Card>
-                                                                    <Card className="border-2">
-                                                                        <CardHeader className="pb-3">
-                                                                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                                                                                <Workflow className="h-4 w-4 text-primary" />
+                                                                    <Card>
+                                                                        <CardHeader className="pb-2">
+                                                                            <CardTitle className="text-xs font-medium flex items-center gap-2">
+                                                                                <Workflow className="h-3.5 w-3.5 text-muted-foreground" />
                                                                                 Usage Statistics
                                                                             </CardTitle>
                                                                         </CardHeader>
-                                                                        <CardContent className="space-y-3">
-                                                                            <div className="flex justify-between items-center py-2 border-b border-border">
-                                                                                <span className="text-sm text-muted-foreground">Producers</span>
-                                                                                <Badge variant="secondary" className="font-mono">
+                                                                        <CardContent className="space-y-2">
+                                                                            <div className="flex justify-between items-center py-1.5 border-b border-border text-xs">
+                                                                                <span className="text-muted-foreground">Producers</span>
+                                                                                <span className="font-mono">
                                                                                     {eventProducers.length}
-                                                                                </Badge>
+                                                                                </span>
                                                                             </div>
-                                                                            <div className="flex justify-between items-center py-2 border-b border-border">
-                                                                                <span className="text-sm text-muted-foreground">Consumers</span>
-                                                                                <Badge variant="secondary" className="font-mono">
+                                                                            <div className="flex justify-between items-center py-1.5 border-b border-border text-xs">
+                                                                                <span className="text-muted-foreground">Consumers</span>
+                                                                                <span className="font-mono">
                                                                                     {eventConsumers.length}
-                                                                                </Badge>
+                                                                                </span>
                                                                             </div>
-                                                                            <div className="flex justify-between items-center py-2">
-                                                                                <span className="text-sm text-muted-foreground">Status</span>
-                                                                                <Badge
-                                                                                    variant={status === 'active' ? 'default' : 'secondary'}
-                                                                                    className={`${status !== 'active' ? statusColor : ''} gap-1`}
-                                                                                >
+                                                                            <div className="flex justify-between items-center py-1.5 text-xs">
+                                                                                <span className="text-muted-foreground">Status</span>
+                                                                                <Badge variant="secondary" className="text-[10px] font-normal gap-1">
                                                                                     {statusIcon}
                                                                                     {status.charAt(0).toUpperCase() + status.slice(1)}
                                                                                 </Badge>
@@ -533,12 +492,12 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                 </div>
 
                                                                 {event.properties && (
-                                                                    <div className="space-y-3">
-                                                                        <h4 className="text-sm font-semibold flex items-center gap-2">
-                                                                            <Code className="h-4 w-4 text-muted-foreground" />
+                                                                    <div className="space-y-2">
+                                                                        <h4 className="text-xs font-medium flex items-center gap-2">
+                                                                            <Code className="h-3.5 w-3.5 text-muted-foreground" />
                                                                             Properties Schema
                                                                         </h4>
-                                                                        <div className="bg-muted/50 p-5 rounded-lg border-2 border-border overflow-x-auto">
+                                                                        <div className="bg-muted p-4 rounded-lg border border-border overflow-x-auto">
                                                                             <pre className="text-xs font-mono leading-relaxed">
                                                                                 {JSON.stringify(event.properties, null, 2)}
                                                                             </pre>
@@ -547,17 +506,17 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                 )}
 
                                                                 {event.headers && event.headers.length > 0 && (
-                                                                    <div className="space-y-3">
-                                                                        <h4 className="text-sm font-semibold flex items-center gap-2">
-                                                                            <FileJson className="h-4 w-4 text-muted-foreground" />
+                                                                    <div className="space-y-2">
+                                                                        <h4 className="text-xs font-medium flex items-center gap-2">
+                                                                            <FileJson className="h-3.5 w-3.5 text-muted-foreground" />
                                                                             Headers
                                                                         </h4>
-                                                                        <div className="rounded-lg border-2 border-border overflow-hidden">
+                                                                        <div className="rounded-lg border border-border overflow-hidden">
                                                                             <Table>
                                                                                 <TableHeader>
                                                                                     <TableRow className="hover:bg-transparent">
-                                                                                        <TableHead className="text-xs font-semibold">Name</TableHead>
-                                                                                        <TableHead className="text-xs font-semibold">Description</TableHead>
+                                                                                        <TableHead className="text-[11px] font-medium">Name</TableHead>
+                                                                                        <TableHead className="text-[11px] font-medium">Description</TableHead>
                                                                                     </TableRow>
                                                                                 </TableHeader>
                                                                                 <TableBody>
@@ -578,56 +537,50 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                 )}
                                                             </TabsContent>
 
-                                                            <TabsContent value="flow" className="space-y-6">
-                                                                <div className="grid md:grid-cols-2 gap-6">
-                                                                    <div className="space-y-4">
-                                                                        <div className="flex items-center gap-2 pb-3 border-b-2 border-border">
-                                                                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                                                                <Box className="h-4 w-4 text-primary" />
-                                                                            </div>
-                                                                            <h4 className="text-sm font-semibold">Producers ({eventProducers.length})</h4>
+                                                            <TabsContent value="flow" className="space-y-4">
+                                                                <div className="grid md:grid-cols-2 gap-4">
+                                                                    <div className="space-y-3">
+                                                                        <div className="flex items-center gap-2 pb-2 border-b border-border">
+                                                                            <Box className="h-3.5 w-3.5 text-muted-foreground" />
+                                                                            <h4 className="text-xs font-medium">Producers ({eventProducers.length})</h4>
                                                                         </div>
                                                                         {eventProducers.length > 0 ? (
                                                                             <div className="space-y-2">
                                                                                 {eventProducers.map(p => (
-                                                                                    <div key={`${p.service}-${p.repository}-${p.topic}`} className="p-4 bg-card rounded-lg border-2 border-border hover:border-primary/50 transition-colors flex flex-col gap-2">
-                                                                                        <span className="font-semibold text-sm">{p.service}</span>
-                                                                                        <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded inline-block">
+                                                                                    <div key={`${p.service}-${p.repository}-${p.topic}`} className="p-3 bg-muted/50 rounded-lg border border-border flex flex-col gap-1">
+                                                                                        <span className="font-medium text-sm">{p.service}</span>
+                                                                                        <code className="text-xs text-muted-foreground font-mono">
                                                                                             {p.topic}
-                                                                                        </span>
+                                                                                        </code>
                                                                                     </div>
                                                                                 ))}
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="text-sm text-muted-foreground italic p-6 text-center bg-muted/20 rounded-lg border-2 border-dashed border-border">
-                                                                                <XCircle className="h-8 w-8 mx-auto mb-2 text-destructive" />
-                                                                                <p className="font-medium">No producers registered</p>
-                                                                                <p className="text-xs mt-1">This event has no active producers</p>
+                                                                            <div className="text-center p-6 bg-muted/30 rounded-lg border border-dashed border-border">
+                                                                                <XCircle className="h-6 w-6 mx-auto mb-2 text-destructive" />
+                                                                                <p className="text-xs font-medium">No producers registered</p>
                                                                             </div>
                                                                         )}
                                                                     </div>
 
-                                                                    <div className="space-y-4">
-                                                                        <div className="flex items-center gap-2 pb-3 border-b-2 border-border">
-                                                                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                                                                <Layers className="h-4 w-4 text-primary" />
-                                                                            </div>
-                                                                            <h4 className="text-sm font-semibold">Consumers ({eventConsumers.length})</h4>
+                                                                    <div className="space-y-3">
+                                                                        <div className="flex items-center gap-2 pb-2 border-b border-border">
+                                                                            <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                                                                            <h4 className="text-xs font-medium">Consumers ({eventConsumers.length})</h4>
                                                                         </div>
                                                                         {eventConsumers.length > 0 ? (
                                                                             <div className="space-y-2">
                                                                                 {eventConsumers.map(c => (
-                                                                                    <div key={`${c.service}-${c.repository}-${c.group}`} className="p-4 bg-card rounded-lg border-2 border-border hover:border-primary/50 transition-colors flex flex-col gap-2">
-                                                                                        <span className="font-semibold text-sm">{c.service}</span>
+                                                                                    <div key={`${c.service}-${c.repository}-${c.group}`} className="p-3 bg-muted/50 rounded-lg border border-border flex flex-col gap-1">
+                                                                                        <span className="font-medium text-sm">{c.service}</span>
                                                                                         <span className="text-xs text-muted-foreground">{c.group}</span>
                                                                                     </div>
                                                                                 ))}
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="text-sm text-muted-foreground italic p-6 text-center bg-muted/20 rounded-lg border-2 border-dashed border-border">
-                                                                                <AlertCircle className="h-8 w-8 mx-auto mb-2 text-accent" />
-                                                                                <p className="font-medium">No consumers registered</p>
-                                                                                <p className="text-xs mt-1">This event is not being consumed</p>
+                                                                            <div className="text-center p-6 bg-muted/30 rounded-lg border border-dashed border-border">
+                                                                                <AlertCircle className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                                                                                <p className="text-xs font-medium">No consumers registered</p>
                                                                             </div>
                                                                         )}
                                                                     </div>

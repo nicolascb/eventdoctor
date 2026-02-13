@@ -31,6 +31,20 @@ export interface Producer {
     events: Event[];
 }
 
+export interface ProducerTopic {
+    topic: string;
+    description: string;
+    owner: boolean;
+    writes: boolean;
+    events: Event[];
+}
+
+export interface GroupedProducer {
+    service: string;
+    repository: string;
+    topics: ProducerTopic[];
+}
+
 // ─── Consumer Types ─────────────────────────────────────────
 
 export interface ConsumerEvent {

@@ -10,19 +10,19 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, badge, children }: PageHeaderProps) {
     return (
-        <div className="flex flex-col gap-3">
-            <div className="flex items-baseline gap-4">
-                <h2 className="text-5xl font-bold tracking-tight text-foreground">
+        <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     {title}
                 </h2>
                 {badge && (
-                    <Badge variant="secondary" className="text-xs px-3 py-1 font-mono">
+                    <Badge variant="secondary" className="text-[11px] px-2 py-0.5 font-mono font-normal">
                         {badge}
                     </Badge>
                 )}
             </div>
             {description && (
-                <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+                <p className="text-sm text-muted-foreground">
                     {description}
                 </p>
             )}

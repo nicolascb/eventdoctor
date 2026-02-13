@@ -16,16 +16,16 @@ export function EmptyState({
     action,
 }: EmptyStateProps) {
     return (
-        <Card className="border-2 border-dashed">
-            <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground">
-                <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                    {icon ?? <Search className="h-8 w-8" />}
+        <Card className="border border-dashed">
+            <CardContent className="flex flex-col items-center justify-center p-10 text-muted-foreground">
+                <div className="mb-3">
+                    {icon ?? <Search className="h-6 w-6" />}
                 </div>
-                <p className="font-semibold text-lg">{title}</p>
+                <p className="font-medium text-sm">{title}</p>
                 {description && (
-                    <p className="text-sm mt-1">{description}</p>
+                    <p className="text-xs mt-1">{description}</p>
                 )}
-                {action && <div className="mt-4">{action}</div>}
+                {action && <div className="mt-3">{action}</div>}
             </CardContent>
         </Card>
     );
