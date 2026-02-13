@@ -11,7 +11,7 @@ import {
     RefreshCw,
     Stethoscope,
     Sun,
-    Zap,
+    Zap
 } from "lucide-react";
 
 export type NavItem = "overview" | "producers" | "topics" | "consumers" | "validator";
