@@ -77,7 +77,15 @@ func (s *Service) insertProducers(ctx context.Context, tx db.SQLExecutor, produc
 				return fmt.Errorf("insertProducers: failed to get/create event: %w", err)
 			}
 
-			// Upsert headers do evento se houver
+			// Se o producer é owner, remove todos os headers existentes antes de inserir
+			// Caso contrário, usa upsert para preservar headers de outras fontes
+			if p.Owner {
+				if err := db.DeleteEventHeaders(ctx, tx, ev.ID); err != nil {
+					return fmt.Errorf("insertProducers: failed to delete existing headers: %w", err)
+				}
+			}
+
+			// Inserir ou atualizar headers do evento
 			for _, h := range e.Headers {
 				header := models.EventHeader{
 					EventID:     ev.ID,
@@ -85,8 +93,14 @@ func (s *Service) insertProducers(ctx context.Context, tx db.SQLExecutor, produc
 					Description: h.Description,
 					CreatedAt:   time.Now(),
 				}
-				if err := db.UpsertEventHeader(ctx, tx, header); err != nil {
-					return fmt.Errorf("insertProducers: failed to upsert header: %w", err)
+				if p.Owner {
+					if _, err := db.InsertEventHeader(ctx, tx, header); err != nil {
+						return fmt.Errorf("insertProducers: failed to insert header: %w", err)
+					}
+				} else {
+					if err := db.UpsertEventHeader(ctx, tx, header); err != nil {
+						return fmt.Errorf("insertProducers: failed to upsert header: %w", err)
+					}
 				}
 			}
 
