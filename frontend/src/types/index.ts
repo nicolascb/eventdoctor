@@ -47,7 +47,7 @@ export interface Consumer {
     service: string;
     repository: string;
     group: string;
-    description: string;
+    description?: string;
     topics: Topic[];
 }
 
