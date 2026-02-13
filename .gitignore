@@ -32,8 +32,10 @@ go.work.sum
 # .vscode/
 #
 *.db
-.github
 .vscode
 TASKS.md
 TODO.md
 node_modules
+frontend/node_modules
+frontend/dist
+frontend/build
