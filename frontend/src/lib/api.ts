@@ -1,4 +1,4 @@
-import type { Consumer, Producer, TopicWithEvents } from '@/types';
+import type { Consumer, OverviewResponse, Producer, TopicWithEvents } from '@/types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8087/v1';
 
@@ -58,6 +58,10 @@ class ApiClient {
 
     getConsumers(): Promise<Consumer[]> {
         return this.request<Consumer[]>('/consumers');
+    }
+
+    getOverview(): Promise<OverviewResponse> {
+        return this.request<OverviewResponse>('/overview');
     }
 
     uploadConfig(config: string): Promise<{ message: string }> {

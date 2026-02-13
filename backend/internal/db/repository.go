@@ -7,7 +7,7 @@ import (
 
 // DeleteProducersByRepository remove todos os produtores associados a um repositório
 func DeleteProducersByRepository(ctx context.Context, tx SQLExecutor, repository string) (int64, error) {
-	query := `DELETE FROM producers WHERE repository = $1`
+	query := `DELETE FROM producers WHERE service_id IN (SELECT id FROM services WHERE repository = ?)`
 	result, err := tx.ExecContext(ctx, query, repository)
 	if err != nil {
 		return 0, fmt.Errorf("erro ao excluir produtores: %w", err)
@@ -18,7 +18,7 @@ func DeleteProducersByRepository(ctx context.Context, tx SQLExecutor, repository
 
 // DeleteConsumersByRepository remove todos os consumidores associados a um repositório
 func DeleteConsumersByRepository(ctx context.Context, tx SQLExecutor, repository string) (int64, error) {
-	query := `DELETE FROM consumers WHERE repository = $1`
+	query := `DELETE FROM consumers WHERE service_id IN (SELECT id FROM services WHERE repository = ?)`
 	result, err := tx.ExecContext(ctx, query, repository)
 	if err != nil {
 		return 0, fmt.Errorf("erro ao excluir consumidores: %w", err)

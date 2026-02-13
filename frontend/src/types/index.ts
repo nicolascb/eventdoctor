@@ -22,11 +22,11 @@ export interface TopicWithEvents {
 // ─── Producer Types ─────────────────────────────────────────
 
 export interface Producer {
+    service: string;
+    repository: string;
     topic: string;
-    name: string;
     owner: boolean;
     writes: boolean;
-    description: string;
     events: Event[];
 }
 
@@ -43,9 +43,19 @@ export interface Topic {
 }
 
 export interface Consumer {
+    service: string;
+    repository: string;
     group: string;
-    description: string;
     topics: Topic[];
+}
+
+// ─── Overview Types ─────────────────────────────────────────
+
+export interface OverviewResponse {
+    total_topics: number;
+    total_events: number;
+    total_producers: number;
+    total_consumers: number;
 }
 
 // ─── Config Types ───────────────────────────────────────────

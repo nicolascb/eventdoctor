@@ -3,12 +3,14 @@ package api
 import (
 	"context"
 
+	"github.com/nicolascb/eventdoctor/internal/api/response"
 	"github.com/nicolascb/eventdoctor/internal/eventdoctor"
 )
 
 type Service interface {
 	SaveSpec(ctx context.Context, spec eventdoctor.EventDoctorSpec) error
-	ListProducers(ctx context.Context) ([]eventdoctor.Producer, error)
-	ListConsumers(ctx context.Context) ([]eventdoctor.Consumer, error)
-	ListEvents(ctx context.Context) ([]eventdoctor.Event, error)
+	ListProducers(ctx context.Context) ([]response.ProducerView, error)
+	ListConsumers(ctx context.Context) ([]response.ConsumerView, error)
+	ListEvents(ctx context.Context) ([]response.TopicEventsView, error)
+	Overview(ctx context.Context) (*response.OverviewResponse, error)
 }

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nicolascb/eventdoctor/internal/api/response"
 	"github.com/nicolascb/eventdoctor/internal/eventdoctor"
 )
 
@@ -73,10 +74,12 @@ func (a *API) routes() {
 	a.mux.HandleFunc("GET /v1/producers", a.corsMiddleware(a.handlerListProducers))
 	a.mux.HandleFunc("GET /v1/events", a.corsMiddleware(a.handlerListEvents))
 	a.mux.HandleFunc("GET /v1/consumers", a.corsMiddleware(a.handlerListConsumers))
+	a.mux.HandleFunc("GET /v1/overview", a.corsMiddleware(a.handlerOverview))
 	a.mux.HandleFunc("OPTIONS /v1/config", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/producers", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/events", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/consumers", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
+	a.mux.HandleFunc("OPTIONS /v1/overview", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 
 }
 
@@ -86,16 +89,11 @@ func (a *API) writeResponse(w http.ResponseWriter, status int, data any) error {
 	return json.NewEncoder(w).Encode(data)
 }
 
-// stringPtr returns a pointer to the given string
-func stringPtr(s string) *string {
-	return &s
-}
-
 func (a *API) handlerApplyConfig(w http.ResponseWriter, r *http.Request) {
 	cfg, err := eventdoctor.LoadSpecFromReader(r.Body)
 	if err != nil {
 		a.logger.Error("failed to load config", slog.Any("error", err))
-		a.writeResponse(w, http.StatusBadRequest, ErrorResponse{
+		a.writeResponse(w, http.StatusBadRequest, response.ErrorResponse{
 			Error:   "invalid configuration",
 			Details: err.Error(),
 		})
@@ -104,7 +102,7 @@ func (a *API) handlerApplyConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err := cfg.Validate(); err != nil {
 		a.logger.Error("invalid config", slog.Any("error", err))
-		a.writeResponse(w, http.StatusBadRequest, ErrorResponse{
+		a.writeResponse(w, http.StatusBadRequest, response.ErrorResponse{
 			Error:   "configuration validation failed",
 			Details: err.Error(),
 		})
@@ -113,169 +111,78 @@ func (a *API) handlerApplyConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err := a.service.SaveSpec(r.Context(), cfg); err != nil {
 		a.logger.Error("failed to save config", slog.Any("error", err))
-		a.writeResponse(w, http.StatusInternalServerError, ErrorResponse{
+		a.writeResponse(w, http.StatusInternalServerError, response.ErrorResponse{
 			Error:   "failed to persist configuration",
 			Details: err.Error(),
 		})
 		return
 	}
 
-	a.writeResponse(w, http.StatusOK, SuccessResponse{
+	a.writeResponse(w, http.StatusOK, response.SuccessResponse{
 		Message: "config uploaded successfully",
 	})
 }
 
 func (a *API) handlerListProducers(w http.ResponseWriter, r *http.Request) {
-	// Mock data for producers
-	mockProducers := []ProducerResponse{
-		{
-			Topic:       "user.events",
-			Name:        "user-service",
-			Owner:       true,
-			Writes:      true,
-			Description: "Produces user-related events",
-			Events: []EventResponse{
-				{
-					Name:        "user.created",
-					Version:     stringPtr("1.0.0"),
-					Description: "User creation event",
-					SchemaURL:   "https://schemas.example.com/user.created.v1.json",
-				},
-				{
-					Name:        "user.updated",
-					Version:     stringPtr("1.0.0"),
-					Description: "User update event",
-					SchemaURL:   "https://schemas.example.com/user.updated.v1.json",
-				},
-			},
-		},
-		{
-			Topic:       "payment.events",
-			Name:        "payment-service",
-			Owner:       true,
-			Writes:      true,
-			Description: "Produces payment-related events",
-			Events: []EventResponse{
-				{
-					Name:        "payment.processed",
-					Version:     stringPtr("1.0.0"),
-					Description: "Payment processing event",
-					SchemaURL:   "https://schemas.example.com/payment.processed.v1.json",
-				},
-			},
-		},
+	producers, err := a.service.ListProducers(r.Context())
+	if err != nil {
+		a.logger.Error("failed to list producers", slog.Any("error", err))
+		a.writeResponse(w, http.StatusInternalServerError, response.ErrorResponse{
+			Error:   "failed to list producers",
+			Details: err.Error(),
+		})
+		return
 	}
 
-	if err := a.writeResponse(w, http.StatusOK, mockProducers); err != nil {
+	if err := a.writeResponse(w, http.StatusOK, producers); err != nil {
 		a.logger.Error("failed to write response", slog.Any("error", err))
 	}
 }
 
 func (a *API) handlerListEvents(w http.ResponseWriter, r *http.Request) {
-	// Mock data for events grouped by topic
-	mockTopics := []TopicWithEvents{
-		{
-			TopicName: "user.events",
-			Events: []EventResponse{
-				{
-					Name:        "user.created",
-					Version:     stringPtr("1.0.0"),
-					Description: "User creation event",
-					SchemaURL:   "https://schemas.example.com/user.created.v1.json",
-					Headers: []EventHeaderResponse{
-						{Name: "x-correlation-id", Description: "Correlation ID for tracing"},
-						{Name: "x-source-service", Description: "Service that produced the event"},
-					},
-				},
-				{
-					Name:        "user.updated",
-					Version:     stringPtr("1.0.0"),
-					Description: "User update event",
-					SchemaURL:   "https://schemas.example.com/user.updated.v1.json",
-					Headers: []EventHeaderResponse{
-						{Name: "x-correlation-id", Description: "Correlation ID for tracing"},
-					},
-				},
-			},
-		},
-		{
-			TopicName: "payment.events",
-			Events: []EventResponse{
-				{
-					Name:        "payment.processed",
-					Version:     stringPtr("1.0.0"),
-					Description: "Payment processing event",
-					SchemaURL:   "https://schemas.example.com/payment.processed.v1.json",
-				},
-			},
-		},
-		{
-			TopicName: "order.events",
-			Events: []EventResponse{
-				{
-					Name:        "order.completed",
-					Version:     stringPtr("2.1.0"),
-					Description: "Order completion event",
-					SchemaURL:   "https://schemas.example.com/order.completed.v2.json",
-				},
-			},
-		},
+	events, err := a.service.ListEvents(r.Context())
+	if err != nil {
+		a.logger.Error("failed to list events", slog.Any("error", err))
+		a.writeResponse(w, http.StatusInternalServerError, response.ErrorResponse{
+			Error:   "failed to list events",
+			Details: err.Error(),
+		})
+		return
 	}
 
-	if err := a.writeResponse(w, http.StatusOK, mockTopics); err != nil {
+	if err := a.writeResponse(w, http.StatusOK, events); err != nil {
 		a.logger.Error("failed to write response", slog.Any("error", err))
 	}
 }
 
 func (a *API) handlerListConsumers(w http.ResponseWriter, r *http.Request) {
-	// Mock data for consumers
-	mockConsumers := []ConsumerResponse{
-		{
-			Group:       "notification-service",
-			Description: "Service responsible for sending notifications",
-			Topics: []ConsumerTopicResponse{
-				{
-					Name: "user.events",
-					Events: []ConsumerEventResponse{
-						{Name: "user.created", Version: stringPtr("1.0.0")},
-						{Name: "user.updated", Version: stringPtr("1.0.0")},
-					},
-				},
-			},
-		},
-		{
-			Group:       "analytics-service",
-			Description: "Service for analytics and reporting",
-			Topics: []ConsumerTopicResponse{
-				{
-					Name: "payment.events",
-					Events: []ConsumerEventResponse{
-						{Name: "payment.processed", Version: stringPtr("1.0.0")},
-					},
-				},
-				{
-					Name: "user.events",
-					Events: []ConsumerEventResponse{
-						{Name: "user.created", Version: stringPtr("1.0.0")},
-					},
-				},
-			},
-		},
-		{
-			Group:       "order-fulfillment",
-			Description: "Order processing and fulfillment service",
-			Topics: []ConsumerTopicResponse{
-				{
-					Name: "order.events",
-					Events: []ConsumerEventResponse{
-						{Name: "order.completed", Version: stringPtr("2.1.0")},
-					},
-				},
-			},
-		},
+	consumers, err := a.service.ListConsumers(r.Context())
+	if err != nil {
+		a.logger.Error("failed to list consumers", slog.Any("error", err))
+		a.writeResponse(w, http.StatusInternalServerError, response.ErrorResponse{
+			Error:   "failed to list consumers",
+			Details: err.Error(),
+		})
+		return
 	}
 
-	if err := a.writeResponse(w, http.StatusOK, mockConsumers); err != nil {
+	if err := a.writeResponse(w, http.StatusOK, consumers); err != nil {
+		a.logger.Error("failed to write response", slog.Any("error", err))
+	}
+}
+
+func (a *API) handlerOverview(w http.ResponseWriter, r *http.Request) {
+	overview, err := a.service.Overview(r.Context())
+	if err != nil {
+		a.logger.Error("failed to get overview", slog.Any("error", err))
+		a.writeResponse(w, http.StatusInternalServerError, response.ErrorResponse{
+			Error:   "failed to get overview",
+			Details: err.Error(),
+		})
+		return
+	}
+
+	if err := a.writeResponse(w, http.StatusOK, overview); err != nil {
 		a.logger.Error("failed to write response", slog.Any("error", err))
 	}
 }
