@@ -43,5 +43,3 @@ jobs:
             org.opencontainers.image.title=eventdoctor-ui
             org.opencontainers.image.version=${{ steps.version.outputs.value }}
             org.opencontainers.image.source=https://github.com/nicolascb/eventdoctor
-          build-args: |
-            VITE_API_URL=http://localhost:8087/v1

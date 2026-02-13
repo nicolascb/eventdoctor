@@ -21,7 +21,9 @@ func (s *Service) GetServiceView(ctx context.Context, serviceName string) (*resp
 	}
 
 	view := &response.ServiceView{
-		Service: serviceName,
+		Service:  serviceName,
+		Produces: make([]response.ServiceProduceEntry, 0, len(producerRows)),
+		Consumes: make([]response.ServiceConsumeEntry, 0, len(consumerRows)),
 	}
 
 	for _, row := range producerRows {

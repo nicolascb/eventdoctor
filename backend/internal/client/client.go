@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
 
 	"github.com/goccy/go-yaml"
@@ -76,7 +77,11 @@ func (c *Client) GetTopicView(serverURL, topicName string) (*response.TopicView,
 
 // GetServiceView fetches the service detail view from the server.
 func (c *Client) GetServiceView(serverURL, serviceName string) (*response.ServiceView, error) {
-	endpoint := serverURL + servicesEndpoint + "/" + serviceName
+	endpoint, err := url.JoinPath(serverURL, servicesEndpoint, serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to join URL path: %w", err)
+	}
+
 	res, err := c.http.Get(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)

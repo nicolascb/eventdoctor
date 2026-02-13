@@ -21,7 +21,9 @@ func (s *Service) GetTopicView(ctx context.Context, topicName string) (*response
 	}
 
 	view := &response.TopicView{
-		Topic: topicName,
+		Topic:     topicName,
+		Producers: make([]response.TopicProducerEntry, 0, len(producerRows)),
+		Consumers: make([]response.TopicConsumerEntry, 0, len(consumerRows)),
 	}
 
 	for _, row := range producerRows {

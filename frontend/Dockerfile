@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
@@ -8,8 +8,9 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_API_URL=http://localhost:8087/v1
-ENV VITE_API_URL=$VITE_API_URL
+# Use a placeholder that will be replaced at container startup by docker-entrypoint.sh.
+# Do NOT set a real URL here — the actual API_URL is injected at runtime.
+ENV VITE_API_URL=__API_URL__
 
 RUN npm run build
 
@@ -18,7 +19,10 @@ FROM nginx:alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 80
 
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
