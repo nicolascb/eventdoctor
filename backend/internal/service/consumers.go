@@ -36,9 +36,10 @@ func aggregateConsumers(rows []models.ConsumerRow) []response.ConsumerView {
 
 		cv := consumers.getOrCreate(key, func() response.ConsumerView {
 			return response.ConsumerView{
-				Service:    row.ServiceName,
-				Repository: row.Repository,
-				Group:      row.ConsumerGroup,
+				Service:     row.ServiceName,
+				Repository:  row.Repository,
+				Group:       row.ConsumerGroup,
+				Description: row.Description,
 			}
 		})
 

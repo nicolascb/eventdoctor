@@ -25,6 +25,7 @@ export interface Producer {
     service: string;
     repository: string;
     topic: string;
+    description: string;
     owner: boolean;
     writes: boolean;
     events: Event[];
@@ -46,6 +47,7 @@ export interface Consumer {
     service: string;
     repository: string;
     group: string;
+    description: string;
     topics: Topic[];
 }
 

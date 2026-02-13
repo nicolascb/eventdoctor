@@ -8,6 +8,7 @@ import (
 type Topic struct {
 	ID             int64
 	Name           string
+	Description    string
 	OwnerServiceID *int64
 	CreatedAt      time.Time
 }
@@ -34,6 +35,7 @@ type Event struct {
 	ID            int64
 	TopicID       int64
 	EventName     string
+	Description   string
 	SchemaURL     string
 	SchemaVersion *string
 	Deprecated    bool
@@ -56,6 +58,7 @@ type Consumer struct {
 	EventID       int64
 	ServiceID     int64
 	ConsumerGroup string
+	Description   string
 	EventVersion  *string
 	CreatedAt     time.Time
 }
@@ -65,6 +68,7 @@ type ConsumerRow struct {
 	ServiceName   string
 	Repository    string
 	ConsumerGroup string
+	Description   string
 	TopicName     string
 	EventName     string
 	EventVersion  *string
@@ -74,6 +78,7 @@ type ConsumerRow struct {
 type EventRow struct {
 	TopicName         string
 	EventName         string
+	EventDescription  string
 	SchemaVersion     *string
 	SchemaURL         string
 	HeaderName        *string
@@ -85,9 +90,11 @@ type ProducerRow struct {
 	ServiceName       string
 	Repository        string
 	TopicName         string
+	TopicDescription  string
 	Owner             bool
 	Writes            bool
 	EventName         string
+	EventDescription  string
 	SchemaVersion     *string
 	SchemaURL         string
 	HeaderName        *string

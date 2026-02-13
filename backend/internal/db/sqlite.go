@@ -99,17 +99,18 @@ func mockData(ctx context.Context, db *sql.DB) error {
 
 	topics := []struct {
 		name         string
+		description  string
 		ownerService string
 	}{
-		{"user.events", "user-service"},
-		{"order.events", "checkout-service"},
-		{"payment.events", "payment-service"},
+		{"user.events", "Events related to user lifecycle", "user-service"},
+		{"order.events", "Events related to order processing", "checkout-service"},
+		{"payment.events", "Events related to payment transactions", "payment-service"},
 	}
 
 	topicIDs := make(map[string]int64)
 	for _, t := range topics {
 		ownerID := serviceIDs[t.ownerService]
-		topic := models.Topic{Name: t.name, OwnerServiceID: &ownerID, CreatedAt: now}
+		topic := models.Topic{Name: t.name, Description: t.description, OwnerServiceID: &ownerID, CreatedAt: now}
 		id, err := InsertTopic(ctx, db, topic)
 		if err != nil {
 			return err
@@ -124,12 +125,12 @@ func mockData(ctx context.Context, db *sql.DB) error {
 		topic string
 		event models.Event
 	}{
-		{"user.events", models.Event{EventName: "UserCreated", SchemaURL: "https://schemas.local/user-created.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"user.events", models.Event{EventName: "UserUpdated", SchemaURL: "https://schemas.local/user-updated.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"order.events", models.Event{EventName: "OrderPlaced", SchemaURL: "https://schemas.local/order-placed.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"order.events", models.Event{EventName: "OrderShipped", SchemaURL: "https://schemas.local/order-shipped.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"payment.events", models.Event{EventName: "PaymentAuthorized", SchemaURL: "https://schemas.local/payment-authorized.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"payment.events", models.Event{EventName: "PaymentCaptured", SchemaURL: "https://schemas.local/payment-captured.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"user.events", models.Event{EventName: "UserCreated", Description: "Fired when a new user registers in the platform", SchemaURL: "https://schemas.local/user-created.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"user.events", models.Event{EventName: "UserUpdated", Description: "Fired when user profile information is updated", SchemaURL: "https://schemas.local/user-updated.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"order.events", models.Event{EventName: "OrderPlaced", Description: "Fired when a new order is placed by a customer", SchemaURL: "https://schemas.local/order-placed.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"order.events", models.Event{EventName: "OrderShipped", Description: "Fired when an order is shipped for delivery", SchemaURL: "https://schemas.local/order-shipped.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"payment.events", models.Event{EventName: "PaymentAuthorized", Description: "Fired when a payment is authorized by the gateway", SchemaURL: "https://schemas.local/payment-authorized.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"payment.events", models.Event{EventName: "PaymentCaptured", Description: "Fired when an authorized payment is captured", SchemaURL: "https://schemas.local/payment-captured.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
 	}
 
 	eventIDs := map[string]int64{}
@@ -177,14 +178,15 @@ func mockData(ctx context.Context, db *sql.DB) error {
 		eventKey      string
 		serviceName   string
 		consumerGroup string
+		description   string
 	}{
-		{"user.events:UserCreated", "analytics-service", "analytics-service-group"},
-		{"user.events:UserCreated", "email-service", "email-service-group"},
-		{"user.events:UserUpdated", "notification-service", "notification-service-group"},
-		{"order.events:OrderPlaced", "inventory-service", "inventory-service-group"},
-		{"order.events:OrderShipped", "notification-service", "notification-service-group"},
-		{"payment.events:PaymentAuthorized", "fraud-service", "fraud-service-group"},
-		{"payment.events:PaymentCaptured", "billing-service", "billing-service-group"},
+		{"user.events:UserCreated", "analytics-service", "analytics-service-group", "Tracks new user registrations for analytics dashboards"},
+		{"user.events:UserCreated", "email-service", "email-service-group", "Sends welcome emails to new users"},
+		{"user.events:UserUpdated", "notification-service", "notification-service-group", "Sends push notifications on profile changes"},
+		{"order.events:OrderPlaced", "inventory-service", "inventory-service-group", "Reserves stock when a new order is placed"},
+		{"order.events:OrderShipped", "notification-service", "notification-service-group", "Notifies customers about shipping updates"},
+		{"payment.events:PaymentAuthorized", "fraud-service", "fraud-service-group", "Analyzes authorized payments for fraud detection"},
+		{"payment.events:PaymentCaptured", "billing-service", "billing-service-group", "Generates invoices for captured payments"},
 	}
 
 	for _, c := range consumersSeed {
@@ -196,6 +198,7 @@ func mockData(ctx context.Context, db *sql.DB) error {
 			EventID:       eventID,
 			ServiceID:     serviceIDs[c.serviceName],
 			ConsumerGroup: c.consumerGroup,
+			Description:   c.description,
 			CreatedAt:     now,
 		}
 		if _, err := InsertConsumer(ctx, db, cons); err != nil {
@@ -245,9 +248,9 @@ func GetOrCreateService(ctx context.Context, executor SQLExecutor, name, reposit
 // InsertTopic insere um novo tópico no banco de dados
 func InsertTopic(ctx context.Context, executor SQLExecutor, topic models.Topic) (int64, error) {
 	ensureCreatedAt(&topic.CreatedAt)
-	query := `INSERT INTO topics (name, owner_service_id, created_at) VALUES (?, ?, ?)`
+	query := `INSERT INTO topics (name, description, owner_service_id, created_at) VALUES (?, ?, ?, ?)`
 
-	res, err := executor.ExecContext(ctx, query, topic.Name, topic.OwnerServiceID, topic.CreatedAt)
+	res, err := executor.ExecContext(ctx, query, topic.Name, topic.Description, topic.OwnerServiceID, topic.CreatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -262,11 +265,11 @@ func InsertTopic(ctx context.Context, executor SQLExecutor, topic models.Topic) 
 
 // GetTopic busca um tópico pelo nome
 func GetTopic(ctx context.Context, executor SQLExecutor, topicName string) (*models.Topic, error) {
-	query := `SELECT id, name, owner_service_id, created_at FROM topics WHERE name = ?`
+	query := `SELECT id, name, description, owner_service_id, created_at FROM topics WHERE name = ?`
 	row := executor.QueryRowContext(ctx, query, topicName)
 
 	var topic models.Topic
-	err := row.Scan(&topic.ID, &topic.Name, &topic.OwnerServiceID, &topic.CreatedAt)
+	err := row.Scan(&topic.ID, &topic.Name, &topic.Description, &topic.OwnerServiceID, &topic.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -286,7 +289,7 @@ func RemoveTopic(ctx context.Context, executor SQLExecutor, topicName string) er
 
 // ListTopics retorna todos os tópicos ordenados por nome
 func ListTopics(ctx context.Context, executor SQLExecutor) ([]models.Topic, error) {
-	query := `SELECT id, name, owner_service_id, created_at FROM topics ORDER BY name`
+	query := `SELECT id, name, description, owner_service_id, created_at FROM topics ORDER BY name`
 	rows, err := executor.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -296,7 +299,7 @@ func ListTopics(ctx context.Context, executor SQLExecutor) ([]models.Topic, erro
 	var topics []models.Topic
 	for rows.Next() {
 		var t models.Topic
-		if err := rows.Scan(&t.ID, &t.Name, &t.OwnerServiceID, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Description, &t.OwnerServiceID, &t.CreatedAt); err != nil {
 			return nil, err
 		}
 		topics = append(topics, t)
@@ -307,8 +310,8 @@ func ListTopics(ctx context.Context, executor SQLExecutor) ([]models.Topic, erro
 // InsertEvent insere um novo evento no banco de dados
 func InsertEvent(ctx context.Context, executor SQLExecutor, event models.Event) (int64, error) {
 	ensureCreatedAt(&event.CreatedAt)
-	query := `INSERT INTO events (topic_id, event_name, schema_url, schema_version, deprecated, created_at) VALUES (?, ?, ?, ?, ?, ?)`
-	result, err := executor.ExecContext(ctx, query, event.TopicID, event.EventName, event.SchemaURL, event.SchemaVersion, event.Deprecated, event.CreatedAt)
+	query := `INSERT INTO events (topic_id, event_name, description, schema_url, schema_version, deprecated, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
+	result, err := executor.ExecContext(ctx, query, event.TopicID, event.EventName, event.Description, event.SchemaURL, event.SchemaVersion, event.Deprecated, event.CreatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -325,7 +328,7 @@ func RemoveEvent(ctx context.Context, executor SQLExecutor, eventID int64) error
 
 // GetEventsByTopic retorna todos os eventos de um tópico
 func GetEventsByTopic(ctx context.Context, executor SQLExecutor, topicID int64) ([]models.Event, error) {
-	query := `SELECT id, topic_id, event_name, schema_url, schema_version, deprecated, created_at FROM events WHERE topic_id = ?`
+	query := `SELECT id, topic_id, event_name, description, schema_url, schema_version, deprecated, created_at FROM events WHERE topic_id = ?`
 	rows, err := executor.QueryContext(ctx, query, topicID)
 	if err != nil {
 		return nil, err
@@ -335,7 +338,7 @@ func GetEventsByTopic(ctx context.Context, executor SQLExecutor, topicID int64) 
 	var events []models.Event
 	for rows.Next() {
 		var event models.Event
-		err := rows.Scan(&event.ID, &event.TopicID, &event.EventName, &event.SchemaURL, &event.SchemaVersion, &event.Deprecated, &event.CreatedAt)
+		err := rows.Scan(&event.ID, &event.TopicID, &event.EventName, &event.Description, &event.SchemaURL, &event.SchemaVersion, &event.Deprecated, &event.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -389,8 +392,8 @@ func GetProducersByEvent(ctx context.Context, executor SQLExecutor, eventID int6
 // InsertConsumer insere um novo consumidor no banco de dados
 func InsertConsumer(ctx context.Context, executor SQLExecutor, consumer models.Consumer) (int64, error) {
 	ensureCreatedAt(&consumer.CreatedAt)
-	query := `INSERT INTO consumers (event_id, service_id, consumer_group, event_version, created_at) VALUES (?, ?, ?, ?, ?)`
-	result, err := executor.ExecContext(ctx, query, consumer.EventID, consumer.ServiceID, consumer.ConsumerGroup, consumer.EventVersion, consumer.CreatedAt)
+	query := `INSERT INTO consumers (event_id, service_id, consumer_group, description, event_version, created_at) VALUES (?, ?, ?, ?, ?, ?)`
+	result, err := executor.ExecContext(ctx, query, consumer.EventID, consumer.ServiceID, consumer.ConsumerGroup, consumer.Description, consumer.EventVersion, consumer.CreatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -407,7 +410,7 @@ func RemoveConsumer(ctx context.Context, executor SQLExecutor, consumerID int64)
 
 // GetConsumersByEvent retorna todos os consumidores de um evento
 func GetConsumersByEvent(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.Consumer, error) {
-	query := `SELECT id, event_id, service_id, consumer_group, event_version, created_at FROM consumers WHERE event_id = ?`
+	query := `SELECT id, event_id, service_id, consumer_group, description, event_version, created_at FROM consumers WHERE event_id = ?`
 	rows, err := executor.QueryContext(ctx, query, eventID)
 	if err != nil {
 		return nil, err
@@ -417,7 +420,7 @@ func GetConsumersByEvent(ctx context.Context, executor SQLExecutor, eventID int6
 	var consumers []models.Consumer
 	for rows.Next() {
 		var consumer models.Consumer
-		err := rows.Scan(&consumer.ID, &consumer.EventID, &consumer.ServiceID, &consumer.ConsumerGroup, &consumer.EventVersion, &consumer.CreatedAt)
+		err := rows.Scan(&consumer.ID, &consumer.EventID, &consumer.ServiceID, &consumer.ConsumerGroup, &consumer.Description, &consumer.EventVersion, &consumer.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -428,7 +431,7 @@ func GetConsumersByEvent(ctx context.Context, executor SQLExecutor, eventID int6
 }
 
 // GetOrCreateTopic busca um tópico pelo nome ou cria um novo se não existir
-func GetOrCreateTopic(ctx context.Context, executor SQLExecutor, topicName string, ownerServiceID *int64) (models.Topic, error) {
+func GetOrCreateTopic(ctx context.Context, executor SQLExecutor, topicName string, ownerServiceID *int64, description string) (models.Topic, error) {
 	// Primeiro tenta encontrar o tópico existente
 	topic, err := GetTopic(ctx, executor, topicName)
 	if err != nil {
@@ -437,18 +440,19 @@ func GetOrCreateTopic(ctx context.Context, executor SQLExecutor, topicName strin
 
 	// Se o tópico já existe
 	if topic != nil {
-		// Verifica se precisa atualizar o owner
+		needsUpdate := false
 		if ownerServiceID != nil && (topic.OwnerServiceID == nil || *ownerServiceID != *topic.OwnerServiceID) {
-			if err := updateTopicOwner(ctx, executor, topicName, ownerServiceID); err != nil {
+			topic.OwnerServiceID = ownerServiceID
+			needsUpdate = true
+		}
+		if description != "" && description != topic.Description {
+			topic.Description = description
+			needsUpdate = true
+		}
+		if needsUpdate {
+			if err := updateTopic(ctx, executor, topic.Name, topic.OwnerServiceID, topic.Description); err != nil {
 				return models.Topic{}, err
 			}
-
-			return models.Topic{
-				ID:             topic.ID,
-				Name:           topic.Name,
-				OwnerServiceID: ownerServiceID,
-				CreatedAt:      topic.CreatedAt,
-			}, nil
 		}
 		return *topic, nil
 	}
@@ -456,6 +460,7 @@ func GetOrCreateTopic(ctx context.Context, executor SQLExecutor, topicName strin
 	// Caso contrário, crie um novo tópico
 	newTopic := models.Topic{
 		Name:           topicName,
+		Description:    description,
 		OwnerServiceID: ownerServiceID,
 		CreatedAt:      time.Now(),
 	}
@@ -465,28 +470,25 @@ func GetOrCreateTopic(ctx context.Context, executor SQLExecutor, topicName strin
 		return models.Topic{}, err
 	}
 
-	return models.Topic{
-		ID:             id,
-		Name:           topicName,
-		OwnerServiceID: ownerServiceID,
-		CreatedAt:      newTopic.CreatedAt,
-	}, nil
+	newTopic.ID = id
+	return newTopic, nil
 }
 
-// updateTopicOwner atualiza o owner de um tópico existente
-func updateTopicOwner(ctx context.Context, executor SQLExecutor, topicName string, ownerServiceID *int64) error {
-	query := `UPDATE topics SET owner_service_id = ? WHERE name = ?`
-	_, err := executor.ExecContext(ctx, query, ownerServiceID, topicName)
+// updateTopic atualiza o owner e description de um tópico existente
+func updateTopic(ctx context.Context, executor SQLExecutor, topicName string, ownerServiceID *int64, description string) error {
+	query := `UPDATE topics SET owner_service_id = ?, description = ? WHERE name = ?`
+	_, err := executor.ExecContext(ctx, query, ownerServiceID, description, topicName)
 	if err != nil {
-		return fmt.Errorf("error updating topic owner: %w", err)
+		return fmt.Errorf("error updating topic: %w", err)
 	}
 	return nil
 }
 
-// GetOrCreateEvent busca um evento por nome em um tópico ou cria um novo se não existir
-func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, eventName string, schemaVersion *string, schemaURL string) (models.Event, error) {
+// GetOrCreateEvent busca um evento por nome em um tópico ou cria um novo se não existir.
+// Se o evento já existe, atualiza campos não vazios (upsert).
+func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, eventName string, schemaVersion *string, schemaURL string, description string) (models.Event, error) {
 	// Primeiro tenta encontrar o evento existente
-	query := `SELECT id, topic_id, event_name, schema_url, schema_version, deprecated, created_at 
+	query := `SELECT id, topic_id, event_name, description, schema_url, schema_version, deprecated, created_at 
               FROM events 
               WHERE topic_id = ? AND event_name = ?`
 
@@ -497,6 +499,7 @@ func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, 
 		&event.ID,
 		&event.TopicID,
 		&event.EventName,
+		&event.Description,
 		&event.SchemaURL,
 		&event.SchemaVersion,
 		&event.Deprecated,
@@ -504,12 +507,30 @@ func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, 
 	)
 
 	if err == nil {
-		// Se o evento existe, retorne-o
+		// Evento existe — atualizar campos não vazios
+		needsUpdate := false
+		if schemaURL != "" && schemaURL != event.SchemaURL {
+			event.SchemaURL = schemaURL
+			needsUpdate = true
+		}
+		if schemaVersion != nil && (event.SchemaVersion == nil || *schemaVersion != *event.SchemaVersion) {
+			event.SchemaVersion = schemaVersion
+			needsUpdate = true
+		}
+		if description != "" && description != event.Description {
+			event.Description = description
+			needsUpdate = true
+		}
+		if needsUpdate {
+			updateQuery := `UPDATE events SET schema_url = ?, schema_version = ?, description = ? WHERE id = ?`
+			if _, err := executor.ExecContext(ctx, updateQuery, event.SchemaURL, event.SchemaVersion, event.Description, event.ID); err != nil {
+				return models.Event{}, fmt.Errorf("error updating event: %w", err)
+			}
+		}
 		return event, nil
 	}
 
 	if err != sql.ErrNoRows {
-		// Se houver um erro que não seja ErrNoRows, retorne o erro
 		return models.Event{}, err
 	}
 
@@ -517,6 +538,7 @@ func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, 
 	newEvent := models.Event{
 		TopicID:       topicID,
 		EventName:     eventName,
+		Description:   description,
 		SchemaURL:     schemaURL,
 		SchemaVersion: schemaVersion,
 		Deprecated:    false,
@@ -528,15 +550,8 @@ func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, 
 		return models.Event{}, err
 	}
 
-	return models.Event{
-		ID:            id,
-		TopicID:       topicID,
-		EventName:     eventName,
-		SchemaURL:     schemaURL,
-		SchemaVersion: schemaVersion,
-		Deprecated:    false,
-		CreatedAt:     newEvent.CreatedAt,
-	}, nil
+	newEvent.ID = id
+	return newEvent, nil
 }
 
 // InsertEventHeader insere um novo header para um evento
@@ -584,6 +599,7 @@ func ListAllEvents(ctx context.Context, executor SQLExecutor) ([]models.EventRow
 		SELECT
 			t.name AS topic_name,
 			e.event_name,
+			e.description AS event_description,
 			e.schema_version,
 			e.schema_url,
 			eh.name AS header_name,
@@ -602,7 +618,7 @@ func ListAllEvents(ctx context.Context, executor SQLExecutor) ([]models.EventRow
 	var results []models.EventRow
 	for rows.Next() {
 		var row models.EventRow
-		if err := rows.Scan(&row.TopicName, &row.EventName, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+		if err := rows.Scan(&row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -617,9 +633,11 @@ func ListAllProducers(ctx context.Context, executor SQLExecutor) ([]models.Produ
 			s.name AS service_name,
 			s.repository,
 			t.name AS topic_name,
+			t.description AS topic_description,
 			CASE WHEN t.owner_service_id = p.service_id THEN 1 ELSE 0 END AS is_owner,
 			p.writes,
 			e.event_name,
+			e.description AS event_description,
 			e.schema_version,
 			e.schema_url,
 			eh.name AS header_name,
@@ -640,7 +658,7 @@ func ListAllProducers(ctx context.Context, executor SQLExecutor) ([]models.Produ
 	var results []models.ProducerRow
 	for rows.Next() {
 		var row models.ProducerRow
-		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.TopicName, &row.Owner, &row.Writes, &row.EventName, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.TopicName, &row.TopicDescription, &row.Owner, &row.Writes, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -655,6 +673,7 @@ func ListAllConsumers(ctx context.Context, executor SQLExecutor) ([]models.Consu
 			s.name AS service_name,
 			s.repository,
 			c.consumer_group,
+			c.description,
 			t.name AS topic_name,
 			e.event_name,
 			c.event_version
@@ -673,7 +692,7 @@ func ListAllConsumers(ctx context.Context, executor SQLExecutor) ([]models.Consu
 	var results []models.ConsumerRow
 	for rows.Next() {
 		var row models.ConsumerRow
-		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.TopicName, &row.EventName, &row.EventVersion); err != nil {
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventName, &row.EventVersion); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
