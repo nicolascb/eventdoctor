@@ -66,18 +66,26 @@ func (s *Service) insertProducers(ctx context.Context, tx db.SQLExecutor, produc
 			ownerServiceID = &svc.ID
 		}
 
-		topic, err := db.GetOrCreateTopic(ctx, tx, p.Topic, ownerServiceID)
+		topic, err := db.GetOrCreateTopic(ctx, tx, p.Topic, ownerServiceID, p.Description)
 		if err != nil {
 			return fmt.Errorf("insertProducers: failed to get/create topic: %w", err)
 		}
 
 		for _, e := range p.Events {
-			ev, err := db.GetOrCreateEvent(ctx, tx, topic.ID, e.Name, e.Version, e.SchemaURL)
+			ev, err := db.GetOrCreateEvent(ctx, tx, topic.ID, e.Name, e.Version, e.SchemaURL, e.Description)
 			if err != nil {
 				return fmt.Errorf("insertProducers: failed to get/create event: %w", err)
 			}
 
-			// Inserir headers do evento se houver
+			// If the producer is owner, remove all existing headers before insertion
+			// Otherwise, use upsert to preserve headers from other sources
+			if p.Owner {
+				if err := db.DeleteEventHeaders(ctx, tx, ev.ID); err != nil {
+					return fmt.Errorf("insertProducers: failed to delete existing headers: %w", err)
+				}
+			}
+
+			// Insert or update event headers
 			for _, h := range e.Headers {
 				header := models.EventHeader{
 					EventID:     ev.ID,
@@ -85,9 +93,14 @@ func (s *Service) insertProducers(ctx context.Context, tx db.SQLExecutor, produc
 					Description: h.Description,
 					CreatedAt:   time.Now(),
 				}
-				if _, err := db.InsertEventHeader(ctx, tx, header); err != nil {
-					// Ignorar erro de constraint única (header já existe)
-					// Seria melhor fazer um upsert, mas por enquanto ignoramos
+				if p.Owner {
+					if _, err := db.InsertEventHeader(ctx, tx, header); err != nil {
+						return fmt.Errorf("insertProducers: failed to insert header: %w", err)
+					}
+				} else {
+					if err := db.UpsertEventHeader(ctx, tx, header); err != nil {
+						return fmt.Errorf("insertProducers: failed to upsert header: %w", err)
+					}
 				}
 			}
 
@@ -113,13 +126,13 @@ func (s *Service) insertConsumers(ctx context.Context, tx db.SQLExecutor, consum
 
 	for _, c := range consumers {
 		for _, t := range c.Topics {
-			topic, err := db.GetOrCreateTopic(ctx, tx, t.Name, nil)
+			topic, err := db.GetOrCreateTopic(ctx, tx, t.Name, nil, "")
 			if err != nil {
 				return fmt.Errorf("insertConsumers: failed to get/create topic: %w", err)
 			}
 
 			for _, e := range t.Events {
-				ev, err := db.GetOrCreateEvent(ctx, tx, topic.ID, e.Name, nil, "")
+				ev, err := db.GetOrCreateEvent(ctx, tx, topic.ID, e.Name, nil, "", "")
 				if err != nil {
 					return fmt.Errorf("insertConsumers: failed to get/create event: %w", err)
 				}
@@ -128,6 +141,7 @@ func (s *Service) insertConsumers(ctx context.Context, tx db.SQLExecutor, consum
 					EventID:       ev.ID,
 					ServiceID:     svc.ID,
 					ConsumerGroup: c.Group,
+					Description:   c.Description,
 					EventVersion:  e.Version,
 				}
 

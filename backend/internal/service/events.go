@@ -30,9 +30,10 @@ func aggregateEvents(rows []models.EventRow) []response.TopicEventsView {
 			func(e *response.EventView) bool { return e.Name == row.EventName },
 			func() response.EventView {
 				return response.EventView{
-					Name:      row.EventName,
-					Version:   row.SchemaVersion,
-					SchemaURL: row.SchemaURL,
+					Name:        row.EventName,
+					Description: row.EventDescription,
+					Version:     row.SchemaVersion,
+					SchemaURL:   row.SchemaURL,
 				}
 			},
 		)

@@ -38,11 +38,12 @@ func aggregateProducers(rows []models.ProducerRow) []response.ProducerView {
 
 		pv := producers.getOrCreate(key, func() response.ProducerView {
 			return response.ProducerView{
-				Service:    row.ServiceName,
-				Repository: row.Repository,
-				Topic:      row.TopicName,
-				Owner:      row.Owner,
-				Writes:     row.Writes,
+				Service:     row.ServiceName,
+				Repository:  row.Repository,
+				Topic:       row.TopicName,
+				Description: row.TopicDescription,
+				Owner:       row.Owner,
+				Writes:      row.Writes,
 			}
 		})
 
@@ -50,9 +51,10 @@ func aggregateProducers(rows []models.ProducerRow) []response.ProducerView {
 			func(e *response.ProducerEventView) bool { return e.Name == row.EventName },
 			func() response.ProducerEventView {
 				return response.ProducerEventView{
-					Name:      row.EventName,
-					Version:   row.SchemaVersion,
-					SchemaURL: row.SchemaURL,
+					Name:        row.EventName,
+					Description: row.EventDescription,
+					Version:     row.SchemaVersion,
+					SchemaURL:   row.SchemaURL,
 				}
 			},
 		)

@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS topics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL DEFAULT '',
     owner_service_id INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_service_id) REFERENCES services(id) ON DELETE SET NULL
@@ -18,6 +19,7 @@ CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     topic_id INTEGER NOT NULL,
     event_name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
     schema_url TEXT NOT NULL,
     schema_version TEXT,
     deprecated BOOLEAN DEFAULT FALSE,
@@ -52,6 +54,7 @@ CREATE TABLE IF NOT EXISTS consumers (
     event_id INTEGER NOT NULL,
     service_id INTEGER NOT NULL,
     consumer_group TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
     event_version TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,

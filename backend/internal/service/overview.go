@@ -54,15 +54,16 @@ func aggregateOverview(producerRows []models.ProducerRow, consumerRows []models.
 	// Processar producers (traz headers junto)
 	for _, row := range producerRows {
 		topic := topics.getOrCreate(row.TopicName, func() response.OverviewTopicView {
-			return response.OverviewTopicView{Name: row.TopicName}
+			return response.OverviewTopicView{Name: row.TopicName, Description: row.TopicDescription}
 		})
 
 		event := findOrAppend(&topic.Events,
 			func(e *response.OverviewEventView) bool { return e.Name == row.EventName },
 			func() response.OverviewEventView {
 				return response.OverviewEventView{
-					Name:      row.EventName,
-					SchemaURL: row.SchemaURL,
+					Name:        row.EventName,
+					Description: row.EventDescription,
+					SchemaURL:   row.SchemaURL,
 				}
 			},
 		)
