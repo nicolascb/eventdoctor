@@ -36,10 +36,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             return (
                 <div className="flex min-h-screen items-center justify-center bg-background">
                     <div className="text-center max-w-md mx-auto px-6">
-                        <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-6">
-                            <AlertTriangle className="h-8 w-8 text-destructive" />
+                        <div className="mb-4">
+                            <AlertTriangle className="h-6 w-6 text-destructive mx-auto" />
                         </div>
-                        <h2 className="text-xl font-bold text-foreground mb-2">
+                        <h2 className="text-base font-semibold text-foreground mb-2">
                             Something went wrong
                         </h2>
                         <p className="text-sm text-muted-foreground mb-6">

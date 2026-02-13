@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ReactNode } from 'react';
 
 interface StatCardProps {
@@ -16,26 +16,21 @@ export function StatCard({
     value,
     description,
     icon,
-    iconClassName = 'bg-primary/10',
     onClick,
     active,
 }: StatCardProps) {
     return (
         <Card
-            className={`${onClick ? 'cursor-pointer hover:shadow-lg' : ''} transition-all ${active ? 'ring-2 ring-primary' : ''}`}
+            className={`${onClick ? 'cursor-pointer hover:bg-accent/50' : ''} transition-colors ${active ? 'ring-2 ring-foreground' : ''}`}
             onClick={onClick}
         >
-            <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                        <p className="text-3xl font-bold mt-1">{value}</p>
-                    </div>
-                    <div className={`h-12 w-12 rounded-full ${iconClassName} flex items-center justify-center`}>
-                        {icon}
-                    </div>
-                </div>
-                <p className="text-xs text-muted-foreground mt-3">{description}</p>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
+                {icon}
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold stat-number">{value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{description}</p>
             </CardContent>
         </Card>
     );

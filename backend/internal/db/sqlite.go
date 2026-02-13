@@ -105,6 +105,7 @@ func mockData(ctx context.Context, db *sql.DB) error {
 		{"user.events", "Events related to user lifecycle", "user-service"},
 		{"order.events", "Events related to order processing", "checkout-service"},
 		{"payment.events", "Events related to payment transactions", "payment-service"},
+		{"payment.history.events", "Events related to payment history records", "payment-service"},
 	}
 
 	topicIDs := make(map[string]int64)
@@ -131,6 +132,8 @@ func mockData(ctx context.Context, db *sql.DB) error {
 		{"order.events", models.Event{EventName: "OrderShipped", Description: "Fired when an order is shipped for delivery", SchemaURL: "https://schemas.local/order-shipped.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
 		{"payment.events", models.Event{EventName: "PaymentAuthorized", Description: "Fired when a payment is authorized by the gateway", SchemaURL: "https://schemas.local/payment-authorized.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
 		{"payment.events", models.Event{EventName: "PaymentCaptured", Description: "Fired when an authorized payment is captured", SchemaURL: "https://schemas.local/payment-captured.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"payment.events", models.Event{EventName: "PaymentReversed", Description: "Fired when a payment is reversed", SchemaURL: "https://schemas.local/payment-reversed.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+		{"payment.history.events", models.Event{EventName: "NewPayment", Description: "Fired when a new payment is recorded in the history", SchemaURL: "https://schemas.local/new-payment.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
 	}
 
 	eventIDs := map[string]int64{}
@@ -155,6 +158,9 @@ func mockData(ctx context.Context, db *sql.DB) error {
 		{"order.events:OrderShipped", "logistics-service", true},
 		{"payment.events:PaymentAuthorized", "payment-service", true},
 		{"payment.events:PaymentCaptured", "payment-service", true},
+		{"payment.events:PaymentAuthorized", "checkout-service", true},
+		{"payment.events:PaymentReversed", "checkout-service", true},
+		{"payment.history.events:NewPayment", "checkout-service", true},
 	}
 
 	for _, p := range producersSeed {

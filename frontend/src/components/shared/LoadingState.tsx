@@ -8,10 +8,10 @@ interface LoadingStateProps {
 export function LoadingState({ message = 'Loading data...' }: LoadingStateProps) {
     return (
         <Card className="animate-in">
-            <CardContent className="flex items-center justify-center py-16">
+            <CardContent className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                    <span className="text-sm">{message}</span>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-xs">{message}</span>
                 </div>
             </CardContent>
         </Card>
