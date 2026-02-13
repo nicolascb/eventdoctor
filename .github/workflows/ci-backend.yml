@@ -56,7 +56,7 @@ jobs:
       - name: Build API
         run: CGO_ENABLED=1 go build -o eventdoctor ./cmd/api/main.go
       - name: Build CLI
-        run: CGO_ENABLED=0 go build -o eventdoctor-cli ./cmd/cli/main.go
+        run: CGO_ENABLED=0 go build -o eventdoctor-cli ./cmd/cli/*.go
 
   security:
     name: Security Scan
