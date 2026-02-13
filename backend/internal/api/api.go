@@ -75,12 +75,15 @@ func (a *API) routes() {
 	a.mux.HandleFunc("GET /v1/events", a.corsMiddleware(a.handlerListEvents))
 	a.mux.HandleFunc("GET /v1/consumers", a.corsMiddleware(a.handlerListConsumers))
 	a.mux.HandleFunc("GET /v1/overview", a.corsMiddleware(a.handlerOverview))
+	a.mux.HandleFunc("GET /v1/topics/{name}", a.corsMiddleware(a.handlerGetTopic))
+	a.mux.HandleFunc("GET /v1/services/{name}", a.corsMiddleware(a.handlerGetService))
 	a.mux.HandleFunc("OPTIONS /v1/config", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/producers", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/events", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/consumers", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/overview", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
-
+	a.mux.HandleFunc("OPTIONS /v1/topics/{name}", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
+	a.mux.HandleFunc("OPTIONS /v1/services/{name}", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 }
 
 func (a *API) writeResponse(w http.ResponseWriter, status int, data any) error {
@@ -183,6 +186,40 @@ func (a *API) handlerOverview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := a.writeResponse(w, http.StatusOK, overview); err != nil {
+		a.logger.Error("failed to write response", slog.Any("error", err))
+	}
+}
+
+func (a *API) handlerGetTopic(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	view, err := a.service.GetTopicView(r.Context(), name)
+	if err != nil {
+		a.logger.Error("failed to get topic", slog.Any("error", err))
+		a.writeResponse(w, http.StatusInternalServerError, response.ErrorResponse{
+			Error:   "failed to get topic",
+			Details: err.Error(),
+		})
+		return
+	}
+
+	if err := a.writeResponse(w, http.StatusOK, view); err != nil {
+		a.logger.Error("failed to write response", slog.Any("error", err))
+	}
+}
+
+func (a *API) handlerGetService(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	view, err := a.service.GetServiceView(r.Context(), name)
+	if err != nil {
+		a.logger.Error("failed to get service", slog.Any("error", err))
+		a.writeResponse(w, http.StatusInternalServerError, response.ErrorResponse{
+			Error:   "failed to get service",
+			Details: err.Error(),
+		})
+		return
+	}
+
+	if err := a.writeResponse(w, http.StatusOK, view); err != nil {
 		a.logger.Error("failed to write response", slog.Any("error", err))
 	}
 }

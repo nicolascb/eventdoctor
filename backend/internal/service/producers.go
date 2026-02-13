@@ -18,8 +18,8 @@ func (s *Service) ListProducers(ctx context.Context) ([]response.ProducerView, e
 	return aggregateProducers(rows), nil
 }
 
-// aggregateProducers agrupa as linhas planas em uma estrutura hierárquica
-// agrupando por (service, topic) -> events -> headers
+// aggregateProducers groups flat rows into a hierarchical structure
+// grouped by (service, topic) -> events -> headers.
 func aggregateProducers(rows []models.ProducerRow) []response.ProducerView {
 	type producerKey struct {
 		Service    string

@@ -1,6 +1,6 @@
 package response
 
-// ConsumerView representa um consumer agregado com informações de serviço e repositório
+// ConsumerView represents an aggregated consumer with service and repository information.
 type ConsumerView struct {
 	Service     string              `json:"service"`
 	Repository  string              `json:"repository"`
@@ -9,13 +9,13 @@ type ConsumerView struct {
 	Topics      []ConsumerTopicView `json:"topics"`
 }
 
-// ConsumerTopicView representa um tópico consumido
+// ConsumerTopicView represents a consumed topic.
 type ConsumerTopicView struct {
 	Name   string              `json:"name"`
 	Events []ConsumerEventView `json:"events"`
 }
 
-// ConsumerEventView representa um evento consumido
+// ConsumerEventView represents a consumed event.
 type ConsumerEventView struct {
 	Name    string  `json:"name"`
 	Version *string `json:"version,omitempty"`

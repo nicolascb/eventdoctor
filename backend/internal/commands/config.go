@@ -8,7 +8,7 @@ import (
 	"github.com/nicolascb/eventdoctor/internal/logger"
 )
 
-// SpecUploader é a interface para enviar o spec para a API
+// SpecUploader is the interface for uploading specs to the API.
 type SpecUploader interface {
 	UploadSpec(serverURL string, spec eventdoctor.EventDoctorSpec) error
 }
@@ -23,7 +23,7 @@ func NewConfigCommand(uploader SpecUploader) *ConfigCommand {
 	}
 }
 
-// LoadAndValidate carrega e valida o spec a partir de um reader
+// LoadAndValidate loads and validates the spec from a reader.
 func (c *ConfigCommand) LoadAndValidate(file io.Reader) (eventdoctor.EventDoctorSpec, error) {
 	spec, err := eventdoctor.LoadSpecFromReader(file)
 	if err != nil {
@@ -37,7 +37,7 @@ func (c *ConfigCommand) LoadAndValidate(file io.Reader) (eventdoctor.EventDoctor
 	return spec, nil
 }
 
-// Validate carrega e valida o arquivo de configuração, exibindo informações
+// Validate loads and validates the configuration file.
 func (c *ConfigCommand) Validate(file io.Reader) error {
 	spec, err := c.LoadAndValidate(file)
 	if err != nil {
@@ -51,7 +51,7 @@ func (c *ConfigCommand) Validate(file io.Reader) error {
 	return nil
 }
 
-// Apply carrega, valida e envia o spec para o servidor do ambiente especificado
+// Apply loads, validates, and uploads the spec to the server for the specified environment.
 func (c *ConfigCommand) Apply(env string, file io.Reader) error {
 	spec, err := c.LoadAndValidate(file)
 	if err != nil {

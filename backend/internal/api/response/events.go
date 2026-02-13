@@ -1,12 +1,12 @@
 package response
 
-// TopicEventsView representa um tópico com seus eventos agregados
+// TopicEventsView represents a topic with its aggregated events.
 type TopicEventsView struct {
 	Topic  string      `json:"topic"`
 	Events []EventView `json:"events"`
 }
 
-// EventView representa um evento com seus headers
+// EventView represents an event with its headers.
 type EventView struct {
 	Name        string            `json:"name"`
 	Description string            `json:"description,omitempty"`
@@ -15,7 +15,7 @@ type EventView struct {
 	Headers     []EventHeaderView `json:"headers,omitempty"`
 }
 
-// EventHeaderView representa um header de evento
+// EventHeaderView represents an event header.
 type EventHeaderView struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`

@@ -6,32 +6,31 @@ import (
 	"fmt"
 )
 
-// SQLExecutor é uma interface que abstrai as operações SQL comuns entre *sql.DB e *sql.Tx
+// SQLExecutor abstracts common SQL operations shared by *sql.DB and *sql.Tx.
 type SQLExecutor interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
 
-// WithTransaction executa uma função dentro de uma transação SQL
-// Se a função retornar um erro, a transação é revertida (rollback)
-// Se a função for bem-sucedida, a transação é confirmada (commit)
+// WithTransaction runs fn inside a SQL transaction.
+// On error the transaction is rolled back; on success it is committed.
 func WithTransaction(ctx context.Context, db *sql.DB, fn func(ctx context.Context, tx SQLExecutor) error) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("erro ao iniciar transação: %w", err)
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	err = fn(ctx, tx)
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
-			return fmt.Errorf("erro na transação: %v, falha ao dar rollback: %v", err, rbErr)
+			return fmt.Errorf("transaction error: %v, rollback failed: %v", err, rbErr)
 		}
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("falha ao commitar transação: %w", err)
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil

@@ -4,9 +4,9 @@ import (
 	"github.com/nicolascb/eventdoctor/internal/api/response"
 )
 
-// orderedMap é um map genérico que preserva a ordem de inserção.
-// Elimina o boilerplate de manter um map + slice de keys separados
-// que aparece nas funções de agregação.
+// orderedMap is a generic map that preserves insertion order.
+// It eliminates the boilerplate of maintaining a separate map + key slice
+// that appears in aggregation functions.
 type orderedMap[K comparable, V any] struct {
 	keys   []K
 	values map[K]*V
@@ -18,8 +18,8 @@ func newOrderedMap[K comparable, V any]() orderedMap[K, V] {
 	}
 }
 
-// getOrCreate retorna o ponteiro para o valor existente ou cria um novo
-// usando a função init. Preserva a ordem de inserção.
+// getOrCreate returns a pointer to the existing value or creates a new one
+// using the init function. Preserves insertion order.
 func (m *orderedMap[K, V]) getOrCreate(key K, init func() V) *V {
 	if v, ok := m.values[key]; ok {
 		return v
@@ -31,7 +31,7 @@ func (m *orderedMap[K, V]) getOrCreate(key K, init func() V) *V {
 	return m.values[key]
 }
 
-// collect retorna os valores na ordem de inserção.
+// collect returns values in insertion order.
 func (m *orderedMap[K, V]) collect() []V {
 	result := make([]V, 0, len(m.keys))
 	for _, key := range m.keys {
@@ -40,9 +40,9 @@ func (m *orderedMap[K, V]) collect() []V {
 	return result
 }
 
-// findOrAppend procura um elemento em um slice pelo predicado match.
-// Se não encontrar, cria um novo usando init e o adiciona ao slice.
-// Retorna o ponteiro para o elemento (existente ou novo).
+// findOrAppend searches for an element in a slice by the match predicate.
+// If not found, creates a new one using init and appends it to the slice.
+// Returns a pointer to the element (existing or new).
 func findOrAppend[T any](slice *[]T, match func(*T) bool, init func() T) *T {
 	for i := range *slice {
 		if match(&(*slice)[i]) {
@@ -54,7 +54,7 @@ func findOrAppend[T any](slice *[]T, match func(*T) bool, init func() T) *T {
 	return &(*slice)[len(*slice)-1]
 }
 
-// appendHeader adiciona um header ao slice se o nome não for nil (LEFT JOIN pode trazer NULL).
+// appendHeader adds a header to the slice if the name is not nil (LEFT JOIN may return NULL).
 func appendHeader(headers *[]response.EventHeaderView, name, description *string) {
 	if name == nil {
 		return

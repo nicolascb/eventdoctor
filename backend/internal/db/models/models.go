@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// Topic representa um tópico no sistema de mensagens
+// Topic represents a topic in the messaging system.
 type Topic struct {
 	ID             int64
 	Name           string
@@ -13,7 +13,7 @@ type Topic struct {
 	CreatedAt      time.Time
 }
 
-// Service representa um serviço registrado no sistema
+// Service represents a registered service.
 type Service struct {
 	ID         int64
 	Name       string
@@ -21,7 +21,7 @@ type Service struct {
 	CreatedAt  time.Time
 }
 
-// EventHeader representa um header HTTP associado a um evento
+// EventHeader represents an HTTP header associated with an event.
 type EventHeader struct {
 	ID          int64
 	EventID     int64
@@ -30,7 +30,7 @@ type EventHeader struct {
 	CreatedAt   time.Time
 }
 
-// Event representa um evento publicado em um tópico
+// Event represents an event published to a topic.
 type Event struct {
 	ID            int64
 	TopicID       int64
@@ -43,7 +43,7 @@ type Event struct {
 	Headers       []EventHeader
 }
 
-// Producer representa um serviço que produz eventos
+// Producer represents a service that produces events.
 type Producer struct {
 	ID        int64
 	EventID   int64
@@ -52,7 +52,7 @@ type Producer struct {
 	CreatedAt time.Time
 }
 
-// Consumer representa um serviço que consome eventos
+// Consumer represents a service that consumes events.
 type Consumer struct {
 	ID            int64
 	EventID       int64
@@ -63,7 +63,7 @@ type Consumer struct {
 	CreatedAt     time.Time
 }
 
-// ConsumerRow representa uma linha da query que junta consumers, events, topics e services
+// ConsumerRow represents a query row joining consumers, events, topics, and services.
 type ConsumerRow struct {
 	ServiceName   string
 	Repository    string
@@ -74,7 +74,7 @@ type ConsumerRow struct {
 	EventVersion  *string
 }
 
-// EventRow representa uma linha da query que junta events, topics e headers
+// EventRow represents a query row joining events, topics, and headers.
 type EventRow struct {
 	TopicName         string
 	EventName         string
@@ -85,7 +85,7 @@ type EventRow struct {
 	HeaderDescription *string
 }
 
-// ProducerRow representa uma linha da query que junta producers, services, events, topics e headers
+// ProducerRow represents a query row joining producers, services, events, topics, and headers.
 type ProducerRow struct {
 	ServiceName       string
 	Repository        string
@@ -99,4 +99,39 @@ type ProducerRow struct {
 	SchemaURL         string
 	HeaderName        *string
 	HeaderDescription *string
+}
+
+// TopicProducerRow represents a query row for producers of a specific topic.
+type TopicProducerRow struct {
+	ServiceName  string
+	Repository   string
+	EventName    string
+	Writes       bool
+	Owner        bool
+	OwnerService *string // name of the service that owns the topic (from topics.owner_service_id)
+}
+
+// TopicConsumerRow represents a query row for consumers of a specific topic.
+type TopicConsumerRow struct {
+	ServiceName   string
+	Repository    string
+	EventName     string
+	ConsumerGroup string
+	EventVersion  *string
+}
+
+// ServiceProducerRow represents a query row for a service's producer details.
+type ServiceProducerRow struct {
+	TopicName string
+	EventName string
+	Writes    bool
+	Owner     bool
+}
+
+// ServiceConsumerRow represents a query row for a service's consumer details.
+type ServiceConsumerRow struct {
+	TopicName     string
+	EventName     string
+	ConsumerGroup string
+	EventVersion  *string
 }

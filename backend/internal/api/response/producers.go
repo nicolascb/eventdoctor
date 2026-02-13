@@ -1,6 +1,6 @@
 package response
 
-// ProducerView representa um producer agregado com informações de serviço
+// ProducerView represents an aggregated producer with service information.
 type ProducerView struct {
 	Service     string              `json:"service"`
 	Repository  string              `json:"repository"`
@@ -11,7 +11,7 @@ type ProducerView struct {
 	Events      []ProducerEventView `json:"events"`
 }
 
-// ProducerEventView representa um evento produzido
+// ProducerEventView represents a produced event.
 type ProducerEventView struct {
 	Name        string            `json:"name"`
 	Description string            `json:"description,omitempty"`
