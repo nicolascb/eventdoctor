@@ -565,6 +565,19 @@ func InsertEventHeader(ctx context.Context, executor SQLExecutor, header models.
 	return result.LastInsertId()
 }
 
+// UpsertEventHeader inserts a new event header or updates the existing one with the same event_id and name
+func UpsertEventHeader(ctx context.Context, executor SQLExecutor, header models.EventHeader) error {
+	ensureCreatedAt(&header.CreatedAt)
+	query := `
+		INSERT INTO event_headers (event_id, name, description, created_at) 
+		VALUES (?, ?, ?, ?)
+		ON CONFLICT(event_id, name) 
+		DO UPDATE SET description = excluded.description
+	`
+	_, err := executor.ExecContext(ctx, query, header.EventID, header.Name, header.Description, header.CreatedAt)
+	return err
+}
+
 // GetEventHeaders retorna todos os headers de um evento
 func GetEventHeaders(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.EventHeader, error) {
 	query := `SELECT id, event_id, name, description, created_at FROM event_headers WHERE event_id = ? ORDER BY name`
