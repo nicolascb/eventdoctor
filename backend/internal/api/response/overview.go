@@ -1,13 +1,13 @@
 package response
 
-// OverviewTopicView representa um tópico no overview com seus eventos
+// OverviewTopicView represents a topic in the overview with its events.
 type OverviewTopicView struct {
 	Name        string              `json:"name"`
 	Description string              `json:"description,omitempty"`
 	Events      []OverviewEventView `json:"events"`
 }
 
-// OverviewEventView representa um evento no overview com producers e consumers
+// OverviewEventView represents an event in the overview with producers and consumers.
 type OverviewEventView struct {
 	Name        string                 `json:"name"`
 	Description string                 `json:"description,omitempty"`
@@ -17,7 +17,7 @@ type OverviewEventView struct {
 	Consumers   []OverviewConsumerView `json:"consumers"`
 }
 
-// OverviewProducerView representa um producer resumido no overview
+// OverviewProducerView represents a summarized producer in the overview.
 type OverviewProducerView struct {
 	Service    string `json:"service"`
 	Repository string `json:"repository"`
@@ -25,14 +25,14 @@ type OverviewProducerView struct {
 	Writes     bool   `json:"writes"`
 }
 
-// OverviewConsumerView representa um consumer resumido no overview
+// OverviewConsumerView represents a summarized consumer in the overview.
 type OverviewConsumerView struct {
 	Service    string `json:"service"`
 	Repository string `json:"repository"`
 	Group      string `json:"group"`
 }
 
-// OverviewResponse é o envelope da resposta do overview com estatísticas consolidadas
+// OverviewResponse is the response envelope for the overview with consolidated statistics.
 type OverviewResponse struct {
 	TotalTopics    int `json:"total_topics"`
 	TotalEvents    int `json:"total_events"`

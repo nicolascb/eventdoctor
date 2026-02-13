@@ -1,0 +1,21 @@
+root = "."
+tmp_dir = "/tmp/air"
+
+[build]
+  cmd = "CGO_ENABLED=1 go build -o /tmp/air/eventdoctor ./cmd/api/main.go"
+  bin = "/tmp/air/eventdoctor"
+  include_ext = ["go"]
+  exclude_dir = ["vendor", "testdata"]
+  delay = 1000
+
+[log]
+  time = true
+
+[color]
+  main = "magenta"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"
+
+[misc]
+  clean_on_exit = true

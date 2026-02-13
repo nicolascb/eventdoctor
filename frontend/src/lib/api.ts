@@ -1,6 +1,11 @@
 import type { Consumer, OverviewResponse, Producer, TopicWithEvents } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8087/v1';
+// In Docker, __API_URL__ is replaced at container startup with the actual API_URL env var.
+// In development, VITE_API_URL takes precedence; the placeholder stays as-is and the fallback kicks in.
+const PLACEHOLDER = '__API_URL__';
+const API_BASE_URL =
+    import.meta.env.VITE_API_URL ??
+    (PLACEHOLDER.startsWith('__') ? '/v1' : PLACEHOLDER);
 
 export class ApiError extends Error {
     status: number;

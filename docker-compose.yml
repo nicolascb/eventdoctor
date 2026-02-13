@@ -1,0 +1,37 @@
+name: eventdoctor
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend:/app
+      - go-build-cache:/root/.cache/go-build
+      - go-modules:/go/pkg/mod
+      - api-data:/data
+    environment:
+      PORT: ":8087"
+      SQLITE_PATH: /data/data.db
+      WITH_MOCK: "1"
+    ports:
+      - "8087:8087"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8087/v1
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  go-build-cache:
+  go-modules:
+  api-data:

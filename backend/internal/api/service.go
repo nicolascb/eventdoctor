@@ -13,4 +13,6 @@ type Service interface {
 	ListConsumers(ctx context.Context) ([]response.ConsumerView, error)
 	ListEvents(ctx context.Context) ([]response.TopicEventsView, error)
 	Overview(ctx context.Context) (*response.OverviewResponse, error)
+	GetTopicView(ctx context.Context, topicName string) (*response.TopicView, error)
+	GetServiceView(ctx context.Context, serviceName string) (*response.ServiceView, error)
 }

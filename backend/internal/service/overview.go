@@ -51,7 +51,7 @@ func (s *Service) Overview(ctx context.Context) (*response.OverviewResponse, err
 func aggregateOverview(producerRows []models.ProducerRow, consumerRows []models.ConsumerRow) []response.OverviewTopicView {
 	topics := newOrderedMap[string, response.OverviewTopicView]()
 
-	// Processar producers (traz headers junto)
+	// Process producers (includes headers).
 	for _, row := range producerRows {
 		topic := topics.getOrCreate(row.TopicName, func() response.OverviewTopicView {
 			return response.OverviewTopicView{Name: row.TopicName, Description: row.TopicDescription}
@@ -83,7 +83,7 @@ func aggregateOverview(producerRows []models.ProducerRow, consumerRows []models.
 		)
 	}
 
-	// Processar consumers (sem headers)
+	// Process consumers (no headers).
 	for _, row := range consumerRows {
 		topic := topics.getOrCreate(row.TopicName, func() response.OverviewTopicView {
 			return response.OverviewTopicView{Name: row.TopicName}

@@ -59,8 +59,8 @@ func createTables(db *sql.DB) error {
 }
 
 func mockData(ctx context.Context, db *sql.DB) error {
-	// Com ON DELETE CASCADE, basta deletar services e topics
-	// que producers, consumers, events e headers são removidos automaticamente
+	// ON DELETE CASCADE propagates deletions from services and topics
+	// to producers, consumers, events, and headers automatically.
 	_, err := db.Exec(`DELETE FROM services`)
 	if err != nil {
 		return err
@@ -74,7 +74,6 @@ func mockData(ctx context.Context, db *sql.DB) error {
 
 	fakeRepository := "https://github.com/org/fake-repo"
 
-	// Criar serviços
 	servicesSeed := []models.Service{
 		{Name: "user-service", Repository: fakeRepository, CreatedAt: now},
 		{Name: "checkout-service", Repository: fakeRepository, CreatedAt: now},
@@ -146,7 +145,6 @@ func mockData(ctx context.Context, db *sql.DB) error {
 		eventIDs[fmt.Sprintf("%s:%s", e.topic, e.event.EventName)] = id
 	}
 
-	// Produtores fictícios
 	producersSeed := []struct {
 		eventKey    string
 		serviceName string
@@ -179,7 +177,6 @@ func mockData(ctx context.Context, db *sql.DB) error {
 		}
 	}
 
-	// Consumidores fictícios
 	consumersSeed := []struct {
 		eventKey      string
 		serviceName   string
@@ -215,14 +212,14 @@ func mockData(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// ensureCreatedAt define now se o campo estiver zerado
+// ensureCreatedAt sets the timestamp to now if it is zero.
 func ensureCreatedAt(t *time.Time) {
 	if t.IsZero() {
 		*t = time.Now()
 	}
 }
 
-// GetOrCreateService busca um serviço pelo nome e repositório ou cria um novo se não existir
+// GetOrCreateService looks up a service by name and repository, or creates it if not found.
 func GetOrCreateService(ctx context.Context, executor SQLExecutor, name, repository string) (models.Service, error) {
 	query := `SELECT id, name, repository, created_at FROM services WHERE name = ? AND repository = ?`
 	row := executor.QueryRowContext(ctx, query, name, repository)
@@ -251,7 +248,7 @@ func GetOrCreateService(ctx context.Context, executor SQLExecutor, name, reposit
 	return models.Service{ID: id, Name: name, Repository: repository, CreatedAt: now}, nil
 }
 
-// InsertTopic insere um novo tópico no banco de dados
+// InsertTopic inserts a new topic into the database.
 func InsertTopic(ctx context.Context, executor SQLExecutor, topic models.Topic) (int64, error) {
 	ensureCreatedAt(&topic.CreatedAt)
 	query := `INSERT INTO topics (name, description, owner_service_id, created_at) VALUES (?, ?, ?, ?)`
@@ -269,7 +266,7 @@ func InsertTopic(ctx context.Context, executor SQLExecutor, topic models.Topic) 
 	return id, nil
 }
 
-// GetTopic busca um tópico pelo nome
+// GetTopic looks up a topic by name.
 func GetTopic(ctx context.Context, executor SQLExecutor, topicName string) (*models.Topic, error) {
 	query := `SELECT id, name, description, owner_service_id, created_at FROM topics WHERE name = ?`
 	row := executor.QueryRowContext(ctx, query, topicName)
@@ -286,14 +283,14 @@ func GetTopic(ctx context.Context, executor SQLExecutor, topicName string) (*mod
 	return &topic, nil
 }
 
-// RemoveTopic remove um tópico pelo nome
+// RemoveTopic deletes a topic by name.
 func RemoveTopic(ctx context.Context, executor SQLExecutor, topicName string) error {
 	query := `DELETE FROM topics WHERE name = ?`
 	_, err := executor.ExecContext(ctx, query, topicName)
 	return err
 }
 
-// ListTopics retorna todos os tópicos ordenados por nome
+// ListTopics returns all topics ordered by name.
 func ListTopics(ctx context.Context, executor SQLExecutor) ([]models.Topic, error) {
 	query := `SELECT id, name, description, owner_service_id, created_at FROM topics ORDER BY name`
 	rows, err := executor.QueryContext(ctx, query)
@@ -313,7 +310,7 @@ func ListTopics(ctx context.Context, executor SQLExecutor) ([]models.Topic, erro
 	return topics, nil
 }
 
-// InsertEvent insere um novo evento no banco de dados
+// InsertEvent inserts a new event into the database.
 func InsertEvent(ctx context.Context, executor SQLExecutor, event models.Event) (int64, error) {
 	ensureCreatedAt(&event.CreatedAt)
 	query := `INSERT INTO events (topic_id, event_name, description, schema_url, schema_version, deprecated, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
@@ -325,14 +322,14 @@ func InsertEvent(ctx context.Context, executor SQLExecutor, event models.Event) 
 	return result.LastInsertId()
 }
 
-// RemoveEvent remove um evento pelo ID
+// RemoveEvent deletes an event by ID.
 func RemoveEvent(ctx context.Context, executor SQLExecutor, eventID int64) error {
 	query := `DELETE FROM events WHERE id = ?`
 	_, err := executor.ExecContext(ctx, query, eventID)
 	return err
 }
 
-// GetEventsByTopic retorna todos os eventos de um tópico
+// GetEventsByTopic returns all events for a given topic.
 func GetEventsByTopic(ctx context.Context, executor SQLExecutor, topicID int64) ([]models.Event, error) {
 	query := `SELECT id, topic_id, event_name, description, schema_url, schema_version, deprecated, created_at FROM events WHERE topic_id = ?`
 	rows, err := executor.QueryContext(ctx, query, topicID)
@@ -354,7 +351,7 @@ func GetEventsByTopic(ctx context.Context, executor SQLExecutor, topicID int64) 
 	return events, nil
 }
 
-// InsertProducer insere um novo produtor no banco de dados
+// InsertProducer inserts a new producer into the database.
 func InsertProducer(ctx context.Context, executor SQLExecutor, producer models.Producer) (int64, error) {
 	ensureCreatedAt(&producer.CreatedAt)
 	query := `INSERT INTO producers (event_id, service_id, writes, created_at) VALUES (?, ?, ?, ?)`
@@ -366,14 +363,14 @@ func InsertProducer(ctx context.Context, executor SQLExecutor, producer models.P
 	return result.LastInsertId()
 }
 
-// RemoveProducer remove um produtor pelo ID
+// RemoveProducer deletes a producer by ID.
 func RemoveProducer(ctx context.Context, executor SQLExecutor, producerID int64) error {
 	query := `DELETE FROM producers WHERE id = ?`
 	_, err := executor.ExecContext(ctx, query, producerID)
 	return err
 }
 
-// GetProducersByEvent retorna todos os produtores de um evento
+// GetProducersByEvent returns all producers for a given event.
 func GetProducersByEvent(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.Producer, error) {
 	query := `SELECT id, event_id, service_id, writes, created_at FROM producers WHERE event_id = ?`
 	rows, err := executor.QueryContext(ctx, query, eventID)
@@ -395,7 +392,7 @@ func GetProducersByEvent(ctx context.Context, executor SQLExecutor, eventID int6
 	return producers, nil
 }
 
-// InsertConsumer insere um novo consumidor no banco de dados
+// InsertConsumer inserts a new consumer into the database.
 func InsertConsumer(ctx context.Context, executor SQLExecutor, consumer models.Consumer) (int64, error) {
 	ensureCreatedAt(&consumer.CreatedAt)
 	query := `INSERT INTO consumers (event_id, service_id, consumer_group, description, event_version, created_at) VALUES (?, ?, ?, ?, ?, ?)`
@@ -407,14 +404,14 @@ func InsertConsumer(ctx context.Context, executor SQLExecutor, consumer models.C
 	return result.LastInsertId()
 }
 
-// RemoveConsumer remove um consumidor pelo ID
+// RemoveConsumer deletes a consumer by ID.
 func RemoveConsumer(ctx context.Context, executor SQLExecutor, consumerID int64) error {
 	query := `DELETE FROM consumers WHERE id = ?`
 	_, err := executor.ExecContext(ctx, query, consumerID)
 	return err
 }
 
-// GetConsumersByEvent retorna todos os consumidores de um evento
+// GetConsumersByEvent returns all consumers for a given event.
 func GetConsumersByEvent(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.Consumer, error) {
 	query := `SELECT id, event_id, service_id, consumer_group, description, event_version, created_at FROM consumers WHERE event_id = ?`
 	rows, err := executor.QueryContext(ctx, query, eventID)
@@ -436,15 +433,13 @@ func GetConsumersByEvent(ctx context.Context, executor SQLExecutor, eventID int6
 	return consumers, nil
 }
 
-// GetOrCreateTopic busca um tópico pelo nome ou cria um novo se não existir
+// GetOrCreateTopic looks up a topic by name, or creates it if not found.
 func GetOrCreateTopic(ctx context.Context, executor SQLExecutor, topicName string, ownerServiceID *int64, description string) (models.Topic, error) {
-	// Primeiro tenta encontrar o tópico existente
 	topic, err := GetTopic(ctx, executor, topicName)
 	if err != nil {
 		return models.Topic{}, err
 	}
 
-	// Se o tópico já existe
 	if topic != nil {
 		needsUpdate := false
 		if ownerServiceID != nil && (topic.OwnerServiceID == nil || *ownerServiceID != *topic.OwnerServiceID) {
@@ -463,7 +458,6 @@ func GetOrCreateTopic(ctx context.Context, executor SQLExecutor, topicName strin
 		return *topic, nil
 	}
 
-	// Caso contrário, crie um novo tópico
 	newTopic := models.Topic{
 		Name:           topicName,
 		Description:    description,
@@ -480,7 +474,7 @@ func GetOrCreateTopic(ctx context.Context, executor SQLExecutor, topicName strin
 	return newTopic, nil
 }
 
-// updateTopic atualiza o owner e description de um tópico existente
+// updateTopic updates the owner and description of an existing topic.
 func updateTopic(ctx context.Context, executor SQLExecutor, topicName string, ownerServiceID *int64, description string) error {
 	query := `UPDATE topics SET owner_service_id = ?, description = ? WHERE name = ?`
 	_, err := executor.ExecContext(ctx, query, ownerServiceID, description, topicName)
@@ -490,12 +484,11 @@ func updateTopic(ctx context.Context, executor SQLExecutor, topicName string, ow
 	return nil
 }
 
-// GetOrCreateEvent busca um evento por nome em um tópico ou cria um novo se não existir.
-// Se o evento já existe, atualiza campos não vazios (upsert).
+// GetOrCreateEvent looks up an event by name within a topic, or creates it if not found.
+// If the event already exists, non-empty fields are updated (upsert).
 func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, eventName string, schemaVersion *string, schemaURL string, description string) (models.Event, error) {
-	// Primeiro tenta encontrar o evento existente
-	query := `SELECT id, topic_id, event_name, description, schema_url, schema_version, deprecated, created_at 
-              FROM events 
+	query := `SELECT id, topic_id, event_name, description, schema_url, schema_version, deprecated, created_at
+              FROM events
               WHERE topic_id = ? AND event_name = ?`
 
 	row := executor.QueryRowContext(ctx, query, topicID, eventName)
@@ -513,7 +506,6 @@ func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, 
 	)
 
 	if err == nil {
-		// Evento existe — atualizar campos não vazios
 		needsUpdate := false
 		if schemaURL != "" && schemaURL != event.SchemaURL {
 			event.SchemaURL = schemaURL
@@ -540,7 +532,6 @@ func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, 
 		return models.Event{}, err
 	}
 
-	// Se o evento não existe, crie um novo
 	newEvent := models.Event{
 		TopicID:       topicID,
 		EventName:     eventName,
@@ -560,7 +551,7 @@ func GetOrCreateEvent(ctx context.Context, executor SQLExecutor, topicID int64, 
 	return newEvent, nil
 }
 
-// InsertEventHeader insere um novo header para um evento
+// InsertEventHeader inserts a new header for an event.
 func InsertEventHeader(ctx context.Context, executor SQLExecutor, header models.EventHeader) (int64, error) {
 	ensureCreatedAt(&header.CreatedAt)
 	query := `INSERT INTO event_headers (event_id, name, description, created_at) VALUES (?, ?, ?, ?)`
@@ -584,7 +575,7 @@ func UpsertEventHeader(ctx context.Context, executor SQLExecutor, header models.
 	return err
 }
 
-// GetEventHeaders retorna todos os headers de um evento
+// GetEventHeaders returns all headers for a given event.
 func GetEventHeaders(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.EventHeader, error) {
 	query := `SELECT id, event_id, name, description, created_at FROM event_headers WHERE event_id = ? ORDER BY name`
 	rows, err := executor.QueryContext(ctx, query, eventID)
@@ -605,14 +596,14 @@ func GetEventHeaders(ctx context.Context, executor SQLExecutor, eventID int64) (
 	return headers, nil
 }
 
-// DeleteEventHeaders remove todos os headers de um evento
+// DeleteEventHeaders deletes all headers for a given event.
 func DeleteEventHeaders(ctx context.Context, executor SQLExecutor, eventID int64) error {
 	query := `DELETE FROM event_headers WHERE event_id = ?`
 	_, err := executor.ExecContext(ctx, query, eventID)
 	return err
 }
 
-// ListAllEvents retorna todos os eventos com informações de tópico e headers
+// ListAllEvents returns all events with topic and header information.
 func ListAllEvents(ctx context.Context, executor SQLExecutor) ([]models.EventRow, error) {
 	query := `
 		SELECT
@@ -645,7 +636,7 @@ func ListAllEvents(ctx context.Context, executor SQLExecutor) ([]models.EventRow
 	return results, rows.Err()
 }
 
-// ListAllProducers retorna todos os produtores com informações de serviço, tópico, evento e headers
+// ListAllProducers returns all producers with service, topic, event, and header information.
 func ListAllProducers(ctx context.Context, executor SQLExecutor) ([]models.ProducerRow, error) {
 	query := `
 		SELECT
@@ -685,7 +676,7 @@ func ListAllProducers(ctx context.Context, executor SQLExecutor) ([]models.Produ
 	return results, rows.Err()
 }
 
-// ListAllConsumers retorna todos os consumidores com informações de tópico e evento
+// ListAllConsumers returns all consumers with topic and event information.
 func ListAllConsumers(ctx context.Context, executor SQLExecutor) ([]models.ConsumerRow, error) {
 	query := `
 		SELECT
@@ -712,6 +703,139 @@ func ListAllConsumers(ctx context.Context, executor SQLExecutor) ([]models.Consu
 	for rows.Next() {
 		var row models.ConsumerRow
 		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventName, &row.EventVersion); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// ListProducersByTopic returns all producers for a specific topic,
+// including whether each producer owns the topic and the owner service name.
+func ListProducersByTopic(ctx context.Context, executor SQLExecutor, topicName string) ([]models.TopicProducerRow, error) {
+	query := `
+		SELECT
+			s.name AS service_name,
+			s.repository,
+			e.event_name,
+			p.writes,
+			CASE WHEN t.owner_service_id = p.service_id THEN 1 ELSE 0 END AS is_owner,
+			os.name AS owner_service
+		FROM producers p
+		JOIN services s ON p.service_id = s.id
+		JOIN events e ON p.event_id = e.id
+		JOIN topics t ON e.topic_id = t.id
+		LEFT JOIN services os ON os.id = t.owner_service_id
+		WHERE t.name = ?
+		ORDER BY s.name, e.event_name
+	`
+	rows, err := executor.QueryContext(ctx, query, topicName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.TopicProducerRow
+	for rows.Next() {
+		var row models.TopicProducerRow
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.EventName, &row.Writes, &row.Owner, &row.OwnerService); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// ListConsumersByTopic returns all consumers for a specific topic.
+func ListConsumersByTopic(ctx context.Context, executor SQLExecutor, topicName string) ([]models.TopicConsumerRow, error) {
+	query := `
+		SELECT
+			s.name AS service_name,
+			s.repository,
+			e.event_name,
+			c.consumer_group,
+			c.event_version
+		FROM consumers c
+		JOIN services s ON c.service_id = s.id
+		JOIN events e ON c.event_id = e.id
+		JOIN topics t ON e.topic_id = t.id
+		WHERE t.name = ?
+		ORDER BY s.name, c.consumer_group, e.event_name
+	`
+	rows, err := executor.QueryContext(ctx, query, topicName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.TopicConsumerRow
+	for rows.Next() {
+		var row models.TopicConsumerRow
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.EventName, &row.ConsumerGroup, &row.EventVersion); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// ListProducersByService returns all events produced by a specific service.
+func ListProducersByService(ctx context.Context, executor SQLExecutor, serviceName string) ([]models.ServiceProducerRow, error) {
+	query := `
+		SELECT
+			t.name AS topic_name,
+			e.event_name,
+			p.writes,
+			CASE WHEN t.owner_service_id = p.service_id THEN 1 ELSE 0 END AS is_owner
+		FROM producers p
+		JOIN services s ON p.service_id = s.id
+		JOIN events e ON p.event_id = e.id
+		JOIN topics t ON e.topic_id = t.id
+		WHERE s.name = ?
+		ORDER BY t.name, e.event_name
+	`
+	rows, err := executor.QueryContext(ctx, query, serviceName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.ServiceProducerRow
+	for rows.Next() {
+		var row models.ServiceProducerRow
+		if err := rows.Scan(&row.TopicName, &row.EventName, &row.Writes, &row.Owner); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// ListConsumersByService returns all events consumed by a specific service.
+func ListConsumersByService(ctx context.Context, executor SQLExecutor, serviceName string) ([]models.ServiceConsumerRow, error) {
+	query := `
+		SELECT
+			t.name AS topic_name,
+			e.event_name,
+			c.consumer_group,
+			c.event_version
+		FROM consumers c
+		JOIN services s ON c.service_id = s.id
+		JOIN events e ON c.event_id = e.id
+		JOIN topics t ON e.topic_id = t.id
+		WHERE s.name = ?
+		ORDER BY t.name, e.event_name
+	`
+	rows, err := executor.QueryContext(ctx, query, serviceName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.ServiceConsumerRow
+	for rows.Next() {
+		var row models.ServiceConsumerRow
+		if err := rows.Scan(&row.TopicName, &row.EventName, &row.ConsumerGroup, &row.EventVersion); err != nil {
 			return nil, err
 		}
 		results = append(results, row)

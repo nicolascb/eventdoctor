@@ -2,13 +2,13 @@ package eventdoctor
 
 import "fmt"
 
-// validateOwnerEventsSchema verifica se todos os eventos de produtores owner têm schema_url definido
+// validateOwnerEventsSchema checks that all events from owner producers have a schema_url defined.
 func validateOwnerEventsSchema(producers []Producer) error {
 	for _, producer := range producers {
 		if producer.Owner {
 			for _, event := range producer.Events {
 				if event.SchemaURL == "" {
-					return fmt.Errorf("o produtor é owner do tópico '%s', mas o evento '%s' não possui schema_url definido",
+					return fmt.Errorf("producer is owner of topic %q but event %q has no schema_url defined",
 						producer.Topic, event.Name)
 				}
 			}
@@ -17,7 +17,7 @@ func validateOwnerEventsSchema(producers []Producer) error {
 	return nil
 }
 
-// validateUniqueEnvironments verifica se cada ambiente é único
+// validateUniqueEnvironments checks that each environment name appears only once.
 func validateUniqueEnvironments(servers []Server) error {
 	environments := make(map[string]bool)
 

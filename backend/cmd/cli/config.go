@@ -70,7 +70,7 @@ func cmdConfigValidate(filePath string) error {
 	}
 	defer file.Close()
 
-	c := commands.NewConfigCommand(nil) // não precisa de uploader para validar
+	c := commands.NewConfigCommand(nil)
 	if err := c.Validate(file); err != nil {
 		return fmt.Errorf("config validation failed: %w", err)
 	}

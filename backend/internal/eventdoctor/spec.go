@@ -64,12 +64,10 @@ func (c *EventDoctorSpec) Validate() error {
 		return err
 	}
 
-	// Validação de ambientes únicos por servidor
 	if err := validateUniqueEnvironments(c.Config.Servers); err != nil {
 		return err
 	}
 
-	// Validação para garantir que eventos de produtores owner tenham schema_url
 	if err := validateOwnerEventsSchema(c.Producers); err != nil {
 		return err
 	}
@@ -77,7 +75,7 @@ func (c *EventDoctorSpec) Validate() error {
 	return nil
 }
 
-// GetServerURL retorna a URL do servidor para o ambiente especificado
+// GetServerURL returns the server URL for the specified environment.
 func (c *EventDoctorSpec) GetServerURL(env string) (string, error) {
 	for _, srv := range c.Config.Servers {
 		if srv.Environment == env {
