@@ -1,0 +1,109 @@
+version: 2
+
+project_name: eventdoctor
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: api
+    binary: eventdoctor
+    main: ./cmd/api/main.go
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+
+  - id: cli
+    binary: eventdoctor-cli
+    main: ./cmd/cli/main.go
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+
+archives:
+  - id: api-archive
+    builds:
+      - api
+    name_template: "eventdoctor_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+    files:
+      - migration.sql
+      - README.md
+
+  - id: cli-archive
+    builds:
+      - cli
+    name_template: "eventdoctor-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+      - zip
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+dockers:
+  - id: api-docker
+    ids:
+      - api
+    image_templates:
+      - "ghcr.io/nicolascb/eventdoctor:{{ .Tag }}"
+      - "ghcr.io/nicolascb/eventdoctor:latest"
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title=eventdoctor"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source=https://github.com/nicolascb/eventdoctor"
+
+  - id: cli-docker
+    ids:
+      - cli
+    image_templates:
+      - "ghcr.io/nicolascb/eventdoctor-cli:{{ .Tag }}"
+      - "ghcr.io/nicolascb/eventdoctor-cli:latest"
+    dockerfile: Dockerfile.cli
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title=eventdoctor-cli"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source=https://github.com/nicolascb/eventdoctor"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: nicolascb
+    name: eventdoctor
+  draft: false
+  prerelease: auto
+  name_template: "v{{ .Version }}"
