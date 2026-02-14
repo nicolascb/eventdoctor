@@ -8,11 +8,13 @@ on:
     branches: [main]
     paths:
       - "frontend/**"
+      - ".github/workflows/**"
   pull_request:
     types: [labeled, synchronize]
     branches: [main]
     paths:
       - "frontend/**"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
