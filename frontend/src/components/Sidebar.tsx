@@ -2,19 +2,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
+    Code,
     Database,
     Eye,
+    FileCheck,
     Layers,
     Moon,
     Network,
-    PanelLeft,
     RefreshCw,
     Stethoscope,
     Sun,
     Zap
 } from "lucide-react";
 
-export type NavItem = "overview" | "producers" | "topics" | "consumers" | "validator";
+export type NavItem = "overview" | "producers" | "topics" | "consumers" | "validator" | "auditor";
 
 interface SidebarProps {
     activeItem: NavItem;
@@ -40,7 +41,8 @@ const navItems = [
 ];
 
 const toolItems = [
-    { id: "validator" as const, label: "Validator", icon: Stethoscope },
+    { id: "validator" as const, label: "Validator", icon: FileCheck },
+    { id: "auditor" as const, label: "Auditor", icon: Stethoscope },
 ];
 
 export function Sidebar({
@@ -61,7 +63,7 @@ export function Sidebar({
             style={{ borderColor: "var(--sidebar-border)" }}
         >
             {/* Logo */}
-            <div className="flex h-14 items-center px-4 border-b" style={{ borderColor: "var(--sidebar-border)" }}>
+            <div className="relative flex h-14 items-center px-4 border-b" style={{ borderColor: "var(--sidebar-border)" }}>
                 <div className="flex items-center gap-2.5 min-w-0">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                         <Layers className="h-4 w-4" />
@@ -72,6 +74,15 @@ export function Sidebar({
                         </span>
                     )}
                 </div>
+                <button
+                    type="button"
+                    onClick={onToggleCollapse}
+                    title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    className="absolute -right-3 -bottom-3 z-50 flex h-6 w-6 items-center justify-center rounded-full border bg-sidebar hover:bg-accent transition-colors"
+                    style={{ borderColor: "var(--sidebar-border)", color: "var(--sidebar-foreground)" }}
+                >
+                    <Code className={`h-3.5 w-3.5 shrink-0 transition-transform ${collapsed ? "rotate-180" : ""}`} />
+                </button>
             </div>
 
             {/* Navigation */}
@@ -167,17 +178,6 @@ export function Sidebar({
                     {!collapsed && <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>}
                 </Button>
 
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onToggleCollapse}
-                    className={`w-full justify-start gap-3 text-sm font-medium ${collapsed ? "px-2" : "px-3"}`}
-                    title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    style={{ color: "var(--sidebar-foreground)" }}
-                >
-                    <PanelLeft className={`h-4 w-4 shrink-0 transition-transform ${collapsed ? "rotate-180" : ""}`} />
-                    {!collapsed && <span>Collapse</span>}
-                </Button>
             </div>
         </aside>
     );

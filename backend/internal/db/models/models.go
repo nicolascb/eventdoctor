@@ -135,3 +135,10 @@ type ServiceConsumerRow struct {
 	ConsumerGroup string
 	EventVersion  *string
 }
+
+type UndocumentedConsumerGroupRow struct {
+	Topic         string
+	ConsumerGroup string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}

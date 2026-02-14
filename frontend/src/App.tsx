@@ -22,6 +22,7 @@ const pageTitles: Record<NavItem, string> = {
   topics: 'Topics',
   consumers: 'Consumers',
   validator: 'Validator',
+  auditor: 'Auditor',
 };
 
 const pageDescriptions: Record<NavItem, string> = {
@@ -30,6 +31,7 @@ const pageDescriptions: Record<NavItem, string> = {
   topics: 'Message channels and their event types.',
   consumers: 'Services consuming events from topics.',
   validator: 'Validate your EventDoctor YAML configuration.',
+  auditor: 'Auditor consumer status',
 };
 
 function App() {
@@ -39,7 +41,7 @@ function App() {
 
   const { producers, loading: producersLoading, error: producersError, refetch: refetchProducers } = useProducers();
   const { topics, loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents();
-  const { consumers, loading: consumersLoading, error: consumersError, refetch: refetchConsumers } = useConsumers();
+  const { consumers, undocumentedGroups, loading: consumersLoading, error: consumersError, refetch: refetchConsumers } = useConsumers();
   const { overview, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useOverview();
 
   const isLoading = producersLoading || eventsLoading || consumersLoading || overviewLoading;
@@ -79,9 +81,11 @@ function App() {
       case 'topics':
         return <TopicsView topics={topics} producers={producers} consumers={consumers} />;
       case 'consumers':
-        return <ConsumersView consumers={consumers} />;
+        return <ConsumersView consumers={consumers} undocumentedGroups={undocumentedGroups} />;
       case 'validator':
         return <ConfigValidator />;
+      case 'auditor':
+        return <div>Auditor view coming soon...</div>;
     }
   };
 

@@ -62,20 +62,12 @@ CREATE TABLE IF NOT EXISTS consumers (
     UNIQUE(event_id, service_id, consumer_group)
 );
 
--- Tópicos vistos no cluster mas ausentes em config
-CREATE TABLE IF NOT EXISTS missing_topics (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
--- Eventos (topic + type) observados e não configurados/documentados
-CREATE TABLE IF NOT EXISTS missing_events (
+CREATE TABLE IF NOT EXISTS missing_consumers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     topic TEXT NOT NULL,
-    event_name TEXT NOT NULL,
-    first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(topic, event_name)
+    consumer_group TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(topic, consumer_group)
 );

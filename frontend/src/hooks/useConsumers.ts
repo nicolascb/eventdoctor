@@ -1,11 +1,12 @@
 import { api } from '@/lib/api';
-import type { Consumer } from '@/types';
+import type { ConsumerView } from '@/types';
 import { useAsync } from './useAsync';
 
 export function useConsumers() {
-    const { data, loading, error, refetch } = useAsync<Consumer[]>(() => api.getConsumers(), []);
+    const { data, loading, error, refetch } = useAsync<ConsumerView>(() => api.getConsumers(), []);
 
-    const consumers = data ?? [];
+    const consumers = data?.consumers ?? [];
+    const undocumentedGroups = data?.groups_undocumented ?? [];
 
     const totalTopics = consumers.reduce((acc, c) => acc + c.topics.length, 0);
     const totalEvents = consumers.reduce(
@@ -15,6 +16,7 @@ export function useConsumers() {
 
     return {
         consumers,
+        undocumentedGroups,
         loading,
         error,
         refetch,

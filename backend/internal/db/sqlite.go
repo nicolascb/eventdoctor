@@ -842,3 +842,24 @@ func ListConsumersByService(ctx context.Context, executor SQLExecutor, serviceNa
 	}
 	return results, rows.Err()
 }
+
+// ListUndocumentedConsumerGroups returns all consumer groups that are consuming events without documentation.
+func ListUndocumentedConsumerGroups(ctx context.Context, executor SQLExecutor) ([]models.UndocumentedConsumerGroupRow, error) {
+	query := `select topic, consumer_group, created_at, updated_at from missing_consumers`
+
+	rows, err := executor.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.UndocumentedConsumerGroupRow
+	for rows.Next() {
+		var row models.UndocumentedConsumerGroupRow
+		if err := rows.Scan(&row.Topic, &row.ConsumerGroup, &row.CreatedAt, &row.UpdatedAt); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}

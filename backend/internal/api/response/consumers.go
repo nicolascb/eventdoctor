@@ -2,6 +2,18 @@ package response
 
 // ConsumerView represents an aggregated consumer with service and repository information.
 type ConsumerView struct {
+	GroupsUndocumented []UndocumentedGroup `json:"groups_undocumented"`
+	Consumers          []Consumer          `json:"consumers"`
+}
+
+type UndocumentedGroup struct {
+	Topic     string `json:"topic"`
+	Group     string `json:"group"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+type Consumer struct {
 	Service     string              `json:"service"`
 	Repository  string              `json:"repository"`
 	Group       string              `json:"group"`
