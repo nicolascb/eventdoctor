@@ -9,10 +9,10 @@ services:
       - ./backend:/app
       - go-build-cache:/root/.cache/go-build
       - go-modules:/go/pkg/mod
-      - api-data:/data
+      - ./backend/data:/app/data
     environment:
       PORT: ":8087"
-      SQLITE_PATH: /data/data.db
+      SQLITE_PATH: /app/data/data.db
       WITH_MOCK: "1"
     ports:
       - "8087:8087"
@@ -34,4 +34,3 @@ services:
 volumes:
   go-build-cache:
   go-modules:
-  api-data:

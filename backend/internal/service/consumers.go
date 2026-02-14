@@ -9,23 +9,42 @@ import (
 	"github.com/nicolascb/eventdoctor/internal/db/models"
 )
 
-func (s *Service) ListConsumers(ctx context.Context) ([]response.ConsumerView, error) {
+func (s *Service) ListConsumers(ctx context.Context) (*response.ConsumerView, error) {
 	rows, err := db.ListAllConsumers(ctx, s.db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list consumers: %w", err)
 	}
 
-	return aggregateConsumers(rows), nil
+	undocumentedGroups, err := db.ListUndocumentedConsumerGroups(ctx, s.db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list undocumented consumer groups: %w", err)
+	}
+
+	res := &response.ConsumerView{
+		GroupsUndocumented: make([]response.UndocumentedGroup, 0),
+		Consumers:          aggregateConsumers(rows),
+	}
+
+	for _, group := range undocumentedGroups {
+		res.GroupsUndocumented = append(res.GroupsUndocumented, response.UndocumentedGroup{
+			Topic:     group.Topic,
+			Group:     group.ConsumerGroup,
+			CreatedAt: group.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: group.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return res, nil
 }
 
-func aggregateConsumers(rows []models.ConsumerRow) []response.ConsumerView {
+func aggregateConsumers(rows []models.ConsumerRow) []response.Consumer {
 	type consumerKey struct {
 		Service    string
 		Repository string
 		Group      string
 	}
 
-	consumers := newOrderedMap[consumerKey, response.ConsumerView]()
+	consumers := newOrderedMap[consumerKey, response.Consumer]()
 
 	for _, row := range rows {
 		key := consumerKey{
@@ -34,8 +53,8 @@ func aggregateConsumers(rows []models.ConsumerRow) []response.ConsumerView {
 			Group:      row.ConsumerGroup,
 		}
 
-		cv := consumers.getOrCreate(key, func() response.ConsumerView {
-			return response.ConsumerView{
+		cv := consumers.getOrCreate(key, func() response.Consumer {
+			return response.Consumer{
 				Service:     row.ServiceName,
 				Repository:  row.Repository,
 				Group:       row.ConsumerGroup,

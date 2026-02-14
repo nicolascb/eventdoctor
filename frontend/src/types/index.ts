@@ -65,6 +65,18 @@ export interface Consumer {
     topics: Topic[];
 }
 
+export interface UndocumentedGroup {
+    topic: string;
+    group: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ConsumerView {
+    groups_undocumented: UndocumentedGroup[];
+    consumers: Consumer[];
+}
+
 // ─── Overview Types ─────────────────────────────────────────
 
 export interface OverviewResponse {

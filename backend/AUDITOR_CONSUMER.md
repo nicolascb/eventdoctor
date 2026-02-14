@@ -20,3 +20,15 @@ Considered as undocumented:
 - Consumer that consumes from a topic that is not documented in EventDoctor.
 
 When the auditor identifies any of these situations, it will report them to the EventDoctor API to enrich its database.
+
+Undocumented producers:
+
+- We consume events from a topic that is not documented in EventDoctor.
+- Save it in the events table.
+
+Undocumented consumers:
+
+- We consume events from a topic that does not have a consumer documented in EventDoctor.
+- Save it in the missing_consumers table.
+
+When saving a spec, it must check whether the consumer exists in the missing_consumers table. If it exists, it should remove it from that table and save it in the consumers table.
