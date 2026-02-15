@@ -2,11 +2,13 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"path"
+	"time"
 
 	"github.com/goccy/go-yaml"
 	"github.com/nicolascb/eventdoctor/internal/api/response"
@@ -24,7 +26,15 @@ type Client struct {
 }
 
 func newHTTPClient() *http.Client {
-	return &http.Client{}
+	return &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
 }
 
 func NewClient() *Client {
