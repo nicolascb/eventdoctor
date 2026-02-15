@@ -19,8 +19,9 @@ import {
 } from "@/components/ui/table";
 import { useConsumers } from "@/hooks/useConsumers";
 import type { Consumer, Topic } from "@/types";
-import { Activity, ChevronLeft, ChevronRight, ExternalLink, Layers, Server, Workflow, Zap } from "lucide-react";
+import { Activity, ChevronLeft, ChevronRight, Layers, Server, Workflow, Zap } from "lucide-react";
 import { useState } from "react";
+import { ConsumerDetails } from "./ConsumerDetails";
 
 export function ConsumersView() {
     const {
@@ -187,96 +188,10 @@ export function ConsumersView() {
                     <Dialog open={!!selectedConsumer && !selectedTopic} onOpenChange={(open) => { if (!open) setSelectedConsumer(null); }}>
                         {selectedConsumer && (
                             <DialogContent className="max-w-xl">
-                                <DialogHeader>
-                                    <div className="flex items-center gap-2">
-                                        <Layers className="h-4 w-4 text-muted-foreground" />
-                                        <DialogTitle className="text-base font-semibold">
-                                            {selectedConsumer.group}
-                                        </DialogTitle>
-                                    </div>
-                                    {selectedConsumer.description && (
-                                        <DialogDescription>
-                                            {selectedConsumer.description}
-                                        </DialogDescription>
-                                    )}
-                                </DialogHeader>
-
-                                {/* Metadata rows */}
-                                <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm py-1">
-                                    <span className="text-muted-foreground text-xs font-medium">Service</span>
-                                    <span className="text-xs font-medium">{selectedConsumer.service}</span>
-                                    <span className="text-muted-foreground text-xs font-medium">Repository</span>
-                                    {selectedConsumer.repository ? (
-                                        <a
-                                            href={selectedConsumer.repository}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors truncate"
-                                        >
-                                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                                            <span className="truncate">{selectedConsumer.repository}</span>
-                                        </a>
-                                    ) : (
-                                        <span className="text-xs text-muted-foreground italic">Not specified</span>
-                                    )}
-                                </div>
-
-                                {/* Topic Subscriptions */}
-                                {selectedConsumer.topics.length > 0 && (
-                                    <>
-                                        <Separator />
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <h4 className="text-xs font-medium text-muted-foreground">
-                                                    Topic Subscriptions
-                                                </h4>
-                                                <span className="text-xs font-mono text-muted-foreground">
-                                                    {selectedConsumer.topics.length}
-                                                </span>
-                                            </div>
-
-                                            <div className="space-y-1.5">
-                                                {selectedConsumer.topics.map((topic) => (
-                                                    <button
-                                                        key={topic.name}
-                                                        type="button"
-                                                        className="w-full text-left rounded-md border border-border px-3 py-2.5 hover:bg-accent/30 transition-colors cursor-pointer"
-                                                        onClick={() => setSelectedTopic(topic)}
-                                                    >
-                                                        <div className="flex items-center justify-between gap-3">
-                                                            <code className="text-xs font-mono font-medium">{topic.name}</code>
-                                                            <div className="flex items-center gap-2 flex-shrink-0">
-                                                                <Badge variant="secondary" className="text-[10px] font-normal tabular-nums">
-                                                                    {topic.events.length} {topic.events.length === 1 ? 'event' : 'events'}
-                                                                </Badge>
-                                                                <Zap className="h-3.5 w-3.5 text-muted-foreground" />
-                                                            </div>
-                                                        </div>
-                                                        {topic.events.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1 mt-1.5">
-                                                                {topic.events.slice(0, 4).map((ev) => (
-                                                                    <Badge
-                                                                        key={ev.name}
-                                                                        variant="outline"
-                                                                        className="text-[10px] font-normal font-mono"
-                                                                    >
-                                                                        {ev.name}
-                                                                        {ev.version && <span className="ml-0.5 text-muted-foreground">v{ev.version}</span>}
-                                                                    </Badge>
-                                                                ))}
-                                                                {topic.events.length > 4 && (
-                                                                    <Badge variant="secondary" className="text-[10px] font-normal">
-                                                                        +{topic.events.length - 4}
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
+                                <ConsumerDetails
+                                    consumer={selectedConsumer}
+                                    onTopicClick={(topic) => setSelectedTopic(topic)}
+                                />
                             </DialogContent>
                         )}
                     </Dialog>

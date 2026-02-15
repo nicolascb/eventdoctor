@@ -4,11 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import {
     Table,
     TableBody,
@@ -19,8 +15,9 @@ import {
 } from "@/components/ui/table";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventView } from "@/types";
-import { ChevronLeft, ChevronRight, ExternalLink, Layers, Server, Zap } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import { useState } from "react";
+import { EventDetails } from "./EventDetails";
 
 export function EventsView() {
     const {
@@ -166,162 +163,7 @@ export function EventsView() {
                     <Dialog open={!!selectedEvent} onOpenChange={(open) => { if (!open) setSelectedEvent(null); }}>
                         {selectedEvent && (
                             <DialogContent className="max-w-xl">
-                                <DialogHeader>
-                                    <div className="flex items-center gap-2">
-                                        <Zap className="h-4 w-4 text-muted-foreground" />
-                                        <DialogTitle className="text-base font-semibold font-mono">
-                                            {selectedEvent.name}
-                                        </DialogTitle>
-                                        {selectedEvent.version && (
-                                            <Badge variant="outline" className="text-[10px] font-normal font-mono">
-                                                v{selectedEvent.version}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    {selectedEvent.description && (
-                                        <DialogDescription>
-                                            {selectedEvent.description}
-                                        </DialogDescription>
-                                    )}
-                                </DialogHeader>
-
-                                {/* Metadata rows */}
-                                <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm py-1">
-                                    <span className="text-muted-foreground text-xs font-medium">Topic</span>
-                                    <span className="text-xs font-medium font-mono">{selectedEvent.topic}</span>
-
-                                    <span className="text-muted-foreground text-xs font-medium">Schema</span>
-                                    {selectedEvent.schema_url ? (
-                                        <a
-                                            href={selectedEvent.schema_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors truncate"
-                                        >
-                                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                                            <span className="truncate">{selectedEvent.schema_url}</span>
-                                        </a>
-                                    ) : (
-                                        <span className="text-xs text-muted-foreground italic">Not specified</span>
-                                    )}
-                                </div>
-
-                                {/* Headers */}
-                                {selectedEvent.headers && selectedEvent.headers.length > 0 && (
-                                    <>
-                                        <Separator />
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <h4 className="text-xs font-medium text-muted-foreground">
-                                                    Headers
-                                                </h4>
-                                                <span className="text-xs font-mono text-muted-foreground">
-                                                    {selectedEvent.headers.length}
-                                                </span>
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                {selectedEvent.headers.map((header) => (
-                                                    <div
-                                                        key={header.name}
-                                                        className="flex items-center justify-between rounded-md border border-border px-3 py-2.5"
-                                                    >
-                                                        <code className="text-xs font-mono font-medium">{header.name}</code>
-                                                        {header.description && (
-                                                            <span className="text-xs text-muted-foreground ml-3 truncate">{header.description}</span>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
-                                {/* Producers */}
-                                {selectedEvent.producers.length > 0 && (
-                                    <>
-                                        <Separator />
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <h4 className="text-xs font-medium text-muted-foreground">
-                                                    Producers
-                                                </h4>
-                                                <span className="text-xs font-mono text-muted-foreground">
-                                                    {selectedEvent.producers.length}
-                                                </span>
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                {selectedEvent.producers.map((producer) => (
-                                                    <div
-                                                        key={producer.id}
-                                                        className="rounded-md border border-border px-3 py-2.5"
-                                                    >
-                                                        <div className="flex items-center justify-between gap-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <Server className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                                                                <span className="text-xs font-medium">{producer.service}</span>
-                                                            </div>
-                                                            {producer.owner && (
-                                                                <Badge variant="secondary" className="text-[10px] font-normal">owner</Badge>
-                                                            )}
-                                                        </div>
-                                                        {producer.repository && (
-                                                            <a
-                                                                href={producer.repository}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors mt-1 truncate"
-                                                            >
-                                                                <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                                                                <span className="truncate">{producer.repository}</span>
-                                                            </a>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
-                                {/* Consumers */}
-                                {selectedEvent.consumers.length > 0 && (
-                                    <>
-                                        <Separator />
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <h4 className="text-xs font-medium text-muted-foreground">
-                                                    Consumers
-                                                </h4>
-                                                <span className="text-xs font-mono text-muted-foreground">
-                                                    {selectedEvent.consumers.length}
-                                                </span>
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                {selectedEvent.consumers.map((consumer) => (
-                                                    <div
-                                                        key={consumer.id}
-                                                        className="rounded-md border border-border px-3 py-2.5"
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            <Layers className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                                                            <span className="text-xs font-medium">{consumer.service}</span>
-                                                        </div>
-                                                        {consumer.repository && (
-                                                            <a
-                                                                href={consumer.repository}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors mt-1 truncate"
-                                                            >
-                                                                <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                                                                <span className="truncate">{consumer.repository}</span>
-                                                            </a>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
+                                <EventDetails event={selectedEvent} />
                             </DialogContent>
                         )}
                     </Dialog>
