@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,14 +9,6 @@ import (
 	"github.com/nicolascb/eventdoctor/internal/db/models"
 	"github.com/nicolascb/eventdoctor/internal/eventdoctor"
 )
-
-type Service struct {
-	db *sql.DB
-}
-
-func NewService(db *sql.DB) *Service {
-	return &Service{db: db}
-}
 
 func (s *Service) SaveSpec(ctx context.Context, spec eventdoctor.EventDoctorSpec) error {
 	return db.WithTransaction(ctx, s.db, func(ctx context.Context, tx db.SQLExecutor) error {

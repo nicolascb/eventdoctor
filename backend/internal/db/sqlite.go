@@ -243,13 +243,6 @@ func GetTopic(ctx context.Context, executor SQLExecutor, topicName string) (*mod
 	return &topic, nil
 }
 
-// RemoveTopic deletes a topic by name.
-func RemoveTopic(ctx context.Context, executor SQLExecutor, topicName string) error {
-	query := `DELETE FROM topics WHERE name = ?`
-	_, err := executor.ExecContext(ctx, query, topicName)
-	return err
-}
-
 // CountTopics returns the total number of topics.
 func CountTopics(ctx context.Context, executor SQLExecutor) (int, error) {
 	var count int
@@ -297,26 +290,6 @@ func ListAllTopicNames(ctx context.Context, executor SQLExecutor) ([]string, err
 	return names, rows.Err()
 }
 
-// ListTopics returns all topics ordered by name.
-func ListTopics(ctx context.Context, executor SQLExecutor) ([]models.Topic, error) {
-	query := `SELECT id, name, description, owner_service_id, created_at FROM topics ORDER BY name`
-	rows, err := executor.QueryContext(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var topics []models.Topic
-	for rows.Next() {
-		var t models.Topic
-		if err := rows.Scan(&t.ID, &t.Name, &t.Description, &t.OwnerServiceID, &t.CreatedAt); err != nil {
-			return nil, err
-		}
-		topics = append(topics, t)
-	}
-	return topics, nil
-}
-
 // InsertEvent inserts a new event into the database.
 func InsertEvent(ctx context.Context, executor SQLExecutor, event models.Event) (int64, error) {
 	ensureCreatedAt(&event.CreatedAt)
@@ -327,35 +300,6 @@ func InsertEvent(ctx context.Context, executor SQLExecutor, event models.Event) 
 	}
 
 	return result.LastInsertId()
-}
-
-// RemoveEvent deletes an event by ID.
-func RemoveEvent(ctx context.Context, executor SQLExecutor, eventID int64) error {
-	query := `DELETE FROM events WHERE id = ?`
-	_, err := executor.ExecContext(ctx, query, eventID)
-	return err
-}
-
-// GetEventsByTopic returns all events for a given topic.
-func GetEventsByTopic(ctx context.Context, executor SQLExecutor, topicID int64) ([]models.Event, error) {
-	query := `SELECT id, topic_id, event_name, description, schema_url, schema_version, deprecated, created_at FROM events WHERE topic_id = ?`
-	rows, err := executor.QueryContext(ctx, query, topicID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var events []models.Event
-	for rows.Next() {
-		var event models.Event
-		err := rows.Scan(&event.ID, &event.TopicID, &event.EventName, &event.Description, &event.SchemaURL, &event.SchemaVersion, &event.Deprecated, &event.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-		events = append(events, event)
-	}
-
-	return events, nil
 }
 
 // InsertProducer inserts a new producer into the database.
@@ -370,35 +314,6 @@ func InsertProducer(ctx context.Context, executor SQLExecutor, producer models.P
 	return result.LastInsertId()
 }
 
-// RemoveProducer deletes a producer by ID.
-func RemoveProducer(ctx context.Context, executor SQLExecutor, producerID int64) error {
-	query := `DELETE FROM producers WHERE id = ?`
-	_, err := executor.ExecContext(ctx, query, producerID)
-	return err
-}
-
-// GetProducersByEvent returns all producers for a given event.
-func GetProducersByEvent(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.Producer, error) {
-	query := `SELECT id, event_id, service_id, writes, created_at FROM producers WHERE event_id = ?`
-	rows, err := executor.QueryContext(ctx, query, eventID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var producers []models.Producer
-	for rows.Next() {
-		var producer models.Producer
-		err := rows.Scan(&producer.ID, &producer.EventID, &producer.ServiceID, &producer.Writes, &producer.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-		producers = append(producers, producer)
-	}
-
-	return producers, nil
-}
-
 // InsertConsumer inserts a new consumer into the database.
 func InsertConsumer(ctx context.Context, executor SQLExecutor, consumer models.Consumer) (int64, error) {
 	ensureCreatedAt(&consumer.CreatedAt)
@@ -409,35 +324,6 @@ func InsertConsumer(ctx context.Context, executor SQLExecutor, consumer models.C
 	}
 
 	return result.LastInsertId()
-}
-
-// RemoveConsumer deletes a consumer by ID.
-func RemoveConsumer(ctx context.Context, executor SQLExecutor, consumerID int64) error {
-	query := `DELETE FROM consumers WHERE id = ?`
-	_, err := executor.ExecContext(ctx, query, consumerID)
-	return err
-}
-
-// GetConsumersByEvent returns all consumers for a given event.
-func GetConsumersByEvent(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.Consumer, error) {
-	query := `SELECT id, event_id, service_id, consumer_group, description, event_version, created_at FROM consumers WHERE event_id = ?`
-	rows, err := executor.QueryContext(ctx, query, eventID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var consumers []models.Consumer
-	for rows.Next() {
-		var consumer models.Consumer
-		err := rows.Scan(&consumer.ID, &consumer.EventID, &consumer.ServiceID, &consumer.ConsumerGroup, &consumer.Description, &consumer.EventVersion, &consumer.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-		consumers = append(consumers, consumer)
-	}
-
-	return consumers, nil
 }
 
 // GetOrCreateTopic looks up a topic by name, or creates it if not found.
@@ -580,27 +466,6 @@ func UpsertEventHeader(ctx context.Context, executor SQLExecutor, header models.
 	`
 	_, err := executor.ExecContext(ctx, query, header.EventID, header.Name, header.Description, header.CreatedAt)
 	return err
-}
-
-// GetEventHeaders returns all headers for a given event.
-func GetEventHeaders(ctx context.Context, executor SQLExecutor, eventID int64) ([]models.EventHeader, error) {
-	query := `SELECT id, event_id, name, description, created_at FROM event_headers WHERE event_id = ? ORDER BY name`
-	rows, err := executor.QueryContext(ctx, query, eventID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var headers []models.EventHeader
-	for rows.Next() {
-		var header models.EventHeader
-		err := rows.Scan(&header.ID, &header.EventID, &header.Name, &header.Description, &header.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-		headers = append(headers, header)
-	}
-	return headers, nil
 }
 
 // DeleteEventHeaders deletes all headers for a given event.

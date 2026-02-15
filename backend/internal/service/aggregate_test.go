@@ -335,3 +335,71 @@ func TestAggregateOverview_ConsumerOnlyTopic(t *testing.T) {
 		t.Fatalf("expected 1 topic from consumer-only data, got %d", len(result))
 	}
 }
+
+// aggregateProducers tests
+
+func TestAggregateProducers_Empty(t *testing.T) {
+	result := aggregateProducers(nil, nil)
+	if len(result) != 0 {
+		t.Fatalf("expected empty result, got %v", result)
+	}
+}
+
+func TestAggregateProducers_SingleService(t *testing.T) {
+	services := []models.Service{
+		{ID: 1, Name: "svc-a", Repository: "repo-a"},
+	}
+	topicRows := []models.ProducerListRow{
+		{ServiceID: 1, ServiceName: "svc-a", Repository: "repo-a", TopicID: 10, TopicName: "topic-a", EventCount: 5, Owner: true, Writes: true},
+	}
+
+	result := aggregateProducers(services, topicRows)
+	if len(result) != 1 {
+		t.Fatalf("expected 1 producer, got %d", len(result))
+	}
+	p := result[0]
+	if p.Service != "svc-a" {
+		t.Errorf("unexpected service name: %s", p.Service)
+	}
+	if len(p.Topics) != 1 {
+		t.Fatalf("expected 1 topic, got %d", len(p.Topics))
+	}
+	if p.Topics[0].Topic != "topic-a" {
+		t.Errorf("unexpected topic name: %s", p.Topics[0].Topic)
+	}
+	if p.Topics[0].EventCount != 5 {
+		t.Errorf("unexpected event count: %d", p.Topics[0].EventCount)
+	}
+}
+
+func TestAggregateProducers_MultipleServices(t *testing.T) {
+	services := []models.Service{
+		{ID: 1, Name: "svc-a"},
+		{ID: 2, Name: "svc-b"},
+	}
+	topicRows := []models.ProducerListRow{
+		{ServiceID: 1, TopicName: "topic-a"},
+		{ServiceID: 2, TopicName: "topic-b"},
+		{ServiceID: 1, TopicName: "topic-c"},
+	}
+
+	result := aggregateProducers(services, topicRows)
+	if len(result) != 2 {
+		t.Fatalf("expected 2 producers, got %d", len(result))
+	}
+
+	// Result order should match services input order
+	if result[0].Service != "svc-a" {
+		t.Errorf("expected svc-a first, got %s", result[0].Service)
+	}
+	if len(result[0].Topics) != 2 {
+		t.Errorf("expected 2 topics for svc-a, got %d", len(result[0].Topics))
+	}
+
+	if result[1].Service != "svc-b" {
+		t.Errorf("expected svc-b second, got %s", result[1].Service)
+	}
+	if len(result[1].Topics) != 1 {
+		t.Errorf("expected 1 topic for svc-b, got %d", len(result[1].Topics))
+	}
+}
