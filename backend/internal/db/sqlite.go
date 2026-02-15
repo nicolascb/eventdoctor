@@ -59,153 +59,112 @@ func createTables(db *sql.DB) error {
 }
 
 func mockData(ctx context.Context, db *sql.DB) error {
-	// ON DELETE CASCADE propagates deletions from services and topics
-	// to producers, consumers, events, and headers automatically.
-	_, err := db.Exec(`DELETE FROM services`)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(`DELETE FROM topics`)
-	if err != nil {
-		return err
-	}
-
 	now := time.Now()
-
 	fakeRepository := "https://github.com/org/fake-repo"
 
-	servicesSeed := []models.Service{
-		{Name: "user-service", Repository: fakeRepository, CreatedAt: now},
-		{Name: "checkout-service", Repository: fakeRepository, CreatedAt: now},
-		{Name: "logistics-service", Repository: fakeRepository, CreatedAt: now},
-		{Name: "payment-service", Repository: fakeRepository, CreatedAt: now},
-		{Name: "analytics-service", Repository: fakeRepository, CreatedAt: now},
-		{Name: "email-service", Repository: fakeRepository, CreatedAt: now},
-		{Name: "notification-service", Repository: fakeRepository, CreatedAt: now},
-		{Name: "inventory-service", Repository: fakeRepository, CreatedAt: now},
-		{Name: "fraud-service", Repository: fakeRepository, CreatedAt: now},
-		{Name: "billing-service", Repository: fakeRepository, CreatedAt: now},
+	serviceNames := []string{
+		"user-service", "checkout-service", "logistics-service", "payment-service",
+		"analytics-service", "email-service", "notification-service", "inventory-service",
+		"fraud-service", "billing-service",
 	}
 
-	serviceIDs := make(map[string]int64)
-	for _, svc := range servicesSeed {
-		s, err := GetOrCreateService(ctx, db, svc.Name, svc.Repository)
+	serviceIDs := make(map[int]int64)
+	for i, name := range serviceNames {
+		s, err := GetOrCreateService(ctx, db, name, fakeRepository)
 		if err != nil {
 			return err
 		}
-		serviceIDs[svc.Name] = s.ID
-	}
-
-	topics := []struct {
-		name         string
-		description  string
-		ownerService string
-	}{
-		{"user.events", "Events related to user lifecycle", "user-service"},
-		{"order.events", "Events related to order processing", "checkout-service"},
-		{"payment.events", "Events related to payment transactions", "payment-service"},
-		{"payment.history.events", "Events related to payment history records", "payment-service"},
-	}
-
-	topicIDs := make(map[string]int64)
-	for _, t := range topics {
-		ownerID := serviceIDs[t.ownerService]
-		topic := models.Topic{Name: t.name, Description: t.description, OwnerServiceID: &ownerID, CreatedAt: now}
-		id, err := InsertTopic(ctx, db, topic)
-		if err != nil {
-			return err
-		}
-
-		topicIDs[t.name] = id
+		serviceIDs[i] = s.ID
 	}
 
 	schemaVersion := "1.0.0"
 
-	eventsSeed := []struct {
-		topic string
-		event models.Event
-	}{
-		{"user.events", models.Event{EventName: "UserCreated", Description: "Fired when a new user registers in the platform", SchemaURL: "https://schemas.local/user-created.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"user.events", models.Event{EventName: "UserUpdated", Description: "Fired when user profile information is updated", SchemaURL: "https://schemas.local/user-updated.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"order.events", models.Event{EventName: "OrderPlaced", Description: "Fired when a new order is placed by a customer", SchemaURL: "https://schemas.local/order-placed.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"order.events", models.Event{EventName: "OrderShipped", Description: "Fired when an order is shipped for delivery", SchemaURL: "https://schemas.local/order-shipped.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"payment.events", models.Event{EventName: "PaymentAuthorized", Description: "Fired when a payment is authorized by the gateway", SchemaURL: "https://schemas.local/payment-authorized.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"payment.events", models.Event{EventName: "PaymentCaptured", Description: "Fired when an authorized payment is captured", SchemaURL: "https://schemas.local/payment-captured.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"payment.events", models.Event{EventName: "PaymentReversed", Description: "Fired when a payment is reversed", SchemaURL: "https://schemas.local/payment-reversed.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
-		{"payment.history.events", models.Event{EventName: "NewPayment", Description: "Fired when a new payment is recorded in the history", SchemaURL: "https://schemas.local/new-payment.json", SchemaVersion: &schemaVersion, Deprecated: false, CreatedAt: now}},
+	// Vocabulary for random names without numbers
+	adjectives := []string{"alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa"}
+	nouns := []string{"falcon", "eagle", "hawk", "owl", "raven", "wolf", "bear", "lion", "tiger", "shark"}
+	actions := []string{
+		"Born", "Died", "Awake", "Asleep", "Moving", "Stopped", "Eating", "Drinking",
+		"Flying", "Swimming", "Hunting", "Hiding", "Singing", "Running", "Jumping",
+		"Climbing", "Falling", "Rising", "Growing", "Shrinking",
 	}
 
-	eventIDs := map[string]int64{}
-	for _, e := range eventsSeed {
-		e.event.TopicID = topicIDs[e.topic]
-		id, err := InsertEvent(ctx, db, e.event)
-		if err != nil {
-			return err
+	// 100 topics (10 * 10)
+	serviceIndex := 0
+	for _, adj := range adjectives {
+		for _, noun := range nouns {
+			topicName := fmt.Sprintf("%s.%s.events", adj, noun)
+			ownerID := serviceIDs[serviceIndex%len(serviceIDs)]
+			serviceIndex++
+
+			topic := models.Topic{
+				Name:           topicName,
+				Description:    fmt.Sprintf("Events for the %s %s domain", adj, noun),
+				OwnerServiceID: &ownerID,
+				CreatedAt:      now,
+			}
+			topicID, err := InsertTopic(ctx, db, topic)
+			if err != nil {
+				return err
+			}
+
+			// 20 events per topic
+			for _, action := range actions {
+				eventName := action
+				event := models.Event{
+					TopicID:       topicID,
+					EventName:     eventName,
+					Description:   fmt.Sprintf("Fired when %s %s is %s", adj, noun, action),
+					SchemaURL:     fmt.Sprintf("https://schemas.local/%s-%s/%s.json", adj, noun, action),
+					SchemaVersion: &schemaVersion,
+					Deprecated:    false,
+					CreatedAt:     now,
+				}
+				eventID, err := InsertEvent(ctx, db, event)
+				if err != nil {
+					return err
+				}
+
+				// Producer for each event (using the owner service)
+				prod := models.Producer{
+					EventID:   eventID,
+					ServiceID: ownerID,
+					Writes:    true,
+					CreatedAt: now,
+				}
+				if _, err := InsertProducer(ctx, db, prod); err != nil {
+					return err
+				}
+
+				// Add a consumer sometimes to make it realistic
+				if serviceIndex%3 == 0 {
+					consumerSvcID := serviceIDs[(serviceIndex)%len(serviceIDs)]
+					cons := models.Consumer{
+						EventID:       eventID,
+						ServiceID:     consumerSvcID,
+						ConsumerGroup: fmt.Sprintf("%s-group", serviceNames[serviceIndex%len(serviceNames)]),
+						Description:   fmt.Sprintf("Consumer for %s events", eventName),
+						CreatedAt:     now,
+					}
+					if _, err := InsertConsumer(ctx, db, cons); err != nil {
+						return err
+					}
+				}
+			}
 		}
-		eventIDs[fmt.Sprintf("%s:%s", e.topic, e.event.EventName)] = id
 	}
 
-	producersSeed := []struct {
-		eventKey    string
-		serviceName string
-		writes      bool
-	}{
-		{"user.events:UserCreated", "user-service", true},
-		{"user.events:UserUpdated", "user-service", true},
-		{"order.events:OrderPlaced", "checkout-service", true},
-		{"order.events:OrderShipped", "logistics-service", true},
-		{"payment.events:PaymentAuthorized", "payment-service", true},
-		{"payment.events:PaymentCaptured", "payment-service", true},
-		{"payment.events:PaymentAuthorized", "checkout-service", true},
-		{"payment.events:PaymentReversed", "checkout-service", true},
-		{"payment.history.events:NewPayment", "checkout-service", true},
-	}
+	// 100 undocumented consumers (10 * 10)
+	secretAdjs := []string{"secret", "hidden", "ghost", "shadow", "dark", "phantom", "stray", "lost", "void", "null"}
+	secretNouns := []string{"watcher", "listener", "sniffer", "prowler", "lurker", "stalker", "scout", "spy", "agent", "wraith"}
 
-	for _, p := range producersSeed {
-		eventID, ok := eventIDs[p.eventKey]
-		if !ok {
-			return fmt.Errorf("event not found for key %s", p.eventKey)
-		}
-		prod := models.Producer{
-			EventID:   eventID,
-			ServiceID: serviceIDs[p.serviceName],
-			Writes:    p.writes,
-			CreatedAt: now,
-		}
-		if _, err := InsertProducer(ctx, db, prod); err != nil {
-			return err
-		}
-	}
-
-	consumersSeed := []struct {
-		eventKey      string
-		serviceName   string
-		consumerGroup string
-		description   string
-	}{
-		{"user.events:UserCreated", "analytics-service", "analytics-service-group", "Tracks new user registrations for analytics dashboards"},
-		{"user.events:UserCreated", "email-service", "email-service-group", "Sends welcome emails to new users"},
-		{"user.events:UserUpdated", "notification-service", "notification-service-group", "Sends push notifications on profile changes"},
-		{"order.events:OrderPlaced", "inventory-service", "inventory-service-group", "Reserves stock when a new order is placed"},
-		{"order.events:OrderShipped", "notification-service", "notification-service-group", "Notifies customers about shipping updates"},
-		{"payment.events:PaymentAuthorized", "fraud-service", "fraud-service-group", "Analyzes authorized payments for fraud detection"},
-		{"payment.events:PaymentCaptured", "billing-service", "billing-service-group", "Generates invoices for captured payments"},
-	}
-
-	for _, c := range consumersSeed {
-		eventID, ok := eventIDs[c.eventKey]
-		if !ok {
-			return fmt.Errorf("event not found for key %s", c.eventKey)
-		}
-		cons := models.Consumer{
-			EventID:       eventID,
-			ServiceID:     serviceIDs[c.serviceName],
-			ConsumerGroup: c.consumerGroup,
-			Description:   c.description,
-			CreatedAt:     now,
-		}
-		if _, err := InsertConsumer(ctx, db, cons); err != nil {
-			return err
+	for _, adj := range secretAdjs {
+		for _, noun := range secretNouns {
+			topicName := fmt.Sprintf("untracked.%s.%s", adj, noun)
+			consumerGroup := fmt.Sprintf("%s-%s-group", adj, noun)
+			query := `INSERT INTO missing_consumers (topic, consumer_group, created_at, updated_at) VALUES (?, ?, ?, ?)`
+			if _, err := db.ExecContext(ctx, query, topicName, consumerGroup, now, now); err != nil {
+				return fmt.Errorf("failed to insert missing consumer: %w", err)
+			}
 		}
 	}
 
@@ -288,6 +247,53 @@ func RemoveTopic(ctx context.Context, executor SQLExecutor, topicName string) er
 	query := `DELETE FROM topics WHERE name = ?`
 	_, err := executor.ExecContext(ctx, query, topicName)
 	return err
+}
+
+// CountTopics returns the total number of topics.
+func CountTopics(ctx context.Context, executor SQLExecutor) (int, error) {
+	var count int
+	if err := executor.QueryRowContext(ctx, `SELECT COUNT(*) FROM topics`).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// ListTopicNamesPaginated returns topic names for a specific page, ordered by name.
+func ListTopicNamesPaginated(ctx context.Context, executor SQLExecutor, limit, offset int) ([]string, error) {
+	rows, err := executor.QueryContext(ctx, `SELECT name FROM topics ORDER BY name LIMIT ? OFFSET ?`, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, rows.Err()
+}
+
+// ListAllTopicNames returns all topic names ordered by name.
+func ListAllTopicNames(ctx context.Context, executor SQLExecutor) ([]string, error) {
+	rows, err := executor.QueryContext(ctx, `SELECT name FROM topics ORDER BY name`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, rows.Err()
 }
 
 // ListTopics returns all topics ordered by name.
@@ -636,6 +642,40 @@ func ListAllEvents(ctx context.Context, executor SQLExecutor) ([]models.EventRow
 	return results, rows.Err()
 }
 
+// ListEventsByTopicName returns all events (with headers) for a specific topic.
+func ListEventsByTopicName(ctx context.Context, executor SQLExecutor, topicName string) ([]models.EventRow, error) {
+	query := `
+		SELECT
+			t.name AS topic_name,
+			e.event_name,
+			e.description AS event_description,
+			e.schema_version,
+			e.schema_url,
+			eh.name AS header_name,
+			eh.description AS header_description
+		FROM events e
+		JOIN topics t ON e.topic_id = t.id
+		LEFT JOIN event_headers eh ON eh.event_id = e.id
+		WHERE t.name = ?
+		ORDER BY e.event_name, eh.name
+	`
+	rows, err := executor.QueryContext(ctx, query, topicName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.EventRow
+	for rows.Next() {
+		var row models.EventRow
+		if err := rows.Scan(&row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
 // ListAllProducers returns all producers with service, topic, event, and header information.
 func ListAllProducers(ctx context.Context, executor SQLExecutor) ([]models.ProducerRow, error) {
 	query := `
@@ -694,6 +734,59 @@ func ListAllConsumers(ctx context.Context, executor SQLExecutor) ([]models.Consu
 		ORDER BY s.name, c.consumer_group, t.name, e.event_name
 	`
 	rows, err := executor.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.ConsumerRow
+	for rows.Next() {
+		var row models.ConsumerRow
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventName, &row.EventVersion); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// CountConsumerGroups returns the total number of distinct consumer groups.
+func CountConsumerGroups(ctx context.Context, executor SQLExecutor) (int, error) {
+	query := `SELECT COUNT(*) FROM (SELECT DISTINCT c.service_id, c.consumer_group FROM consumers c)`
+	var count int
+	if err := executor.QueryRowContext(ctx, query).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// ListConsumersPaginated returns consumers for a specific page of consumer groups.
+// It paginates on distinct (service_id, consumer_group) pairs, then fetches all
+// rows (events/topics) for those groups.
+func ListConsumersPaginated(ctx context.Context, executor SQLExecutor, limit, offset int) ([]models.ConsumerRow, error) {
+	query := `
+		SELECT
+			s.name AS service_name,
+			s.repository,
+			c.consumer_group,
+			c.description,
+			t.name AS topic_name,
+			e.event_name,
+			c.event_version
+		FROM consumers c
+		JOIN services s ON c.service_id = s.id
+		JOIN events e ON c.event_id = e.id
+		JOIN topics t ON e.topic_id = t.id
+		WHERE (c.service_id, c.consumer_group) IN (
+			SELECT DISTINCT c2.service_id, c2.consumer_group
+			FROM consumers c2
+			JOIN services s2 ON c2.service_id = s2.id
+			ORDER BY s2.name, c2.consumer_group
+			LIMIT ? OFFSET ?
+		)
+		ORDER BY s.name, c.consumer_group, t.name, e.event_name
+	`
+	rows, err := executor.QueryContext(ctx, query, limit, offset)
 	if err != nil {
 		return nil, err
 	}

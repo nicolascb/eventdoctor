@@ -3,16 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
     Code,
-    Database,
     Eye,
     FileCheck,
     Layers,
     Moon,
     Network,
+    NotebookPen,
     RefreshCw,
-    Stethoscope,
-    Sun,
-    Zap
+    SatelliteDish,
+    Sun
 } from "lucide-react";
 
 export type NavItem = "overview" | "producers" | "topics" | "consumers" | "validator" | "auditor";
@@ -35,14 +34,14 @@ interface SidebarProps {
 
 const navItems = [
     { id: "overview" as const, label: "Overview", icon: Eye },
-    { id: "producers" as const, label: "Producers", icon: Database, countKey: "producers" as const },
-    { id: "topics" as const, label: "Topics", icon: Zap, countKey: "topics" as const },
-    { id: "consumers" as const, label: "Consumers", icon: Network, countKey: "consumers" as const },
+    { id: "topics" as const, label: "Topics", icon: Network, countKey: "topics" as const },
+    { id: "producers" as const, label: "Producers", icon: NotebookPen, countKey: "producers" as const },
+    { id: "consumers" as const, label: "Consumers", icon: SatelliteDish, countKey: "consumers" as const },
 ];
 
 const toolItems = [
     { id: "validator" as const, label: "Validator", icon: FileCheck },
-    { id: "auditor" as const, label: "Auditor", icon: Stethoscope },
+    // { id: "auditor" as const, label: "Auditor", icon: Stethoscope },
 ];
 
 export function Sidebar({

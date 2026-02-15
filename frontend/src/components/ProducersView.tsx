@@ -17,13 +17,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { useProducers } from "@/hooks/useProducers";
 import type { Event, GroupedProducer, Producer, ProducerTopic } from "@/types";
 import { Database, ExternalLink, FileJson, Layers, Server, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
-
-interface ProducersViewProps {
-    producers: Producer[];
-}
 
 function groupProducersByService(producers: Producer[]): GroupedProducer[] {
     const map = new Map<string, GroupedProducer>();
@@ -51,7 +48,8 @@ function groupProducersByService(producers: Producer[]): GroupedProducer[] {
     return Array.from(map.values());
 }
 
-export function ProducersView({ producers }: ProducersViewProps) {
+export function ProducersView() {
+    const { producers, loading } = useProducers();
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedGroup, setSelectedGroup] = useState<GroupedProducer | null>(null);
     const [selectedTopic, setSelectedTopic] = useState<ProducerTopic | null>(null);
@@ -91,6 +89,8 @@ export function ProducersView({ producers }: ProducersViewProps) {
 
     const totalEventsForGroup = (group: GroupedProducer) =>
         group.topics.reduce((acc, t) => acc + t.events.length, 0);
+
+    if (loading) return null;
 
     return (
         <div className="space-y-6 animate-in">

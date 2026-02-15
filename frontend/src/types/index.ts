@@ -72,9 +72,54 @@ export interface UndocumentedGroup {
     updated_at: string;
 }
 
+export interface Pagination {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+}
+
 export interface ConsumerView {
-    groups_undocumented: UndocumentedGroup[];
     consumers: Consumer[];
+    pagination?: Pagination;
+}
+
+export interface UndocumentedConsumersView {
+    groups_undocumented: UndocumentedGroup[];
+}
+
+// ─── Topic View Types ──────────────────────────────────────
+
+export interface TopicProducerEntry {
+    service: string;
+    repository: string;
+    event: string;
+    writes: boolean;
+    owner: boolean;
+}
+
+export interface TopicConsumerEntry {
+    service: string;
+    repository: string;
+    event: string;
+    group: string;
+    version?: string;
+}
+
+export interface TopicView {
+    topic: string;
+    owner_service?: string;
+    events: Event[];
+    producers: TopicProducerEntry[];
+    consumers: TopicConsumerEntry[];
+}
+
+export interface TopicListView {
+    topics: TopicView[];
+    count_events: number;
+    count_unconsumed: number;
+    count_orphaned: number;
+    pagination?: Pagination;
 }
 
 // ─── Overview Types ─────────────────────────────────────────

@@ -1,15 +1,12 @@
 import { ConfigValidator } from '@/components/ConfigValidator';
-import { ConsumersView } from '@/components/ConsumersView';
+import { ConsumersPage } from '@/components/ConsumersPage';
 import { OverviewView } from '@/components/OverviewView';
 import { ProducersView } from '@/components/ProducersView';
 import { ErrorState, LoadingState } from '@/components/shared';
 import { Sidebar, type NavItem } from '@/components/Sidebar';
 import { TopicsView } from '@/components/TopicsView';
 import { Separator } from '@/components/ui/separator';
-import { useConsumers } from '@/hooks/useConsumers';
-import { useEvents } from '@/hooks/useEvents';
 import { useOverview } from '@/hooks/useOverview';
-import { useProducers } from '@/hooks/useProducers';
 import { useTheme } from '@/hooks/useTheme';
 import { useState } from 'react';
 
@@ -39,49 +36,32 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  const { producers, loading: producersLoading, error: producersError, refetch: refetchProducers } = useProducers();
-  const { topics, loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents();
-  const { consumers, undocumentedGroups, loading: consumersLoading, error: consumersError, refetch: refetchConsumers } = useConsumers();
   const { overview, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useOverview();
 
-  const isLoading = producersLoading || eventsLoading || consumersLoading || overviewLoading;
-  const hasError = producersError || eventsError || consumersError || overviewError;
-
-  const handleRetry = () => {
-    refetchProducers();
-    refetchEvents();
-    refetchConsumers();
-    refetchOverview();
-  };
-
   const renderContent = () => {
-    if (isLoading) {
+    if (overviewLoading) {
       return <LoadingState message="Loading EventDoctor data..." />;
     }
 
-    if (hasError) {
+    if (overviewError) {
       return (
         <ErrorState
           message={`Make sure the EventDoctor API is running at ${API_URL}.`}
-          details={{
-            Producers: producersError,
-            Events: eventsError,
-            Consumers: consumersError,
-          }}
-          onRetry={handleRetry}
+          details={{ Overview: overviewError }}
+          onRetry={refetchOverview}
         />
       );
     }
 
     switch (activeView) {
       case 'overview':
-        return <OverviewView overview={overview} topics={topics} producers={producers} consumers={consumers} />;
+        return <OverviewView overview={overview} />;
       case 'producers':
-        return <ProducersView producers={producers} />;
+        return <ProducersView />;
       case 'topics':
-        return <TopicsView topics={topics} producers={producers} consumers={consumers} />;
+        return <TopicsView />;
       case 'consumers':
-        return <ConsumersView consumers={consumers} undocumentedGroups={undocumentedGroups} />;
+        return <ConsumersPage />;
       case 'validator':
         return <ConfigValidator />;
       case 'auditor':
@@ -95,12 +75,12 @@ function App() {
         activeItem={activeView}
         onNavigate={setActiveView}
         counts={{
-          producers: producers.length,
-          topics: topics.length,
-          consumers: consumers.length,
+          producers: overview.total_producers,
+          topics: overview.total_topics,
+          consumers: overview.total_consumers,
         }}
-        isLoading={isLoading}
-        onRefresh={handleRetry}
+        isLoading={overviewLoading}
+        onRefresh={refetchOverview}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         theme={theme}

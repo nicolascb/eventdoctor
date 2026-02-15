@@ -9,20 +9,57 @@ import (
 	"github.com/nicolascb/eventdoctor/internal/db/models"
 )
 
-func (s *Service) ListConsumers(ctx context.Context) (*response.ConsumerView, error) {
-	rows, err := db.ListAllConsumers(ctx, s.db)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list consumers: %w", err)
+func (s *Service) ListConsumers(ctx context.Context, page, pageSize int) (*response.ConsumerView, error) {
+	var rows []models.ConsumerRow
+	var pagination *response.Pagination
+	var err error
+
+	if page > 0 && pageSize > 0 {
+		total, err := db.CountConsumerGroups(ctx, s.db)
+		if err != nil {
+			return nil, fmt.Errorf("failed to count consumer groups: %w", err)
+		}
+
+		offset := (page - 1) * pageSize
+		rows, err = db.ListConsumersPaginated(ctx, s.db, pageSize, offset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list consumers: %w", err)
+		}
+
+		totalPages := total / pageSize
+		if total%pageSize != 0 {
+			totalPages++
+		}
+
+		pagination = &response.Pagination{
+			Page:       page,
+			PageSize:   pageSize,
+			Total:      total,
+			TotalPages: totalPages,
+		}
+	} else {
+		rows, err = db.ListAllConsumers(ctx, s.db)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list consumers: %w", err)
+		}
 	}
 
+	res := &response.ConsumerView{
+		Consumers:  aggregateConsumers(rows),
+		Pagination: pagination,
+	}
+
+	return res, nil
+}
+
+func (s *Service) ListUndocumentedConsumers(ctx context.Context) (*response.UndocumentedConsumerView, error) {
 	undocumentedGroups, err := db.ListUndocumentedConsumerGroups(ctx, s.db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list undocumented consumer groups: %w", err)
 	}
 
-	res := &response.ConsumerView{
-		GroupsUndocumented: make([]response.UndocumentedGroup, 0),
-		Consumers:          aggregateConsumers(rows),
+	res := &response.UndocumentedConsumerView{
+		GroupsUndocumented: make([]response.UndocumentedGroup, 0, len(undocumentedGroups)),
 	}
 
 	for _, group := range undocumentedGroups {

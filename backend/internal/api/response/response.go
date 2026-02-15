@@ -10,3 +10,11 @@ type ErrorResponse struct {
 type SuccessResponse struct {
 	Message string `json:"message"`
 }
+
+// Pagination holds pagination metadata for paginated responses.
+type Pagination struct {
+	Page       int `json:"page"`
+	PageSize   int `json:"page_size"`
+	Total      int `json:"total"`
+	TotalPages int `json:"total_pages"`
+}

@@ -19,33 +19,36 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Consumer, Producer, TopicWithEvents } from "@/types";
-import { AlertCircle, ArrowRight, Box, CheckCircle2, ChevronDown, ChevronRight, Code, FileJson, Filter, Layers, Search as SearchIcon, Workflow, XCircle, Zap } from "lucide-react";
+import { useTopics } from "@/hooks/useTopics";
+import type { TopicConsumerEntry, TopicProducerEntry, TopicView } from "@/types";
+import { AlertCircle, ArrowRight, Box, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Code, FileJson, Filter, Layers, Search as SearchIcon, Workflow, XCircle, Zap } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-
-interface TopicsViewProps {
-    topics: TopicWithEvents[];
-    producers: Producer[];
-    consumers: Consumer[];
-}
 
 type FilterMode = 'all' | 'orphaned' | 'unconsumed' | 'active';
 
-export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
+export function TopicsView() {
+    const {
+        topics,
+        countEvents,
+        countOrphaned,
+        countUnconsumed,
+        loading,
+        pagination,
+        page,
+        setPage
+    } = useTopics();
     const [searchQuery, setSearchQuery] = useState("");
     const [openTopics, setOpenTopics] = useState<Record<string, boolean>>({});
     const [filterMode, setFilterMode] = useState<FilterMode>('all');
     const [expandAll, setExpandAll] = useState(false);
 
-    const getEventProducers = useCallback((topic: string, eventType: string) => {
-        return producers.filter(p => p.topic === topic && p.events.some(e => e.name === eventType));
-    }, [producers]);
+    const getEventProducers = useCallback((topicData: TopicView, eventName: string): TopicProducerEntry[] => {
+        return topicData.producers.filter(p => p.event === eventName);
+    }, []);
 
-    const getEventConsumers = useCallback((topic: string, eventType: string) => {
-        return consumers.filter(c =>
-            c.topics.some(t => t.name === topic && t.events.some(e => e.name === eventType))
-        );
-    }, [consumers]);
+    const getEventConsumers = useCallback((topicData: TopicView, eventName: string): TopicConsumerEntry[] => {
+        return topicData.consumers.filter(c => c.event === eventName);
+    }, []);
 
     const toggleTopic = (topicName: string) => {
         setOpenTopics(prev => ({
@@ -54,18 +57,16 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
         }));
     };
 
-    const getEventStatus = useCallback((topic: string, eventType: string) => {
-        const eventProducers = getEventProducers(topic, eventType);
-        const eventConsumers = getEventConsumers(topic, eventType);
+    const getEventStatus = useCallback((topicData: TopicView, eventName: string) => {
+        const producers = getEventProducers(topicData, eventName);
+        const consumers = getEventConsumers(topicData, eventName);
 
-        if (eventProducers.length === 0) return 'orphaned';
-        if (eventConsumers.length === 0) return 'unconsumed';
+        if (producers.length === 0) return 'orphaned';
+        if (consumers.length === 0) return 'unconsumed';
         return 'active';
     }, [getEventProducers, getEventConsumers]);
 
-    const totalEvents = useMemo(() => {
-        return topics.reduce((acc, t) => acc + t.events.length, 0);
-    }, [topics]);
+    const activeCount = countEvents - countOrphaned - countUnconsumed;
 
     const filteredTopics = useMemo(() => {
         let result = topics;
@@ -87,14 +88,14 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                     };
                 }
                 return null;
-            }).filter((t): t is TopicWithEvents => t !== null);
+            }).filter((t): t is TopicView => t !== null);
         }
 
         // Apply status filter
         if (filterMode !== 'all') {
             result = result.map(topic => {
                 const filteredEvents = topic.events.filter(event => {
-                    const status = getEventStatus(topic.topic, event.name);
+                    const status = getEventStatus(topic, event.name);
                     return status === filterMode;
                 });
 
@@ -102,7 +103,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                     return { ...topic, events: filteredEvents };
                 }
                 return null;
-            }).filter((t): t is TopicWithEvents => t !== null);
+            }).filter((t): t is TopicView => t !== null);
         }
 
         return result;
@@ -122,23 +123,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
         setOpenTopics(newOpenTopics);
     };
 
-    const statsData = useMemo(() => {
-        let orphanedCount = 0;
-        let unconsumedCount = 0;
-        let activeCount = 0;
-
-        topics.forEach(topic => {
-            topic.events.forEach(event => {
-                const status = getEventStatus(topic.topic, event.name);
-                if (status === 'orphaned') orphanedCount++;
-                else if (status === 'unconsumed') unconsumedCount++;
-                else activeCount++;
-            });
-        });
-
-        return { orphanedCount, unconsumedCount, activeCount };
-    }, [topics, getEventStatus]);
-
+    if (loading) return null;
 
     return (
         <div className="space-y-6 animate-in">
@@ -146,7 +131,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <StatCard
                     label="Active Events"
-                    value={statsData.activeCount}
+                    value={activeCount}
                     description="With producers & consumers"
                     icon={<CheckCircle2 className="h-4 w-4 text-muted-foreground" />}
                     onClick={() => setFilterMode(filterMode === 'active' ? 'all' : 'active')}
@@ -154,7 +139,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                 />
                 <StatCard
                     label="Unconsumed"
-                    value={statsData.unconsumedCount}
+                    value={countUnconsumed}
                     description="No active consumers"
                     icon={<AlertCircle className="h-4 w-4 text-muted-foreground" />}
                     onClick={() => setFilterMode(filterMode === 'unconsumed' ? 'all' : 'unconsumed')}
@@ -162,7 +147,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                 />
                 <StatCard
                     label="Orphaned"
-                    value={statsData.orphanedCount}
+                    value={countOrphaned}
                     description="No producers defined"
                     icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
                     onClick={() => setFilterMode(filterMode === 'orphaned' ? 'all' : 'orphaned')}
@@ -180,7 +165,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                         resultCount={searchQuery || filterMode !== 'all'
                             ? filteredEventsCount
                             : undefined}
-                        totalCount={searchQuery || filterMode !== 'all' ? totalEvents : undefined}
+                        totalCount={searchQuery || filterMode !== 'all' ? countEvents : undefined}
                     />
                 </div>
                 <div className="flex gap-2">
@@ -216,7 +201,7 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                 ) : (
                     filteredTopics.map((topicData, topicIndex) => {
                         const orphanedInTopic = topicData.events.filter(
-                            e => getEventStatus(topicData.topic, e.name) === 'orphaned'
+                            e => getEventStatus(topicData, e.name) === 'orphaned'
                         ).length;
 
                         return (
@@ -261,9 +246,9 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                 {openTopics[topicData.topic] && (
                                     <div className="px-4 pb-4 md:px-5 space-y-2 bg-muted/20">
                                         {topicData.events.map((event, eventIndex) => {
-                                            const eventProducers = getEventProducers(topicData.topic, event.name);
-                                            const eventConsumers = getEventConsumers(topicData.topic, event.name);
-                                            const status = getEventStatus(topicData.topic, event.name);
+                                            const eventProducers = getEventProducers(topicData, event.name);
+                                            const eventConsumers = getEventConsumers(topicData, event.name);
+                                            const status = getEventStatus(topicData, event.name);
 
                                             let statusIcon;
                                             let statusColor;
@@ -558,10 +543,10 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                                                                             {eventProducers.length > 0 ? (
                                                                                 <div className="space-y-2">
                                                                                     {eventProducers.map(p => (
-                                                                                        <div key={`${p.service}-${p.repository}-${p.topic}`} className="p-3 bg-muted/50 rounded-lg border border-border flex flex-col gap-1">
+                                                                                        <div key={`${p.service}-${p.repository}`} className="p-3 bg-muted/50 rounded-lg border border-border flex flex-col gap-1">
                                                                                             <span className="font-medium text-sm">{p.service}</span>
                                                                                             <code className="text-xs text-muted-foreground font-mono">
-                                                                                                {p.topic}
+                                                                                                {p.repository}
                                                                                             </code>
                                                                                         </div>
                                                                                     ))}
@@ -610,6 +595,37 @@ export function TopicsView({ topics, producers, consumers }: TopicsViewProps) {
                     })
                 )}
             </div>
+
+            {/* Pagination Controls */}
+            {pagination && pagination.total_pages > 1 && (
+                <div className="flex items-center justify-between px-1">
+                    <span className="text-xs text-muted-foreground">
+                        Page {pagination.page} of {pagination.total_pages} ({pagination.total} topics)
+                    </span>
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            disabled={page <= 1}
+                            onClick={() => setPage(page - 1)}
+                        >
+                            <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            disabled={page >= pagination.total_pages}
+                            onClick={() => setPage(page + 1)}
+                        >
+                            Next
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

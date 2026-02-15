@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/nicolascb/eventdoctor/internal/api/response"
@@ -76,6 +77,7 @@ func (a *API) routes() {
 	a.mux.HandleFunc("GET /v1/consumers", a.corsMiddleware(a.handlerListConsumers))
 	a.mux.HandleFunc("GET /v1/overview", a.corsMiddleware(a.handlerOverview))
 	a.mux.HandleFunc("GET /v1/topics/{name}", a.corsMiddleware(a.handlerGetTopic))
+	a.mux.HandleFunc("GET /v1/topics", a.corsMiddleware(a.handlerListTopics))
 	a.mux.HandleFunc("GET /v1/services/{name}", a.corsMiddleware(a.handlerGetService))
 	a.mux.HandleFunc("OPTIONS /v1/config", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/producers", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
@@ -83,7 +85,9 @@ func (a *API) routes() {
 	a.mux.HandleFunc("OPTIONS /v1/consumers", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/overview", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/topics/{name}", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
+	a.mux.HandleFunc("OPTIONS /v1/topics", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
 	a.mux.HandleFunc("OPTIONS /v1/services/{name}", a.corsMiddleware(func(w http.ResponseWriter, r *http.Request) {}))
+
 }
 
 func (a *API) writeResponse(w http.ResponseWriter, status int, data any) error {
@@ -159,7 +163,34 @@ func (a *API) handlerListEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) handlerListConsumers(w http.ResponseWriter, r *http.Request) {
-	consumers, err := a.service.ListConsumers(r.Context())
+	undocumentedOnly := r.URL.Query().Get("undocumented_only") == "true"
+
+	if undocumentedOnly {
+		result, err := a.service.ListUndocumentedConsumers(r.Context())
+		if err != nil {
+			a.logger.Error("failed to list undocumented consumers", slog.Any("error", err))
+			a.writeResponse(w, http.StatusInternalServerError, response.ErrorResponse{
+				Error:   "failed to list undocumented consumers",
+				Details: err.Error(),
+			})
+			return
+		}
+
+		if err := a.writeResponse(w, http.StatusOK, result); err != nil {
+			a.logger.Error("failed to write response", slog.Any("error", err))
+		}
+		return
+	}
+
+	var page, pageSize int
+	if v := r.URL.Query().Get("page"); v != "" {
+		page, _ = strconv.Atoi(v)
+	}
+	if v := r.URL.Query().Get("page_size"); v != "" {
+		pageSize, _ = strconv.Atoi(v)
+	}
+
+	consumers, err := a.service.ListConsumers(r.Context(), page, pageSize)
 	if err != nil {
 		a.logger.Error("failed to list consumers", slog.Any("error", err))
 		a.writeResponse(w, http.StatusInternalServerError, response.ErrorResponse{
@@ -220,6 +251,30 @@ func (a *API) handlerGetService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := a.writeResponse(w, http.StatusOK, view); err != nil {
+		a.logger.Error("failed to write response", slog.Any("error", err))
+	}
+}
+
+func (a *API) handlerListTopics(w http.ResponseWriter, r *http.Request) {
+	var page, pageSize int
+	if v := r.URL.Query().Get("page"); v != "" {
+		page, _ = strconv.Atoi(v)
+	}
+	if v := r.URL.Query().Get("page_size"); v != "" {
+		pageSize, _ = strconv.Atoi(v)
+	}
+
+	topics, err := a.service.ListTopics(r.Context(), page, pageSize)
+	if err != nil {
+		a.logger.Error("failed to list topics", slog.Any("error", err))
+		a.writeResponse(w, http.StatusInternalServerError, response.ErrorResponse{
+			Error:   "failed to list topics",
+			Details: err.Error(),
+		})
+		return
+	}
+
+	if err := a.writeResponse(w, http.StatusOK, topics); err != nil {
 		a.logger.Error("failed to write response", slog.Any("error", err))
 	}
 }

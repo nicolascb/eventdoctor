@@ -10,9 +10,11 @@ import (
 type Service interface {
 	SaveSpec(ctx context.Context, spec eventdoctor.EventDoctorSpec) error
 	ListProducers(ctx context.Context) ([]response.ProducerView, error)
-	ListConsumers(ctx context.Context) (*response.ConsumerView, error)
+	ListConsumers(ctx context.Context, page, pageSize int) (*response.ConsumerView, error)
+	ListUndocumentedConsumers(ctx context.Context) (*response.UndocumentedConsumerView, error)
 	ListEvents(ctx context.Context) ([]response.TopicEventsView, error)
 	Overview(ctx context.Context) (*response.OverviewResponse, error)
 	GetTopicView(ctx context.Context, topicName string) (*response.TopicView, error)
 	GetServiceView(ctx context.Context, serviceName string) (*response.ServiceView, error)
+	ListTopics(ctx context.Context, page, pageSize int) (*response.TopicListView, error)
 }

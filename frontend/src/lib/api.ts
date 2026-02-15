@@ -1,4 +1,4 @@
-import type { ConsumerView, OverviewResponse, Producer, TopicWithEvents } from '@/types';
+import type { ConsumerView, OverviewResponse, Producer, TopicListView, TopicWithEvents, UndocumentedConsumersView } from '@/types';
 
 // In Docker, __API_URL__ is replaced at container startup with the actual API_URL env var.
 // In development, VITE_API_URL takes precedence; the placeholder stays as-is and the fallback kicks in.
@@ -61,8 +61,28 @@ class ApiClient {
         return this.request<TopicWithEvents[]>('/events');
     }
 
-    getConsumers(): Promise<ConsumerView> {
-        return this.request<ConsumerView>('/consumers');
+    getConsumers(page?: number, pageSize?: number): Promise<ConsumerView> {
+        const params = new URLSearchParams();
+        if (page) params.set('page', String(page));
+        if (pageSize) params.set('page_size', String(pageSize));
+        const qs = params.toString();
+        return this.request<ConsumerView>(`/consumers${qs ? `?${qs}` : ''}`);
+    }
+
+    getUndocumentedConsumers(): Promise<UndocumentedConsumersView> {
+        return this.request<UndocumentedConsumersView>('/consumers?undocumented_only=true');
+    }
+
+    getTopics(page?: number, pageSize?: number): Promise<TopicListView> {
+        const params = new URLSearchParams();
+        if (page) params.set('page', String(page));
+        if (pageSize) params.set('page_size', String(pageSize));
+        const qs = params.toString();
+        return this.request<TopicListView>(`/topics${qs ? `?${qs}` : ''}`);
+    }
+
+    getTopic(name: string): Promise<TopicListView> {
+        return this.request<TopicListView>(`/topics/${name}`);
     }
 
     getOverview(): Promise<OverviewResponse> {

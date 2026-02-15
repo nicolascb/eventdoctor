@@ -17,16 +17,22 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import type { Consumer, Topic, UndocumentedGroup } from "@/types";
-import { Activity, AlertTriangle, ExternalLink, Layers, Server, Workflow, Zap } from "lucide-react";
+import { useConsumers } from "@/hooks/useConsumers";
+import type { Consumer, Topic } from "@/types";
+import { Activity, ChevronLeft, ChevronRight, ExternalLink, Layers, Server, Workflow, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 
-interface ConsumersViewProps {
-    consumers: Consumer[];
-    undocumentedGroups: UndocumentedGroup[];
-}
+export function ConsumersView() {
+    const {
+        consumers,
+        loading,
+        pagination,
+        page,
+        setPage,
+        totalTopics,
+        totalEvents,
+    } = useConsumers();
 
-export function ConsumersView({ consumers, undocumentedGroups }: ConsumersViewProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedConsumer, setSelectedConsumer] = useState<Consumer | null>(null);
     const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
@@ -44,32 +50,17 @@ export function ConsumersView({ consumers, undocumentedGroups }: ConsumersViewPr
         );
     }, [consumers, searchQuery]);
 
-    const filteredUndocumented = useMemo(() => {
-        if (!searchQuery) return undocumentedGroups;
-        const q = searchQuery.toLowerCase();
-        return undocumentedGroups.filter(g =>
-            g.group.toLowerCase().includes(q) ||
-            g.topic.toLowerCase().includes(q)
-        );
-    }, [undocumentedGroups, searchQuery]);
+    const totalConsumerGroups = pagination?.total ?? consumers.length;
 
-    const totalTopics = useMemo(() => {
-        return consumers.reduce((acc, c) => acc + c.topics.length, 0);
-    }, [consumers]);
-
-    const totalEvents = useMemo(() => {
-        return consumers.reduce((acc, c) =>
-            acc + c.topics.reduce((sum, t) => sum + t.events.length, 0), 0
-        );
-    }, [consumers]);
+    if (loading) return null;
 
     return (
         <div className="space-y-4 animate-in">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <StatCard
                     label="Consumer Groups"
-                    value={consumers.length}
+                    value={totalConsumerGroups}
                     description="Active consumer services"
                     icon={<Layers className="h-4 w-4 text-muted-foreground" />}
                 />
@@ -85,12 +76,6 @@ export function ConsumersView({ consumers, undocumentedGroups }: ConsumersViewPr
                     description="Registered event handlers"
                     icon={<Activity className="h-4 w-4 text-muted-foreground" />}
                 />
-                <StatCard
-                    label="Undocumented"
-                    value={undocumentedGroups.length}
-                    description="Consumer groups without documentation"
-                    icon={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
-                />
             </div>
 
             {/* Search Bar */}
@@ -98,8 +83,8 @@ export function ConsumersView({ consumers, undocumentedGroups }: ConsumersViewPr
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Search consumers, topics, or events..."
-                resultCount={searchQuery ? filteredConsumers.length + filteredUndocumented.length : undefined}
-                totalCount={searchQuery ? consumers.length + undocumentedGroups.length : undefined}
+                resultCount={searchQuery ? filteredConsumers.length : undefined}
+                totalCount={searchQuery ? consumers.length : undefined}
             />
 
             {/* Consumers Table */}
@@ -177,48 +162,33 @@ export function ConsumersView({ consumers, undocumentedGroups }: ConsumersViewPr
                 )}
             </div>
 
-            {/* Undocumented Groups */}
-            {filteredUndocumented.length > 0 && (
-                <div className="space-y-2">
-                    <Separator />
-                    <div className="flex items-center gap-2 px-1">
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                        <h2 className="text-xs font-medium text-muted-foreground">
-                            Undocumented Consumer Groups ({filteredUndocumented.length})
-                        </h2>
-                    </div>
-                    <div className="rounded-lg border border-border bg-card overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="hover:bg-transparent">
-                                    <TableHead className="text-[11px] font-medium text-left">Group</TableHead>
-                                    <TableHead className="text-[11px] font-medium text-left">Topic</TableHead>
-                                    <TableHead className="text-[11px] font-medium text-center">First Seen</TableHead>
-                                    <TableHead className="text-[11px] font-medium text-center">Last Updated</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredUndocumented.map((g) => (
-                                    <TableRow key={`${g.group}-${g.topic}`}>
-                                        <TableCell className="py-3">
-                                            <div className="flex items-center gap-2">
-                                                <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-                                                <span className="font-medium text-sm">{g.group}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="py-3">
-                                            <code className="text-xs font-mono">{g.topic}</code>
-                                        </TableCell>
-                                        <TableCell className="py-3 text-center">
-                                            <span className="text-xs text-muted-foreground">{g.created_at}</span>
-                                        </TableCell>
-                                        <TableCell className="py-3 text-center">
-                                            <span className="text-xs text-muted-foreground">{g.updated_at}</span>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+            {/* Pagination Controls */}
+            {pagination && pagination.total_pages > 1 && (
+                <div className="flex items-center justify-between px-1">
+                    <span className="text-xs text-muted-foreground">
+                        Page {pagination.page} of {pagination.total_pages} ({pagination.total} groups)
+                    </span>
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            disabled={page <= 1}
+                            onClick={() => setPage(page - 1)}
+                        >
+                            <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            disabled={page >= pagination.total_pages}
+                            onClick={() => setPage(page + 1)}
+                        >
+                            Next
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                        </Button>
                     </div>
                 </div>
             )}

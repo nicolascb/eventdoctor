@@ -1,9 +1,10 @@
 package response
 
-// TopicView represents a detailed view of a topic with its producers and consumers.
+// TopicView represents a detailed view of a topic with its events, producers and consumers.
 type TopicView struct {
 	Topic        string               `json:"topic"`
 	OwnerService *string              `json:"owner_service,omitempty"`
+	Events       []EventView          `json:"events"`
 	Producers    []TopicProducerEntry `json:"producers"`
 	Consumers    []TopicConsumerEntry `json:"consumers"`
 }
@@ -24,4 +25,12 @@ type TopicConsumerEntry struct {
 	Event      string  `json:"event"`
 	Group      string  `json:"group"`
 	Version    *string `json:"version,omitempty"`
+}
+
+type TopicListView struct {
+	Topics          []TopicView `json:"topics"`
+	CountEvents     int         `json:"count_events"`
+	CountUnconsumed int         `json:"count_unconsumed"`
+	CountOrphaned   int         `json:"count_orphaned"`
+	Pagination      *Pagination `json:"pagination,omitempty"`
 }

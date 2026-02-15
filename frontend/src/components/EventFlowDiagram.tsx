@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { Consumer, Producer, TopicWithEvents } from "@/types";
+import type { TopicView } from "@/types";
 import {
     Check,
     ChevronDown,
@@ -25,9 +25,8 @@ import {
 /* ────────────────────────────────────────────────────────── */
 
 interface EventFlowDiagramProps {
-    topics: TopicWithEvents[];
-    producers: Producer[];
-    consumers: Consumer[];
+    topics: TopicView[];
+    hideSelector?: boolean;
 }
 
 interface FlowEvent {
@@ -147,14 +146,14 @@ function TopicSelect({
                                     type="button"
                                     onClick={() => toggle(name)}
                                     className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors ${active
-                                            ? "bg-accent text-accent-foreground"
-                                            : "hover:bg-accent/50"
+                                        ? "bg-accent text-accent-foreground"
+                                        : "hover:bg-accent/50"
                                         }`}
                                 >
                                     <span
                                         className={`flex h-4 w-4 items-center justify-center rounded-sm border ${active
-                                                ? "bg-primary border-primary text-primary-foreground"
-                                                : "border-muted-foreground/30"
+                                            ? "bg-primary border-primary text-primary-foreground"
+                                            : "border-muted-foreground/30"
                                             }`}
                                     >
                                         {active && <Check className="h-3 w-3" />}
@@ -444,8 +443,7 @@ function FlowRow({
 
 export function EventFlowDiagram({
     topics,
-    producers,
-    consumers,
+    hideSelector = false,
 }: EventFlowDiagramProps) {
     const allTopicNames = useMemo(
         () => topics.map((t) => t.topic).sort(),
@@ -463,21 +461,11 @@ export function EventFlowDiagram({
 
         return visible.map((t) => {
             const flowEvents: FlowEvent[] = t.events.map((e) => {
-                const prods = producers
-                    .filter(
-                        (p) =>
-                            p.topic === t.topic &&
-                            p.events.some((pe) => pe.name === e.name),
-                    )
+                const prods = t.producers
+                    .filter((p) => p.event === e.name)
                     .map((p) => p.service);
-                const cons = consumers
-                    .filter((c) =>
-                        c.topics.some(
-                            (ct) =>
-                                ct.name === t.topic &&
-                                ct.events.some((ce) => ce.name === e.name),
-                        ),
-                    )
+                const cons = t.consumers
+                    .filter((c) => c.event === e.name)
                     .map((c) => c.service);
                 return {
                     name: e.name,
@@ -488,7 +476,7 @@ export function EventFlowDiagram({
 
             return { topic: t.topic, flowEvents };
         });
-    }, [topics, producers, consumers, selected]);
+    }, [topics, selected]);
 
     if (topics.length === 0) return null;
 
@@ -500,15 +488,17 @@ export function EventFlowDiagram({
                         <Zap className="h-4 w-4" />
                         Event Flow
                     </CardTitle>
-                    <TopicSelect
-                        options={allTopicNames}
-                        selected={selected}
-                        onChange={setSelected}
-                    />
+                    {!hideSelector && (
+                        <TopicSelect
+                            options={allTopicNames}
+                            selected={selected}
+                            onChange={setSelected}
+                        />
+                    )}
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                {selected.length === 0 ? (
+                {(selected.length === 0 && !hideSelector) ? (
                     <p className="text-center text-sm text-muted-foreground py-8">
                         Select a topic above to visualize its event flow.
                     </p>
