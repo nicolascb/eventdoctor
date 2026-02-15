@@ -1,5 +1,6 @@
 import { ConfigValidator } from '@/components/ConfigValidator';
 import { ConsumersPage } from '@/components/ConsumersPage';
+import { EventsView } from '@/components/EventsView';
 import { OverviewView } from '@/components/OverviewView';
 import { ProducersView } from '@/components/ProducersView';
 import { ErrorState, LoadingState } from '@/components/shared';
@@ -16,6 +17,7 @@ const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8087/v1';
 const pageTitles: Record<NavItem, string> = {
   overview: 'Overview',
   producers: 'Producers',
+  events: 'Events',
   topics: 'Topics',
   consumers: 'Consumers',
   validator: 'Validator',
@@ -25,6 +27,7 @@ const pageTitles: Record<NavItem, string> = {
 const pageDescriptions: Record<NavItem, string> = {
   overview: 'Monitor your event-driven architecture at a glance.',
   producers: 'Services publishing events to topics.',
+  events: 'Registered event types in the system.',
   topics: 'Message channels and their event types.',
   consumers: 'Services consuming events from topics.',
   validator: 'Validate your EventDoctor YAML configuration.',
@@ -58,6 +61,8 @@ function App() {
         return <OverviewView overview={overview} />;
       case 'producers':
         return <ProducersView />;
+      case 'events':
+        return <EventsView />;
       case 'topics':
         return <TopicsView />;
       case 'consumers':
@@ -76,6 +81,7 @@ function App() {
         onNavigate={setActiveView}
         counts={{
           producers: overview.total_producers,
+          events: overview.total_events,
           topics: overview.total_topics,
           consumers: overview.total_consumers,
         }}

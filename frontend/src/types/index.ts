@@ -19,8 +19,39 @@ export interface TopicWithEvents {
     events: Event[];
 }
 
+export interface EventView {
+    id: string;
+    topic: string;
+    name: string;
+    description?: string;
+    version?: string;
+    schema_url?: string;
+    headers?: EventHeader[];
+    producers: EventProducer[];
+    consumers: EventConsumer[];
+}
+
+export interface EventProducer {
+    id: string;
+    service: string;
+    repository: string;
+    owner: string;
+}
+
+export interface EventConsumer {
+    id: string;
+    service: string;
+    repository: string;
+}
+
+export interface EventsListView {
+    events: EventView[];
+    pagination?: Pagination;
+}
+
 // ─── Producer Types ─────────────────────────────────────────
 
+// Used by EventDoctorSpec (config upload)
 export interface Producer {
     service: string;
     repository: string;
@@ -31,18 +62,48 @@ export interface Producer {
     events: Event[];
 }
 
-export interface ProducerTopic {
+// Topic item within a service group
+export interface ProducerTopicItem {
+    topic_id: number;
     topic: string;
-    description: string;
+    event_count: number;
     owner: boolean;
     writes: boolean;
-    events: Event[];
 }
 
-export interface GroupedProducer {
+// Service item containing topics
+export interface ProducerServiceItem {
+    service_id: number;
     service: string;
     repository: string;
-    topics: ProducerTopic[];
+    topics: ProducerTopicItem[];
+}
+
+export interface ProducersListView {
+    producers: ProducerServiceItem[];
+    pagination?: Pagination;
+}
+
+// Event entry within a producer detail view
+export interface ProducerEventEntry {
+    name: string;
+    description?: string;
+    version?: string;
+    schema_url?: string;
+    headers?: EventHeader[];
+}
+
+// Full detail returned by GET /v1/producers/{service_id}/{topic_id}
+export interface ProducerDetailView {
+    service_id: number;
+    service: string;
+    repository: string;
+    topic_id: number;
+    topic: string;
+    description?: string;
+    owner: boolean;
+    writes: boolean;
+    events: ProducerEventEntry[];
 }
 
 // ─── Consumer Types ─────────────────────────────────────────

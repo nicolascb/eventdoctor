@@ -11,16 +11,18 @@ import {
     NotebookPen,
     RefreshCw,
     SatelliteDish,
-    Sun
+    Sun,
+    Zap
 } from "lucide-react";
 
-export type NavItem = "overview" | "producers" | "topics" | "consumers" | "validator" | "auditor";
+export type NavItem = "overview" | "producers" | "events" | "topics" | "consumers" | "validator" | "auditor";
 
 interface SidebarProps {
     activeItem: NavItem;
     onNavigate: (item: NavItem) => void;
     counts: {
         producers: number;
+        events: number;
         topics: number;
         consumers: number;
     };
@@ -34,6 +36,7 @@ interface SidebarProps {
 
 const navItems = [
     { id: "overview" as const, label: "Overview", icon: Eye },
+    { id: "events" as const, label: "Events", icon: Zap, countKey: "events" as const },
     { id: "topics" as const, label: "Topics", icon: Network, countKey: "topics" as const },
     { id: "producers" as const, label: "Producers", icon: NotebookPen, countKey: "producers" as const },
     { id: "consumers" as const, label: "Consumers", icon: SatelliteDish, countKey: "consumers" as const },

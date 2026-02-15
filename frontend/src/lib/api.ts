@@ -1,4 +1,4 @@
-import type { ConsumerView, OverviewResponse, Producer, TopicListView, TopicWithEvents, UndocumentedConsumersView } from '@/types';
+import type { ConsumerView, EventsListView, OverviewResponse, ProducerDetailView, ProducersListView, TopicListView, UndocumentedConsumersView } from '@/types';
 
 // In Docker, __API_URL__ is replaced at container startup with the actual API_URL env var.
 // In development, VITE_API_URL takes precedence; the placeholder stays as-is and the fallback kicks in.
@@ -53,18 +53,33 @@ class ApiClient {
         return response.json();
     }
 
-    getProducers(): Promise<Producer[]> {
-        return this.request<Producer[]>('/producers');
-    }
-
-    getEvents(): Promise<TopicWithEvents[]> {
-        return this.request<TopicWithEvents[]>('/events');
-    }
-
-    getConsumers(page?: number, pageSize?: number): Promise<ConsumerView> {
+    getProducers(page?: number, pageSize?: number, search?: string): Promise<ProducersListView> {
         const params = new URLSearchParams();
         if (page) params.set('page', String(page));
         if (pageSize) params.set('page_size', String(pageSize));
+        if (search) params.set('search', search);
+        const qs = params.toString();
+        return this.request<ProducersListView>(`/producers${qs ? `?${qs}` : ''}`);
+    }
+
+    getProducerDetail(serviceId: number, topicId: number): Promise<ProducerDetailView> {
+        return this.request<ProducerDetailView>(`/producers/${serviceId}/${topicId}`);
+    }
+
+    getEvents(page?: number, pageSize?: number, search?: string): Promise<EventsListView> {
+        const params = new URLSearchParams();
+        if (page) params.set('page', String(page));
+        if (pageSize) params.set('page_size', String(pageSize));
+        if (search) params.set('search', search);
+        const qs = params.toString();
+        return this.request<EventsListView>(`/events${qs ? `?${qs}` : ''}`);
+    }
+
+    getConsumers(page?: number, pageSize?: number, search?: string): Promise<ConsumerView> {
+        const params = new URLSearchParams();
+        if (page) params.set('page', String(page));
+        if (pageSize) params.set('page_size', String(pageSize));
+        if (search) params.set('search', search);
         const qs = params.toString();
         return this.request<ConsumerView>(`/consumers${qs ? `?${qs}` : ''}`);
     }
