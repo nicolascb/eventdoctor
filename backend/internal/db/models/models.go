@@ -87,8 +87,10 @@ type EventRow struct {
 
 // ProducerRow represents a query row joining producers, services, events, topics, and headers.
 type ProducerRow struct {
+	ServiceID         int64
 	ServiceName       string
 	Repository        string
+	TopicID           int64
 	TopicName         string
 	TopicDescription  string
 	Owner             bool
@@ -99,6 +101,18 @@ type ProducerRow struct {
 	SchemaURL         string
 	HeaderName        *string
 	HeaderDescription *string
+}
+
+// ProducerListRow represents a lightweight query row for the producers listing.
+type ProducerListRow struct {
+	ServiceID   int64
+	ServiceName string
+	Repository  string
+	TopicID     int64
+	TopicName   string
+	EventCount  int
+	Owner       bool
+	Writes      bool
 }
 
 // TopicProducerRow represents a query row for producers of a specific topic.

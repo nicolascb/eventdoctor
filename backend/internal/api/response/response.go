@@ -1,5 +1,10 @@
 package response
 
+import (
+	"encoding/json"
+	"net/http"
+)
+
 // ErrorResponse represents an error in the API response
 type ErrorResponse struct {
 	Error   string `json:"error"`
@@ -17,4 +22,10 @@ type Pagination struct {
 	PageSize   int `json:"page_size"`
 	Total      int `json:"total"`
 	TotalPages int `json:"total_pages"`
+}
+
+func Write(w http.ResponseWriter, status int, data any) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	return json.NewEncoder(w).Encode(data)
 }

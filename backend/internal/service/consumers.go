@@ -9,19 +9,28 @@ import (
 	"github.com/nicolascb/eventdoctor/internal/db/models"
 )
 
-func (s *Service) ListConsumers(ctx context.Context, page, pageSize int) (*response.ConsumerView, error) {
+func (s *Service) ListConsumers(ctx context.Context, page, pageSize int, search string) (*response.ConsumerView, error) {
 	var rows []models.ConsumerRow
 	var pagination *response.Pagination
 	var err error
 
 	if page > 0 && pageSize > 0 {
-		total, err := db.CountConsumerGroups(ctx, s.db)
+		var total int
+		if search != "" {
+			total, err = db.CountConsumerGroupsSearch(ctx, s.db, search)
+		} else {
+			total, err = db.CountConsumerGroups(ctx, s.db)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to count consumer groups: %w", err)
 		}
 
 		offset := (page - 1) * pageSize
-		rows, err = db.ListConsumersPaginated(ctx, s.db, pageSize, offset)
+		if search != "" {
+			rows, err = db.SearchConsumersPaginated(ctx, s.db, search, pageSize, offset)
+		} else {
+			rows, err = db.ListConsumersPaginated(ctx, s.db, pageSize, offset)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to list consumers: %w", err)
 		}

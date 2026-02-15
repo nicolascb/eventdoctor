@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -642,6 +643,116 @@ func ListAllEvents(ctx context.Context, executor SQLExecutor) ([]models.EventRow
 	return results, rows.Err()
 }
 
+// CountEvents returns the total number of events.
+func CountEvents(ctx context.Context, executor SQLExecutor) (int, error) {
+	var count int
+	if err := executor.QueryRowContext(ctx, `SELECT COUNT(*) FROM events`).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// ListEventsPaginated returns events for a specific page.
+func ListEventsPaginated(ctx context.Context, executor SQLExecutor, limit, offset int) ([]models.EventRow, error) {
+	// We need to paginate on the EVENTS table first, then join headers.
+	// 1. Select the event IDs for the current page, filtering/ordering as needed.
+	// Since the main list is ordered by TopicName then EventName, we need to join topics for ordering.
+	query := `
+		SELECT
+			t.name AS topic_name,
+			e.event_name,
+			e.description AS event_description,
+			e.schema_version,
+			e.schema_url,
+			eh.name AS header_name,
+			eh.description AS header_description
+		FROM events e
+		JOIN topics t ON e.topic_id = t.id
+		LEFT JOIN event_headers eh ON eh.event_id = e.id
+		WHERE e.id IN (
+			SELECT e2.id
+			FROM events e2
+			JOIN topics t2 ON e2.topic_id = t2.id
+			ORDER BY t2.name, e2.event_name
+			LIMIT ? OFFSET ?
+		)
+		ORDER BY t.name, e.event_name, eh.name
+	`
+	rows, err := executor.QueryContext(ctx, query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.EventRow
+	for rows.Next() {
+		var row models.EventRow
+		if err := rows.Scan(&row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// CountEventsSearch returns the total number of events matching a search term.
+func CountEventsSearch(ctx context.Context, executor SQLExecutor, search string) (int, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM events e
+		JOIN topics t ON e.topic_id = t.id
+		WHERE e.event_name LIKE ? OR t.name LIKE ?
+	`
+	pattern := "%" + search + "%"
+	var count int
+	if err := executor.QueryRowContext(ctx, query, pattern, pattern).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// SearchEventsPaginated returns events matching a search term for a specific page.
+func SearchEventsPaginated(ctx context.Context, executor SQLExecutor, search string, limit, offset int) ([]models.EventRow, error) {
+	query := `
+		SELECT
+			t.name AS topic_name,
+			e.event_name,
+			e.description AS event_description,
+			e.schema_version,
+			e.schema_url,
+			eh.name AS header_name,
+			eh.description AS header_description
+		FROM events e
+		JOIN topics t ON e.topic_id = t.id
+		LEFT JOIN event_headers eh ON eh.event_id = e.id
+		WHERE e.id IN (
+			SELECT e2.id
+			FROM events e2
+			JOIN topics t2 ON e2.topic_id = t2.id
+			WHERE e2.event_name LIKE ? OR t2.name LIKE ?
+			ORDER BY t2.name, e2.event_name
+			LIMIT ? OFFSET ?
+		)
+		ORDER BY t.name, e.event_name, eh.name
+	`
+	pattern := "%" + search + "%"
+	rows, err := executor.QueryContext(ctx, query, pattern, pattern, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.EventRow
+	for rows.Next() {
+		var row models.EventRow
+		if err := rows.Scan(&row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
 // ListEventsByTopicName returns all events (with headers) for a specific topic.
 func ListEventsByTopicName(ctx context.Context, executor SQLExecutor, topicName string) ([]models.EventRow, error) {
 	query := `
@@ -709,6 +820,170 @@ func ListAllProducers(ctx context.Context, executor SQLExecutor) ([]models.Produ
 	for rows.Next() {
 		var row models.ProducerRow
 		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.TopicName, &row.TopicDescription, &row.Owner, &row.Writes, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// CountServices returns the total number of services.
+func CountServices(ctx context.Context, executor SQLExecutor) (int, error) {
+	var count int
+	if err := executor.QueryRowContext(ctx, "SELECT COUNT(*) FROM services").Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// CountServicesSearch returns the total number of services matching a search term.
+func CountServicesSearch(ctx context.Context, executor SQLExecutor, search string) (int, error) {
+	query := "SELECT COUNT(*) FROM services WHERE name LIKE ?"
+	pattern := "%" + search + "%"
+	var count int
+	if err := executor.QueryRowContext(ctx, query, pattern).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// ListServicesPaginated returns services for a specific page.
+func ListServicesPaginated(ctx context.Context, executor SQLExecutor, limit, offset int) ([]models.Service, error) {
+	query := `
+		SELECT id, name, repository
+		FROM services
+		ORDER BY name
+		LIMIT ? OFFSET ?
+	`
+	rows, err := executor.QueryContext(ctx, query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.Service
+	for rows.Next() {
+		var row models.Service
+		if err := rows.Scan(&row.ID, &row.Name, &row.Repository); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// SearchServicesPaginated returns services matching a search term for a specific page.
+func SearchServicesPaginated(ctx context.Context, executor SQLExecutor, search string, limit, offset int) ([]models.Service, error) {
+	query := `
+		SELECT id, name, repository
+		FROM services
+		WHERE name LIKE ?
+		ORDER BY name
+		LIMIT ? OFFSET ?
+	`
+	pattern := "%" + search + "%"
+	rows, err := executor.QueryContext(ctx, query, pattern, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.Service
+	for rows.Next() {
+		var row models.Service
+		if err := rows.Scan(&row.ID, &row.Name, &row.Repository); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// ListTopicsForServices returns all topics produced by the given services.
+func ListTopicsForServices(ctx context.Context, executor SQLExecutor, serviceIDs []int64) ([]models.ProducerListRow, error) {
+	if len(serviceIDs) == 0 {
+		return nil, nil
+	}
+
+	placeholders := make([]string, len(serviceIDs))
+	args := make([]interface{}, len(serviceIDs))
+	for i, id := range serviceIDs {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			p.service_id,
+			s.name AS service_name,
+			s.repository,
+			e.topic_id,
+			t.name AS topic_name,
+			COUNT(DISTINCT e.id) AS event_count,
+			MAX(CASE WHEN t.owner_service_id = p.service_id THEN 1 ELSE 0 END) AS is_owner,
+			MAX(CASE WHEN p.writes THEN 1 ELSE 0 END) AS writes
+		FROM producers p
+		JOIN services s ON p.service_id = s.id
+		JOIN events e ON p.event_id = e.id
+		JOIN topics t ON e.topic_id = t.id
+		WHERE p.service_id IN (%s)
+		GROUP BY p.service_id, e.topic_id
+		ORDER BY s.name, t.name
+	`, strings.Join(placeholders, ","))
+
+	rows, err := executor.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.ProducerListRow
+	for rows.Next() {
+		var row models.ProducerListRow
+		if err := rows.Scan(&row.ServiceID, &row.ServiceName, &row.Repository, &row.TopicID, &row.TopicName, &row.EventCount, &row.Owner, &row.Writes); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// GetProducerDetail returns full event/header data for a specific (service, topic) producer pair.
+func GetProducerDetail(ctx context.Context, executor SQLExecutor, serviceID, topicID int64) ([]models.ProducerRow, error) {
+	query := `
+		SELECT
+			p.service_id,
+			s.name AS service_name,
+			s.repository,
+			e.topic_id,
+			t.name AS topic_name,
+			t.description AS topic_description,
+			CASE WHEN t.owner_service_id = p.service_id THEN 1 ELSE 0 END AS is_owner,
+			p.writes,
+			e.event_name,
+			e.description AS event_description,
+			e.schema_version,
+			e.schema_url,
+			eh.name AS header_name,
+			eh.description AS header_description
+		FROM producers p
+		JOIN services s ON p.service_id = s.id
+		JOIN events e ON p.event_id = e.id
+		JOIN topics t ON e.topic_id = t.id
+		LEFT JOIN event_headers eh ON eh.event_id = e.id
+		WHERE p.service_id = ? AND e.topic_id = ?
+		ORDER BY e.event_name, eh.name
+	`
+	rows, err := executor.QueryContext(ctx, query, serviceID, topicID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.ProducerRow
+	for rows.Next() {
+		var row models.ProducerRow
+		if err := rows.Scan(&row.ServiceID, &row.ServiceName, &row.Repository, &row.TopicID, &row.TopicName, &row.TopicDescription, &row.Owner, &row.Writes, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -787,6 +1062,71 @@ func ListConsumersPaginated(ctx context.Context, executor SQLExecutor, limit, of
 		ORDER BY s.name, c.consumer_group, t.name, e.event_name
 	`
 	rows, err := executor.QueryContext(ctx, query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.ConsumerRow
+	for rows.Next() {
+		var row models.ConsumerRow
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventName, &row.EventVersion); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// CountConsumerGroupsSearch returns the total number of distinct consumer groups matching a search term.
+func CountConsumerGroupsSearch(ctx context.Context, executor SQLExecutor, search string) (int, error) {
+	query := `
+		SELECT COUNT(*) FROM (
+			SELECT DISTINCT c.service_id, c.consumer_group
+			FROM consumers c
+			JOIN services s ON c.service_id = s.id
+			JOIN events e ON c.event_id = e.id
+			JOIN topics t ON e.topic_id = t.id
+			WHERE c.consumer_group LIKE ? OR s.name LIKE ? OR t.name LIKE ? OR e.event_name LIKE ?
+		)
+	`
+	pattern := "%" + search + "%"
+	var count int
+	if err := executor.QueryRowContext(ctx, query, pattern, pattern, pattern, pattern).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// SearchConsumersPaginated returns consumers matching a search term for a specific page.
+func SearchConsumersPaginated(ctx context.Context, executor SQLExecutor, search string, limit, offset int) ([]models.ConsumerRow, error) {
+	query := `
+		SELECT
+			s.name AS service_name,
+			s.repository,
+			c.consumer_group,
+			c.description,
+			t.name AS topic_name,
+			e.event_name,
+			c.event_version
+		FROM consumers c
+		JOIN services s ON c.service_id = s.id
+		JOIN events e ON c.event_id = e.id
+		JOIN topics t ON e.topic_id = t.id
+		WHERE (c.service_id, c.consumer_group) IN (
+			SELECT DISTINCT c2.service_id, c2.consumer_group
+			FROM consumers c2
+			JOIN services s2 ON c2.service_id = s2.id
+			JOIN events e2 ON c2.event_id = e2.id
+			JOIN topics t2 ON e2.topic_id = t2.id
+			WHERE c2.consumer_group LIKE ? OR s2.name LIKE ? OR t2.name LIKE ? OR e2.event_name LIKE ?
+			ORDER BY s2.name, c2.consumer_group
+			LIMIT ? OFFSET ?
+		)
+		ORDER BY s.name, c.consumer_group, t.name, e.event_name
+	`
+	pattern := "%" + search + "%"
+	rows, err := executor.QueryContext(ctx, query, pattern, pattern, pattern, pattern, limit, offset)
 	if err != nil {
 		return nil, err
 	}
