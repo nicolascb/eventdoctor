@@ -1209,3 +1209,105 @@ func ListUndocumentedConsumerGroups(ctx context.Context, executor SQLExecutor) (
 	}
 	return results, rows.Err()
 }
+
+// ListProducersByEventIDs returns all producers for a list of event IDs.
+func ListProducersByEventIDs(ctx context.Context, executor SQLExecutor, eventIDs []int64) ([]models.ProducerRow, error) {
+	if len(eventIDs) == 0 {
+		return nil, nil
+	}
+
+	placeholders := make([]string, len(eventIDs))
+	args := make([]interface{}, len(eventIDs))
+	for i, id := range eventIDs {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			s.name AS service_name,
+			s.repository,
+			t.name AS topic_name,
+			t.description AS topic_description,
+			CASE WHEN t.owner_service_id = p.service_id THEN 1 ELSE 0 END AS is_owner,
+			p.writes,
+			e.id AS event_id,
+			e.event_name,
+			e.description AS event_description,
+			e.schema_version,
+			e.schema_url,
+			eh.name AS header_name,
+			eh.description AS header_description
+		FROM producers p
+		JOIN services s ON p.service_id = s.id
+		JOIN events e ON p.event_id = e.id
+		JOIN topics t ON e.topic_id = t.id
+		LEFT JOIN event_headers eh ON eh.event_id = e.id
+		WHERE p.event_id IN (%s)
+		ORDER BY s.name, t.name, e.event_name, eh.name
+	`, strings.Join(placeholders, ","))
+
+	rows, err := executor.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.ProducerRow
+	for rows.Next() {
+		var row models.ProducerRow
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.TopicName, &row.TopicDescription, &row.Owner, &row.Writes, &row.EventID, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// ListConsumersByEventIDs returns all consumers for a list of event IDs.
+func ListConsumersByEventIDs(ctx context.Context, executor SQLExecutor, eventIDs []int64) ([]models.ConsumerRow, error) {
+	if len(eventIDs) == 0 {
+		return nil, nil
+	}
+
+	placeholders := make([]string, len(eventIDs))
+	args := make([]interface{}, len(eventIDs))
+	for i, id := range eventIDs {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			s.name AS service_name,
+			s.repository,
+			c.consumer_group,
+			c.description,
+			t.name AS topic_name,
+			e.id AS event_id,
+			e.event_name,
+			c.event_version
+		FROM consumers c
+		JOIN services s ON c.service_id = s.id
+		JOIN events e ON c.event_id = e.id
+		JOIN topics t ON e.topic_id = t.id
+		WHERE c.event_id IN (%s)
+		ORDER BY s.name, c.consumer_group, t.name, e.event_name
+	`, strings.Join(placeholders, ","))
+
+	rows, err := executor.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.ConsumerRow
+	for rows.Next() {
+		var row models.ConsumerRow
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventID, &row.EventName, &row.EventVersion); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}

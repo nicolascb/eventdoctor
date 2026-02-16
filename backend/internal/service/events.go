@@ -16,12 +16,17 @@ func (s *Service) ListEvents(ctx context.Context, page, pageSize int, search str
 		return nil, err
 	}
 
-	producers, err := db.ListAllProducers(ctx, s.db)
+	var eventIDs []int64
+	for _, e := range events {
+		eventIDs = append(eventIDs, e.EventID)
+	}
+
+	producers, err := db.ListProducersByEventIDs(ctx, s.db, eventIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list producers: %w", err)
 	}
 
-	consumers, err := db.ListAllConsumers(ctx, s.db)
+	consumers, err := db.ListConsumersByEventIDs(ctx, s.db, eventIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list consumers: %w", err)
 	}
@@ -91,32 +96,18 @@ func (s *Service) GetEvent(ctx context.Context, id int64) (*response.EventView, 
 		return nil, nil // Not found
 	}
 
-	producers, err := db.ListAllProducers(ctx, s.db)
+	producers, err := db.ListProducersByEventIDs(ctx, s.db, []int64{id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list producers: %w", err)
 	}
 
-	consumers, err := db.ListAllConsumers(ctx, s.db)
+	consumers, err := db.ListConsumersByEventIDs(ctx, s.db, []int64{id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list consumers: %w", err)
 	}
 
-	// Filter producers/consumers for this event ID in memory
-	var relevantProducers []models.ProducerRow
-	for _, p := range producers {
-		if p.EventID == id {
-			relevantProducers = append(relevantProducers, p)
-		}
-	}
-
-	var relevantConsumers []models.ConsumerRow
-	for _, c := range consumers {
-		if c.EventID == id {
-			relevantConsumers = append(relevantConsumers, c)
-		}
-	}
-
-	events := aggregateEvents(eventRows, relevantProducers, relevantConsumers)
+	// No need to filter in memory anymore as the DB returns only relevant data
+	events := aggregateEvents(eventRows, producers, consumers)
 	if len(events) == 0 {
 		return nil, nil
 	}
