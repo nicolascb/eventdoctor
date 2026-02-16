@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
-    DialogContent,
 } from "@/components/ui/dialog";
 import {
     Table,
@@ -162,9 +161,7 @@ export function EventsView() {
                     {/* Event Detail Dialog */}
                     <Dialog open={!!selectedEvent} onOpenChange={(open) => { if (!open) setSelectedEvent(null); }}>
                         {selectedEvent && (
-                            <DialogContent className="max-w-xl">
-                                <EventDetails event={selectedEvent} />
-                            </DialogContent>
+                            <EventDetails eventId={selectedEvent.id} />
                         )}
                     </Dialog>
                 </>

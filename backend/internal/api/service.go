@@ -17,5 +17,7 @@ type Service interface {
 	Overview(ctx context.Context) (*response.OverviewResponse, error)
 	GetTopicView(ctx context.Context, topicName string) (*response.TopicView, error)
 	GetServiceView(ctx context.Context, serviceName string) (*response.ServiceView, error)
+
 	ListTopics(ctx context.Context, page, pageSize int) (*response.TopicListView, error)
+	GetEvent(ctx context.Context, id int64) (*response.EventView, error)
 }

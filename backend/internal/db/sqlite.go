@@ -479,11 +479,13 @@ func DeleteEventHeaders(ctx context.Context, executor SQLExecutor, eventID int64
 func ListAllEvents(ctx context.Context, executor SQLExecutor) ([]models.EventRow, error) {
 	query := `
 		SELECT
+			e.id AS event_id,
 			t.name AS topic_name,
 			e.event_name,
 			e.description AS event_description,
 			e.schema_version,
 			e.schema_url,
+			eh.id AS header_id,
 			eh.name AS header_name,
 			eh.description AS header_description
 		FROM events e
@@ -500,7 +502,7 @@ func ListAllEvents(ctx context.Context, executor SQLExecutor) ([]models.EventRow
 	var results []models.EventRow
 	for rows.Next() {
 		var row models.EventRow
-		if err := rows.Scan(&row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+		if err := rows.Scan(&row.EventID, &row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderID, &row.HeaderName, &row.HeaderDescription); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -524,11 +526,13 @@ func ListEventsPaginated(ctx context.Context, executor SQLExecutor, limit, offse
 	// Since the main list is ordered by TopicName then EventName, we need to join topics for ordering.
 	query := `
 		SELECT
+			e.id AS event_id,
 			t.name AS topic_name,
 			e.event_name,
 			e.description AS event_description,
 			e.schema_version,
 			e.schema_url,
+			eh.id AS header_id,
 			eh.name AS header_name,
 			eh.description AS header_description
 		FROM events e
@@ -552,7 +556,7 @@ func ListEventsPaginated(ctx context.Context, executor SQLExecutor, limit, offse
 	var results []models.EventRow
 	for rows.Next() {
 		var row models.EventRow
-		if err := rows.Scan(&row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+		if err := rows.Scan(&row.EventID, &row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderID, &row.HeaderName, &row.HeaderDescription); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -580,11 +584,13 @@ func CountEventsSearch(ctx context.Context, executor SQLExecutor, search string)
 func SearchEventsPaginated(ctx context.Context, executor SQLExecutor, search string, limit, offset int) ([]models.EventRow, error) {
 	query := `
 		SELECT
+			e.id AS event_id,
 			t.name AS topic_name,
 			e.event_name,
 			e.description AS event_description,
 			e.schema_version,
 			e.schema_url,
+			eh.id AS header_id,
 			eh.name AS header_name,
 			eh.description AS header_description
 		FROM events e
@@ -610,7 +616,7 @@ func SearchEventsPaginated(ctx context.Context, executor SQLExecutor, search str
 	var results []models.EventRow
 	for rows.Next() {
 		var row models.EventRow
-		if err := rows.Scan(&row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+		if err := rows.Scan(&row.EventID, &row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderID, &row.HeaderName, &row.HeaderDescription); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -622,11 +628,13 @@ func SearchEventsPaginated(ctx context.Context, executor SQLExecutor, search str
 func ListEventsByTopicName(ctx context.Context, executor SQLExecutor, topicName string) ([]models.EventRow, error) {
 	query := `
 		SELECT
+			e.id AS event_id,
 			t.name AS topic_name,
 			e.event_name,
 			e.description AS event_description,
 			e.schema_version,
 			e.schema_url,
+			eh.id AS header_id,
 			eh.name AS header_name,
 			eh.description AS header_description
 		FROM events e
@@ -644,7 +652,7 @@ func ListEventsByTopicName(ctx context.Context, executor SQLExecutor, topicName 
 	var results []models.EventRow
 	for rows.Next() {
 		var row models.EventRow
-		if err := rows.Scan(&row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+		if err := rows.Scan(&row.EventID, &row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderID, &row.HeaderName, &row.HeaderDescription); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -662,6 +670,7 @@ func ListAllProducers(ctx context.Context, executor SQLExecutor) ([]models.Produ
 			t.description AS topic_description,
 			CASE WHEN t.owner_service_id = p.service_id THEN 1 ELSE 0 END AS is_owner,
 			p.writes,
+			e.id AS event_id,
 			e.event_name,
 			e.description AS event_description,
 			e.schema_version,
@@ -684,7 +693,43 @@ func ListAllProducers(ctx context.Context, executor SQLExecutor) ([]models.Produ
 	var results []models.ProducerRow
 	for rows.Next() {
 		var row models.ProducerRow
-		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.TopicName, &row.TopicDescription, &row.Owner, &row.Writes, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.TopicName, &row.TopicDescription, &row.Owner, &row.Writes, &row.EventID, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	return results, rows.Err()
+}
+
+// GetEventByID returns a specific event with headers.
+func GetEventByID(ctx context.Context, executor SQLExecutor, id int64) ([]models.EventRow, error) {
+	query := `
+		SELECT
+			e.id AS event_id,
+			t.name AS topic_name,
+			e.event_name,
+			e.description AS event_description,
+			e.schema_version,
+			e.schema_url,
+			eh.id AS header_id,
+			eh.name AS header_name,
+			eh.description AS header_description
+		FROM events e
+		JOIN topics t ON e.topic_id = t.id
+		LEFT JOIN event_headers eh ON eh.event_id = e.id
+		WHERE e.id = ?
+		ORDER BY eh.name
+	`
+	rows, err := executor.QueryContext(ctx, query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.EventRow
+	for rows.Next() {
+		var row models.EventRow
+		if err := rows.Scan(&row.EventID, &row.TopicName, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderID, &row.HeaderName, &row.HeaderDescription); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -825,6 +870,7 @@ func GetProducerDetail(ctx context.Context, executor SQLExecutor, serviceID, top
 			t.description AS topic_description,
 			CASE WHEN t.owner_service_id = p.service_id THEN 1 ELSE 0 END AS is_owner,
 			p.writes,
+			e.id AS event_id,
 			e.event_name,
 			e.description AS event_description,
 			e.schema_version,
@@ -848,7 +894,7 @@ func GetProducerDetail(ctx context.Context, executor SQLExecutor, serviceID, top
 	var results []models.ProducerRow
 	for rows.Next() {
 		var row models.ProducerRow
-		if err := rows.Scan(&row.ServiceID, &row.ServiceName, &row.Repository, &row.TopicID, &row.TopicName, &row.TopicDescription, &row.Owner, &row.Writes, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
+		if err := rows.Scan(&row.ServiceID, &row.ServiceName, &row.Repository, &row.TopicID, &row.TopicName, &row.TopicDescription, &row.Owner, &row.Writes, &row.EventID, &row.EventName, &row.EventDescription, &row.SchemaVersion, &row.SchemaURL, &row.HeaderName, &row.HeaderDescription); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -865,6 +911,7 @@ func ListAllConsumers(ctx context.Context, executor SQLExecutor) ([]models.Consu
 			c.consumer_group,
 			c.description,
 			t.name AS topic_name,
+			e.id AS event_id,
 			e.event_name,
 			c.event_version
 		FROM consumers c
@@ -882,7 +929,7 @@ func ListAllConsumers(ctx context.Context, executor SQLExecutor) ([]models.Consu
 	var results []models.ConsumerRow
 	for rows.Next() {
 		var row models.ConsumerRow
-		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventName, &row.EventVersion); err != nil {
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventID, &row.EventName, &row.EventVersion); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -911,6 +958,7 @@ func ListConsumersPaginated(ctx context.Context, executor SQLExecutor, limit, of
 			c.consumer_group,
 			c.description,
 			t.name AS topic_name,
+			e.id AS event_id,
 			e.event_name,
 			c.event_version
 		FROM consumers c
@@ -935,7 +983,7 @@ func ListConsumersPaginated(ctx context.Context, executor SQLExecutor, limit, of
 	var results []models.ConsumerRow
 	for rows.Next() {
 		var row models.ConsumerRow
-		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventName, &row.EventVersion); err != nil {
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventID, &row.EventName, &row.EventVersion); err != nil {
 			return nil, err
 		}
 		results = append(results, row)

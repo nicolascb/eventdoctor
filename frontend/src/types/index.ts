@@ -6,6 +6,7 @@ export interface EventHeader {
 }
 
 export interface Event {
+    id: number;
     name: string;
     version?: string;
     description: string;
@@ -20,7 +21,7 @@ export interface TopicWithEvents {
 }
 
 export interface EventView {
-    id: string;
+    id: number;
     topic: string;
     name: string;
     description?: string;
@@ -86,6 +87,7 @@ export interface ProducersListView {
 
 // Event entry within a producer detail view
 export interface ProducerEventEntry {
+    id: number;
     name: string;
     description?: string;
     version?: string;
@@ -109,6 +111,7 @@ export interface ProducerDetailView {
 // ─── Consumer Types ─────────────────────────────────────────
 
 export interface ConsumerEvent {
+    id: number;
     name: string;
     version?: string;
 }

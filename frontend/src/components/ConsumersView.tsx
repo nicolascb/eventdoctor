@@ -1,14 +1,7 @@
 import { EmptyState, SearchInput, StatCard } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
+
 import {
     Table,
     TableBody,
@@ -18,10 +11,12 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { useConsumers } from "@/hooks/useConsumers";
-import type { Consumer, Topic } from "@/types";
-import { Activity, ChevronLeft, ChevronRight, Layers, Server, Workflow, Zap } from "lucide-react";
+import type { Consumer } from "@/types";
+import { Activity, ChevronLeft, ChevronRight, Layers, Server, Workflow } from "lucide-react";
 import { useState } from "react";
 import { ConsumerDetails } from "./ConsumerDetails";
+import { EventDetails } from "./EventDetails";
+import { Dialog } from "@/components/ui/dialog";
 
 export function ConsumersView() {
     const {
@@ -37,7 +32,7 @@ export function ConsumersView() {
     } = useConsumers();
 
     const [selectedConsumer, setSelectedConsumer] = useState<Consumer | null>(null);
-    const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+    const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
     const totalConsumerGroups = pagination?.total ?? consumers.length;
 
@@ -105,7 +100,7 @@ export function ConsumersView() {
                                             <TableRow
                                                 key={consumer.group}
                                                 className="cursor-pointer group"
-                                                onClick={() => { setSelectedConsumer(consumer); setSelectedTopic(null); }}
+                                                onClick={() => { setSelectedConsumer(consumer); }}
                                             >
                                                 <TableCell className="py-3">
                                                     <div className="flex flex-col gap-0.5">
@@ -185,60 +180,17 @@ export function ConsumersView() {
                     )}
 
                     {/* Consumer Detail Dialog */}
-                    <Dialog open={!!selectedConsumer && !selectedTopic} onOpenChange={(open) => { if (!open) setSelectedConsumer(null); }}>
-                        {selectedConsumer && (
-                            <DialogContent className="max-w-xl">
-                                <ConsumerDetails
-                                    consumer={selectedConsumer}
-                                    onTopicClick={(topic) => setSelectedTopic(topic)}
-                                />
-                            </DialogContent>
-                        )}
-                    </Dialog>
+                    <ConsumerDetails
+                        consumer={selectedConsumer}
+                        open={!!selectedConsumer}
+                        onOpenChange={(open) => { if (!open) setSelectedConsumer(null); }}
+                        onEventClick={(ev) => setSelectedEventId(ev.id)}
+                    />
 
-                    {/* Topic Detail Dialog */}
-                    <Dialog open={!!selectedTopic} onOpenChange={(open) => { if (!open) setSelectedTopic(null); }}>
-                        {selectedTopic && selectedConsumer && (
-                            <DialogContent className="max-w-xl">
-                                <DialogHeader>
-                                    <div className="flex items-center gap-2">
-                                        <Zap className="h-4 w-4 text-muted-foreground" />
-                                        <DialogTitle className="font-mono text-base flex items-center gap-2">
-                                            <span className="text-muted-foreground font-normal">{selectedConsumer.group}</span>
-                                            <span className="text-muted-foreground/30">/</span>
-                                            <span className="font-semibold">{selectedTopic.name}</span>
-                                        </DialogTitle>
-                                    </div>
-                                    <DialogDescription>
-                                        Events consumed from this topic by {selectedConsumer.service}
-                                    </DialogDescription>
-                                </DialogHeader>
-
-                                <div className="space-y-1.5">
-                                    {selectedTopic.events.map((ev) => (
-                                        <div
-                                            key={`${ev.name}-${ev.version || ''}`}
-                                            className="flex items-center justify-between rounded-md border border-border px-3 py-2.5"
-                                        >
-                                            <span className="font-mono text-xs font-medium">{ev.name}</span>
-                                            {ev.version ? (
-                                                <Badge variant="outline" className="font-mono text-[10px] font-normal">
-                                                    v{ev.version}
-                                                </Badge>
-                                            ) : (
-                                                <span className="text-xs text-muted-foreground">—</span>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <Separator />
-                                <div>
-                                    <Button variant="outline" size="sm" className="text-xs" onClick={() => setSelectedTopic(null)}>
-                                        ← Back to Consumer
-                                    </Button>
-                                </div>
-                            </DialogContent>
+                    {/* Event Details Dialog */}
+                    <Dialog open={!!selectedEventId} onOpenChange={(open) => { if (!open) setSelectedEventId(null); }}>
+                        {selectedEventId && (
+                            <EventDetails eventId={selectedEventId} />
                         )}
                     </Dialog>
                 </>

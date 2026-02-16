@@ -6,7 +6,7 @@ type EventsListView struct {
 }
 
 type EventView struct {
-	ID          string            `json:"id"`
+	ID          int64             `json:"id"`
 	Topic       string            `json:"topic"`
 	Name        string            `json:"name"`
 	Description string            `json:"description,omitempty"`

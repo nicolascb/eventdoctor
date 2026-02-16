@@ -225,9 +225,9 @@ func TestAggregateEvents_SingleRow(t *testing.T) {
 
 func TestAggregateEvents_MultipleTopics(t *testing.T) {
 	rows := []models.EventRow{
-		{TopicName: "topic-a", EventName: "EventA"},
-		{TopicName: "topic-b", EventName: "EventB"},
-		{TopicName: "topic-a", EventName: "EventC"},
+		{EventID: 1, TopicName: "topic-a", EventName: "EventA"},
+		{EventID: 2, TopicName: "topic-b", EventName: "EventB"},
+		{EventID: 3, TopicName: "topic-a", EventName: "EventC"},
 	}
 
 	result := aggregateEvents(rows, nil, nil)

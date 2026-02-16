@@ -1,31 +1,43 @@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import type { Consumer, Topic } from "@/types";
-import { ExternalLink, Layers, Zap } from "lucide-react";
+import type { Consumer, ConsumerEvent } from "@/types";
+import { ExternalLink, Layers, ChevronDown, FileJson } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ServiceDetailsDialog } from "./ServiceDetailsDialog";
 
 interface ConsumerDetailsProps {
-    consumer: Consumer;
-    onTopicClick?: (topic: Topic) => void;
+    consumer?: Consumer | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onEventClick?: (ev: ConsumerEvent) => void;
 }
 
-export function ConsumerDetails({ consumer, onTopicClick }: ConsumerDetailsProps) {
-    return (
-        <div className="space-y-4">
-            {/* Header */}
-            <div>
-                <div className="flex items-center gap-2">
-                    <Layers className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-base font-semibold">
-                        {consumer.group}
-                    </h3>
-                </div>
-                {consumer.description && (
-                    <p className="text-sm text-foreground/80 mt-1">
-                        {consumer.description}
-                    </p>
-                )}
-            </div>
+export function ConsumerDetails({ consumer, open, onOpenChange, onEventClick }: ConsumerDetailsProps) {
+    const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
 
+    // Early return if dialog is closed or no consumer selected
+    if (!open || !consumer) {
+        return null;
+    }
+
+    const handleTopicClick = (topicName: string) => {
+        if (expandedTopic === topicName) {
+            setExpandedTopic(null);
+        } else {
+            setExpandedTopic(topicName);
+        }
+    };
+
+    return (
+        <ServiceDetailsDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            icon={<Layers className="h-4 w-4 text-muted-foreground" />}
+            title={consumer.group}
+            description={consumer.description}
+        >
             {/* Metadata rows */}
             <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm py-1">
                 <span className="text-muted-foreground text-xs font-medium">Service</span>
@@ -50,70 +62,86 @@ export function ConsumerDetails({ consumer, onTopicClick }: ConsumerDetailsProps
             {consumer.topics.length > 0 && (
                 <>
                     <Separator />
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-xs font-medium text-muted-foreground">
+                            <h4 className="text-sm font-medium text-foreground">
                                 Topic Subscriptions
                             </h4>
-                            <span className="text-xs font-mono text-muted-foreground">
+                            <Badge variant="outline" className="font-mono text-xs">
                                 {consumer.topics.length}
-                            </span>
+                            </Badge>
                         </div>
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-2">
                             {consumer.topics.map((topic) => {
-                                const Content = (
-                                    <>
-                                        <div className="flex items-center justify-between gap-3">
-                                            <code className="text-xs font-mono font-medium">{topic.name}</code>
-                                            <div className="flex items-center gap-2 flex-shrink-0">
-                                                <Badge variant="secondary" className="text-[10px] font-normal tabular-nums">
-                                                    {topic.events.length} {topic.events.length === 1 ? 'event' : 'events'}
-                                                </Badge>
-                                                <Zap className="h-3.5 w-3.5 text-muted-foreground" />
-                                            </div>
-                                        </div>
-                                        {topic.events.length > 0 && (
-                                            <div className="flex flex-wrap gap-1 mt-1.5">
-                                                {topic.events.slice(0, 4).map((ev) => (
-                                                    <Badge
-                                                        key={ev.name}
-                                                        variant="outline"
-                                                        className="text-[10px] font-normal font-mono"
-                                                    >
-                                                        {ev.name}
-                                                        {ev.version && <span className="ml-0.5 text-muted-foreground">v{ev.version}</span>}
-                                                    </Badge>
-                                                ))}
-                                                {topic.events.length > 4 && (
-                                                    <Badge variant="secondary" className="text-[10px] font-normal">
-                                                        +{topic.events.length - 4}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        )}
-                                    </>
-                                );
-
-                                if (onTopicClick) {
-                                    return (
-                                        <button
-                                            key={topic.name}
-                                            type="button"
-                                            className="w-full text-left rounded-md border border-border px-3 py-2.5 hover:bg-accent/30 transition-colors cursor-pointer"
-                                            onClick={() => onTopicClick(topic)}
-                                        >
-                                            {Content}
-                                        </button>
-                                    );
-                                }
-
+                                const isExpanded = expandedTopic === topic.name;
                                 return (
                                     <div
                                         key={topic.name}
-                                        className="rounded-md border border-border px-3 py-2.5 bg-card"
+                                        className="rounded-lg border border-border bg-card overflow-hidden"
                                     >
-                                        {Content}
+                                        <button
+                                            type="button"
+                                            className={cn(
+                                                "w-full flex items-center justify-between px-4 py-3 hover:bg-accent/30 transition-colors",
+                                                isExpanded && "bg-accent/30"
+                                            )}
+                                            onClick={() => handleTopicClick(topic.name)}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-secondary/50 rounded-md">
+                                                    <Layers className="h-4 w-4 text-secondary-foreground" />
+                                                </div>
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <code className="text-sm font-mono font-medium">{topic.name}</code>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Badge variant="secondary" className="text-xs font-normal tabular-nums">
+                                                    {topic.events.length} {topic.events.length === 1 ? 'event' : 'events'}
+                                                </Badge>
+                                                <ChevronDown className={cn(
+                                                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                                                    isExpanded && "transform rotate-180"
+                                                )} />
+                                            </div>
+                                        </button>
+
+                                        {isExpanded && (
+                                            <div className="border-t border-border bg-accent/5 px-4 pt-4 pb-2 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                                                <div className="space-y-2">
+                                                    <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Events</h5>
+                                                    <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                                                        {topic.events.map((ev) => (
+                                                            <div
+                                                                key={`${ev.name}-${ev.version}`}
+                                                                className={cn(
+                                                                    "flex items-start justify-between p-3 rounded-md border border-border bg-background transition-colors group",
+                                                                    onEventClick ? "hover:bg-accent/40 cursor-pointer" : ""
+                                                                )}
+                                                                onClick={() => onEventClick?.(ev)}
+                                                            >
+                                                                <div className="space-y-1">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="font-mono text-sm font-medium">{ev.name}</span>
+                                                                        {ev.version && (
+                                                                            <Badge variant="outline" className="text-[10px] h-5">v{ev.version}</Badge>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                                        <FileJson className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -121,6 +149,6 @@ export function ConsumerDetails({ consumer, onTopicClick }: ConsumerDetailsProps
                     </div>
                 </>
             )}
-        </div>
+        </ServiceDetailsDialog>
     );
 }

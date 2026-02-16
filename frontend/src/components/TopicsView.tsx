@@ -1,28 +1,18 @@
 import { SearchInput, StatCard } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import {
     Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+
 import { useTopics } from "@/hooks/useTopics";
 import type { TopicConsumerEntry, TopicProducerEntry, TopicView } from "@/types";
-import { AlertCircle, ArrowRight, Box, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Code, FileJson, Filter, Layers, Search as SearchIcon, Workflow, XCircle, Zap } from "lucide-react";
+import { AlertCircle, ArrowRight, Box, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Code, FileJson, Filter, Layers, Search as SearchIcon, XCircle, Zap } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { EventDetails } from "./EventDetails";
 
 type FilterMode = 'all' | 'orphaned' | 'unconsumed' | 'active';
 
@@ -378,218 +368,14 @@ export function TopicsView() {
                                                             </div>
                                                         </button>
                                                     </DialogTrigger>
-                                                    <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-                                                        <DialogHeader>
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className={statusColor}>{statusIcon}</span>
-                                                                <DialogTitle className="font-mono flex items-center gap-2 text-base">
-                                                                    <span className="text-muted-foreground font-normal">{topicData.topic}</span>
-                                                                    <span className="text-muted-foreground/30">/</span>
-                                                                    <span className="font-semibold">{event.name}</span>
-                                                                    {event.version && (
-                                                                        <Badge variant="outline" className="font-mono text-[10px] font-normal ml-1">
-                                                                            v{event.version}
-                                                                        </Badge>
-                                                                    )}
-                                                                </DialogTitle>
-                                                            </div>
-                                                            <DialogDescription className="text-sm">
-                                                                {event.description}
-                                                            </DialogDescription>
-                                                        </DialogHeader>
+                                                    <EventDetails eventId={event.id} />
 
-                                                        <div className="py-4">
-                                                            <Tabs defaultValue="structure" className="w-full">
-                                                                <TabsList className="mb-4 grid w-full grid-cols-2">
-                                                                    <TabsTrigger value="structure" className="flex items-center gap-2 text-xs">
-                                                                        <Code className="h-3.5 w-3.5" />
-                                                                        Schema & Structure
-                                                                    </TabsTrigger>
-                                                                    <TabsTrigger value="flow" className="flex items-center gap-2 text-xs">
-                                                                        <Workflow className="h-3.5 w-3.5" />
-                                                                        Service Flow
-                                                                    </TabsTrigger>
-                                                                </TabsList>
-
-                                                                <TabsContent value="structure" className="space-y-4">
-                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                        <Card>
-                                                                            <CardHeader className="pb-2">
-                                                                                <CardTitle className="text-xs font-medium flex items-center gap-2">
-                                                                                    <FileJson className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                                    Schema Overview
-                                                                                </CardTitle>
-                                                                            </CardHeader>
-                                                                            <CardContent className="space-y-2">
-                                                                                <div className="flex justify-between items-center py-1.5 border-b border-border text-xs">
-                                                                                    <span className="text-muted-foreground">Headers</span>
-                                                                                    <span className="font-mono">
-                                                                                        {event.headers ? event.headers.length : 0}
-                                                                                    </span>
-                                                                                </div>
-                                                                                {event.properties && (
-                                                                                    <div className="flex justify-between items-center py-1.5 border-b border-border text-xs">
-                                                                                        <span className="text-muted-foreground">Properties</span>
-                                                                                        <span className="font-mono">
-                                                                                            {Object.keys(event.properties).length}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                )}
-                                                                                {event.schema_url && (
-                                                                                    <div className="pt-1">
-                                                                                        <Button
-                                                                                            variant="outline"
-                                                                                            size="sm"
-                                                                                            className="w-full gap-2 text-xs"
-                                                                                            asChild
-                                                                                        >
-                                                                                            <a
-                                                                                                href={event.schema_url}
-                                                                                                target="_blank"
-                                                                                                rel="noopener noreferrer"
-                                                                                            >
-                                                                                                <Code className="h-3.5 w-3.5" />
-                                                                                                View External Schema
-                                                                                            </a>
-                                                                                        </Button>
-                                                                                    </div>
-                                                                                )}
-                                                                            </CardContent>
-                                                                        </Card>
-                                                                        <Card>
-                                                                            <CardHeader className="pb-2">
-                                                                                <CardTitle className="text-xs font-medium flex items-center gap-2">
-                                                                                    <Workflow className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                                    Usage Statistics
-                                                                                </CardTitle>
-                                                                            </CardHeader>
-                                                                            <CardContent className="space-y-2">
-                                                                                <div className="flex justify-between items-center py-1.5 border-b border-border text-xs">
-                                                                                    <span className="text-muted-foreground">Producers</span>
-                                                                                    <span className="font-mono">
-                                                                                        {eventProducers.length}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <div className="flex justify-between items-center py-1.5 border-b border-border text-xs">
-                                                                                    <span className="text-muted-foreground">Consumers</span>
-                                                                                    <span className="font-mono">
-                                                                                        {eventConsumers.length}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <div className="flex justify-between items-center py-1.5 text-xs">
-                                                                                    <span className="text-muted-foreground">Status</span>
-                                                                                    <Badge variant="secondary" className="text-[10px] font-normal gap-1">
-                                                                                        {statusIcon}
-                                                                                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                                                                                    </Badge>
-                                                                                </div>
-                                                                            </CardContent>
-                                                                        </Card>
-                                                                    </div>
-
-                                                                    {event.properties && (
-                                                                        <div className="space-y-2">
-                                                                            <h4 className="text-xs font-medium flex items-center gap-2">
-                                                                                <Code className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                                Properties Schema
-                                                                            </h4>
-                                                                            <div className="bg-muted p-4 rounded-lg border border-border overflow-x-auto">
-                                                                                <pre className="text-xs font-mono leading-relaxed">
-                                                                                    {JSON.stringify(event.properties, null, 2)}
-                                                                                </pre>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-
-                                                                    {event.headers && event.headers.length > 0 && (
-                                                                        <div className="space-y-2">
-                                                                            <h4 className="text-xs font-medium flex items-center gap-2">
-                                                                                <FileJson className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                                Headers
-                                                                            </h4>
-                                                                            <div className="rounded-lg border border-border overflow-hidden">
-                                                                                <Table>
-                                                                                    <TableHeader>
-                                                                                        <TableRow className="hover:bg-transparent">
-                                                                                            <TableHead className="text-[11px] font-medium">Name</TableHead>
-                                                                                            <TableHead className="text-[11px] font-medium">Description</TableHead>
-                                                                                        </TableRow>
-                                                                                    </TableHeader>
-                                                                                    <TableBody>
-                                                                                        {event.headers.map((header) => (
-                                                                                            <TableRow key={header.name}>
-                                                                                                <TableCell className="font-mono text-xs py-2">
-                                                                                                    {header.name}
-                                                                                                </TableCell>
-                                                                                                <TableCell className="text-xs text-muted-foreground py-2">
-                                                                                                    {header.description || '—'}
-                                                                                                </TableCell>
-                                                                                            </TableRow>
-                                                                                        ))}
-                                                                                    </TableBody>
-                                                                                </Table>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </TabsContent>
-
-                                                                <TabsContent value="flow" className="space-y-4">
-                                                                    <div className="grid md:grid-cols-2 gap-4">
-                                                                        <div className="space-y-3">
-                                                                            <div className="flex items-center gap-2 pb-2 border-b border-border">
-                                                                                <Box className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                                <h4 className="text-xs font-medium">Producers ({eventProducers.length})</h4>
-                                                                            </div>
-                                                                            {eventProducers.length > 0 ? (
-                                                                                <div className="space-y-2">
-                                                                                    {eventProducers.map(p => (
-                                                                                        <div key={`${p.service}-${p.repository}`} className="p-3 bg-muted/50 rounded-lg border border-border flex flex-col gap-1">
-                                                                                            <span className="font-medium text-sm">{p.service}</span>
-                                                                                            <code className="text-xs text-muted-foreground font-mono">
-                                                                                                {p.repository}
-                                                                                            </code>
-                                                                                        </div>
-                                                                                    ))}
-                                                                                </div>
-                                                                            ) : (
-                                                                                <div className="text-center p-6 bg-muted/30 rounded-lg border border-dashed border-border">
-                                                                                    <XCircle className="h-6 w-6 mx-auto mb-2 text-destructive" />
-                                                                                    <p className="text-xs font-medium">No producers registered</p>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-
-                                                                        <div className="space-y-3">
-                                                                            <div className="flex items-center gap-2 pb-2 border-b border-border">
-                                                                                <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                                <h4 className="text-xs font-medium">Consumers ({eventConsumers.length})</h4>
-                                                                            </div>
-                                                                            {eventConsumers.length > 0 ? (
-                                                                                <div className="space-y-2">
-                                                                                    {eventConsumers.map(c => (
-                                                                                        <div key={`${c.service}-${c.repository}-${c.group}`} className="p-3 bg-muted/50 rounded-lg border border-border flex flex-col gap-1">
-                                                                                            <span className="font-medium text-sm">{c.service}</span>
-                                                                                            <span className="text-xs text-muted-foreground">{c.group}</span>
-                                                                                        </div>
-                                                                                    ))}
-                                                                                </div>
-                                                                            ) : (
-                                                                                <div className="text-center p-6 bg-muted/30 rounded-lg border border-dashed border-border">
-                                                                                    <AlertCircle className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                                                                    <p className="text-xs font-medium">No consumers registered</p>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                </TabsContent>
-                                                            </Tabs>
-                                                        </div>
-                                                    </DialogContent>
                                                 </Dialog>
                                             );
                                         })}
                                     </div>
-                                )}
+                                )
+                                }
                             </div>
                         );
                     })
@@ -597,35 +383,37 @@ export function TopicsView() {
             </div>
 
             {/* Pagination Controls */}
-            {pagination && pagination.total_pages > 1 && (
-                <div className="flex items-center justify-between px-1">
-                    <span className="text-xs text-muted-foreground">
-                        Page {pagination.page} of {pagination.total_pages} ({pagination.total} topics)
-                    </span>
-                    <div className="flex items-center gap-1">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            disabled={page <= 1}
-                            onClick={() => setPage(page - 1)}
-                        >
-                            <ChevronLeft className="h-3.5 w-3.5 mr-1" />
-                            Previous
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            disabled={page >= pagination.total_pages}
-                            onClick={() => setPage(page + 1)}
-                        >
-                            Next
-                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                        </Button>
+            {
+                pagination && pagination.total_pages > 1 && (
+                    <div className="flex items-center justify-between px-1">
+                        <span className="text-xs text-muted-foreground">
+                            Page {pagination.page} of {pagination.total_pages} ({pagination.total} topics)
+                        </span>
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                disabled={page <= 1}
+                                onClick={() => setPage(page - 1)}
+                            >
+                                <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                disabled={page >= pagination.total_pages}
+                                onClick={() => setPage(page + 1)}
+                            >
+                                Next
+                                <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

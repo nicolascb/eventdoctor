@@ -124,6 +124,7 @@ func aggregateConsumers(rows []models.ConsumerRow) []response.Consumer {
 		)
 
 		topic.Events = append(topic.Events, response.ConsumerEventView{
+			ID:      row.EventID,
 			Name:    row.EventName,
 			Version: row.EventVersion,
 		})

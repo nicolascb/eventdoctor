@@ -99,6 +99,7 @@ func aggregateTopicEvents(rows []models.EventRow) []response.EventView {
 			func(e *response.EventView) bool { return e.Name == row.EventName },
 			func() response.EventView {
 				return response.EventView{
+					ID:          row.EventID,
 					Name:        row.EventName,
 					Description: row.EventDescription,
 					Version:     row.SchemaVersion,

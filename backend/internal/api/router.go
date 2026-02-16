@@ -26,6 +26,7 @@ func (a *API) routes() {
 	a.mux.HandleFunc("POST /v1/config", a.handlerApplyConfig)
 	a.mux.HandleFunc("GET /v1/producers/{service_id}/{topic_id}", a.handlerGetProducerDetail)
 	a.mux.HandleFunc("GET /v1/producers", a.handlerListProducers)
+	a.mux.HandleFunc("GET /v1/events/{id}", a.handlerGetEvent)
 	a.mux.HandleFunc("GET /v1/events", a.handlerListEvents)
 	a.mux.HandleFunc("GET /v1/consumers", a.handlerListConsumers)
 	a.mux.HandleFunc("GET /v1/overview", a.handlerOverview)

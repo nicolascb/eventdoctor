@@ -121,6 +121,38 @@ func (a *API) handlerListEvents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (a *API) handlerGetEvent(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.Write(w, http.StatusBadRequest, response.ErrorResponse{
+			Error: "invalid event id",
+		})
+		return
+	}
+
+	event, err := a.service.GetEvent(r.Context(), id)
+	if err != nil {
+		a.logger.Error("failed to get event", slog.Any("error", err))
+		response.Write(w, http.StatusInternalServerError, response.ErrorResponse{
+			Error:   "failed to get event",
+			Details: err.Error(),
+		})
+		return
+	}
+
+	if event == nil {
+		response.Write(w, http.StatusNotFound, response.ErrorResponse{
+			Error: "event not found",
+		})
+		return
+	}
+
+	if err := response.Write(w, http.StatusOK, event); err != nil {
+		a.logger.Error("failed to write response", slog.Any("error", err))
+	}
+}
+
 func (a *API) handlerListConsumers(w http.ResponseWriter, r *http.Request) {
 	undocumentedOnly := r.URL.Query().Get("undocumented_only") == "true"
 

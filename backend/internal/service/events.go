@@ -81,17 +81,61 @@ func (s *Service) listEventsPaginated(ctx context.Context, page, pageSize int, s
 	}, nil
 }
 
+// GetEvent returns a single event by ID.
+func (s *Service) GetEvent(ctx context.Context, id int64) (*response.EventView, error) {
+	eventRows, err := db.GetEventByID(ctx, s.db, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get event by id: %w", err)
+	}
+	if len(eventRows) == 0 {
+		return nil, nil // Not found
+	}
+
+	producers, err := db.ListAllProducers(ctx, s.db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list producers: %w", err)
+	}
+
+	consumers, err := db.ListAllConsumers(ctx, s.db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list consumers: %w", err)
+	}
+
+	// Filter producers/consumers for this event ID in memory
+	var relevantProducers []models.ProducerRow
+	for _, p := range producers {
+		if p.EventID == id {
+			relevantProducers = append(relevantProducers, p)
+		}
+	}
+
+	var relevantConsumers []models.ConsumerRow
+	for _, c := range consumers {
+		if c.EventID == id {
+			relevantConsumers = append(relevantConsumers, c)
+		}
+	}
+
+	events := aggregateEvents(eventRows, relevantProducers, relevantConsumers)
+	if len(events) == 0 {
+		return nil, nil
+	}
+	// aggregateEvents returns a slice, we want the first one (should be only one)
+	result := events[0]
+	return &result, nil
+}
+
 func aggregateEvents(
 	eventRows []models.EventRow,
 	producerRows []models.ProducerRow,
 	consumerRows []models.ConsumerRow,
 ) []response.EventView {
 	// Use orderedMap to maintain consistent order based on insertion
-	events := newOrderedMap[string, response.EventView]()
+	events := newOrderedMap[int64, response.EventView]()
 
 	// Helper to generate key
-	key := func(topic, event string) string {
-		return topic + "/" + event
+	key := func(id int64) int64 {
+		return id
 	}
 
 	processEventRows(&events, eventRows, key)
@@ -111,12 +155,12 @@ func aggregateEvents(
 	return result
 }
 
-func processEventRows(events *orderedMap[string, response.EventView], rows []models.EventRow, keyFunc func(string, string) string) {
+func processEventRows(events *orderedMap[int64, response.EventView], rows []models.EventRow, keyFunc func(int64) int64) {
 	for _, row := range rows {
-		k := keyFunc(row.TopicName, row.EventName)
+		k := keyFunc(row.EventID)
 		event := events.getOrCreate(k, func() response.EventView {
 			return response.EventView{
-				ID:          row.TopicName + "/" + row.EventName,
+				ID:          row.EventID,
 				Name:        row.EventName,
 				Topic:       row.TopicName,
 				Description: row.EventDescription,
@@ -132,11 +176,10 @@ func processEventRows(events *orderedMap[string, response.EventView], rows []mod
 	}
 }
 
-func processProducerRows(events *orderedMap[string, response.EventView], rows []models.ProducerRow, keyFunc func(string, string) string) {
+func processProducerRows(events *orderedMap[int64, response.EventView], rows []models.ProducerRow, keyFunc func(int64) int64) {
 	for _, row := range rows {
-		k := keyFunc(row.TopicName, row.EventName)
+		k := keyFunc(row.EventID)
 		// We only add producers to existing events (INNER JOIN logic essentially)
-		// If safety is needed, we could use getOrCreate, but typically events should exist first
 		if event, ok := events.values[k]; ok {
 			findOrAppend(&event.Producers,
 				func(p *response.EventProducer) bool { return p.Service == row.ServiceName },
@@ -153,9 +196,9 @@ func processProducerRows(events *orderedMap[string, response.EventView], rows []
 	}
 }
 
-func processConsumerRows(events *orderedMap[string, response.EventView], rows []models.ConsumerRow, keyFunc func(string, string) string) {
+func processConsumerRows(events *orderedMap[int64, response.EventView], rows []models.ConsumerRow, keyFunc func(int64) int64) {
 	for _, row := range rows {
-		k := keyFunc(row.TopicName, row.EventName)
+		k := keyFunc(row.EventID)
 		if event, ok := events.values[k]; ok {
 			findOrAppend(&event.Consumers,
 				func(c *response.EventConsumer) bool {

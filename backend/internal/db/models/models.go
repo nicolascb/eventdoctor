@@ -71,16 +71,19 @@ type ConsumerRow struct {
 	Description   string
 	TopicName     string
 	EventName     string
+	EventID       int64
 	EventVersion  *string
 }
 
 // EventRow represents a query row joining events, topics, and headers.
 type EventRow struct {
+	EventID           int64
 	TopicName         string
 	EventName         string
 	EventDescription  string
 	SchemaVersion     *string
 	SchemaURL         string
+	HeaderID          *int64
 	HeaderName        *string
 	HeaderDescription *string
 }
@@ -95,6 +98,7 @@ type ProducerRow struct {
 	TopicDescription  string
 	Owner             bool
 	Writes            bool
+	EventID           int64
 	EventName         string
 	EventDescription  string
 	SchemaVersion     *string

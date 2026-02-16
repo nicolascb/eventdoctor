@@ -143,6 +143,7 @@ func (s *Service) GetProducerDetail(ctx context.Context, serviceID, topicID int6
 			func(e *response.ProducerEventEntry) bool { return e.Name == row.EventName },
 			func() response.ProducerEventEntry {
 				return response.ProducerEventEntry{
+					ID:          row.EventID,
 					Name:        row.EventName,
 					Description: row.EventDescription,
 					Version:     row.SchemaVersion,

@@ -33,6 +33,7 @@ type ConsumerTopicView struct {
 
 // ConsumerEventView represents a consumed event.
 type ConsumerEventView struct {
+	ID      int64   `json:"id"`
 	Name    string  `json:"name"`
 	Version *string `json:"version,omitempty"`
 }

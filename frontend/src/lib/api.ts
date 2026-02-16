@@ -1,4 +1,4 @@
-import type { ConsumerView, EventsListView, OverviewResponse, ProducerDetailView, ProducersListView, TopicListView, UndocumentedConsumersView } from '@/types';
+import type { ConsumerView, EventsListView, EventView, OverviewResponse, ProducerDetailView, ProducersListView, TopicListView, UndocumentedConsumersView } from '@/types';
 
 // In Docker, __API_URL__ is replaced at container startup with the actual API_URL env var.
 // In development, VITE_API_URL takes precedence; the placeholder stays as-is and the fallback kicks in.
@@ -73,6 +73,10 @@ class ApiClient {
         if (search) params.set('search', search);
         const qs = params.toString();
         return this.request<EventsListView>(`/events${qs ? `?${qs}` : ''}`);
+    }
+
+    getEvent(id: number): Promise<EventView> {
+        return this.request<EventView>(`/events/${id}`);
     }
 
     getConsumers(page?: number, pageSize?: number, search?: string): Promise<ConsumerView> {

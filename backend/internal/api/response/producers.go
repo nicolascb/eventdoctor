@@ -38,6 +38,7 @@ type ProducerDetailView struct {
 
 // ProducerEventEntry represents an event in the producer detail view.
 type ProducerEventEntry struct {
+	ID          int64             `json:"id"`
 	Name        string            `json:"name"`
 	Description string            `json:"description,omitempty"`
 	Version     *string           `json:"version,omitempty"`
