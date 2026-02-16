@@ -1,6 +1,6 @@
-# CLAUDE.md
+# GEMINI.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Gemini/Antigravity when working with code in this repository.
 
 ## Commands
 
@@ -82,13 +82,14 @@ HTTP → internal/api/api.go (routing, CORS)
 - **`db.SQLExecutor` interface** (`internal/db/transaction.go`) — abstracts `*sql.DB` and `*sql.Tx` so DB functions work in both contexts. All DB query/write functions should accept `SQLExecutor`, not `*sql.DB`.
 - **`db.WithTransaction(ctx, db, fn)`** — wraps multi-step writes in a transaction; the callback receives a `SQLExecutor`.
 - **`orderedMap[K, V]` + `findOrAppend()`** (`internal/service/aggregate.go`) — preserve insertion order when building aggregated responses. Reuse these for any new aggregation.
+- **Data Fetching Patterns** — When retrieving related entities (e.g., Producers for a list of Events), **ALWAYS use batch queries** (e.g., `WHERE foreign_id IN (...)`) or joins. **NEVER** use N+1 queries inside loops or fetch entire tables into memory.
 - **`eventdoctor.EventDoctorSpec`** (`internal/eventdoctor/spec.go`) — core domain model for YAML spec parsing and validation. Validation rules in `spec.go`, helper functions in `utils.go`.
 - **`internal/logger/`** — structured logging via `slog` + `tint` formatter. Use this instead of `fmt.Println` or `log.Printf`.
 
 ### Adding a new endpoint (checklist)
 
-1. Add method to `api.Service` interface (`internal/api/service.go`)
-2. Implement in `internal/service/` (new file if non-trivial)
+1. Add method to `api.Service` interface (`internal/api/service.go`). **Ensure list endpoints accept pagination parameters (`page`, `pageSize`).**
+2. Implement in `internal/service/` (new file if non-trivial). Implement efficient data fetching.
 3. Add DB query function(s) to `internal/db/sqlite.go` (reads) or `internal/db/repository.go` (deletes/writes); add row types to `internal/db/models/models.go`. Use `SQLExecutor` as the db parameter type.
 4. Add response type to `internal/api/response/` (base types in `response.go`: `ErrorResponse`, `SuccessResponse`)
 5. Register route in `internal/api/api.go`
@@ -111,6 +112,8 @@ Uses `urfave/cli/v3`. Command logic lives in `internal/commands/` (testable); wi
 - **Components:** `src/components/` — page-level views (`OverviewView`, `ProducersView`, `ConsumersView`, `TopicsView`, `ConfigValidator`) + shared UI (`LoadingState`, `ErrorState`, `EmptyState`, `PageHeader`, `SearchInput`).
 - **UI primitives:** `src/components/ui/` — Radix UI components (button, card, table, dialog, etc.) styled with TailwindCSS 4.
 - **Stack:** React 19, Vite 7, TypeScript 5.9, TailwindCSS 4, Radix UI, Lucide icons, React Hook Form + Zod.
+- **UI Patterns:** Maintain visual and functional consistency between similar entity views (e.g., Producers vs Consumers). Use shared wrapper components (like `ServiceDetailsDialog`) to enforce consistent layouts and reduce duplication.
+
 
 ## Database
 
