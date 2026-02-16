@@ -6,6 +6,7 @@ export interface EventHeader {
 }
 
 export interface Event {
+    id: number;
     name: string;
     version?: string;
     description: string;
@@ -19,8 +20,39 @@ export interface TopicWithEvents {
     events: Event[];
 }
 
+export interface EventView {
+    id: number;
+    topic: string;
+    name: string;
+    description?: string;
+    version?: string;
+    schema_url?: string;
+    headers?: EventHeader[];
+    producers: EventProducer[];
+    consumers: EventConsumer[];
+}
+
+export interface EventProducer {
+    id: string;
+    service: string;
+    repository: string;
+    owner: string;
+}
+
+export interface EventConsumer {
+    id: string;
+    service: string;
+    repository: string;
+}
+
+export interface EventsListView {
+    events: EventView[];
+    pagination?: Pagination;
+}
+
 // ─── Producer Types ─────────────────────────────────────────
 
+// Used by EventDoctorSpec (config upload)
 export interface Producer {
     service: string;
     repository: string;
@@ -31,23 +63,55 @@ export interface Producer {
     events: Event[];
 }
 
-export interface ProducerTopic {
+// Topic item within a service group
+export interface ProducerTopicItem {
+    topic_id: number;
     topic: string;
-    description: string;
+    event_count: number;
     owner: boolean;
     writes: boolean;
-    events: Event[];
 }
 
-export interface GroupedProducer {
+// Service item containing topics
+export interface ProducerServiceItem {
+    service_id: number;
     service: string;
     repository: string;
-    topics: ProducerTopic[];
+    topics: ProducerTopicItem[];
+}
+
+export interface ProducersListView {
+    producers: ProducerServiceItem[];
+    pagination?: Pagination;
+}
+
+// Event entry within a producer detail view
+export interface ProducerEventEntry {
+    id: number;
+    name: string;
+    description?: string;
+    version?: string;
+    schema_url?: string;
+    headers?: EventHeader[];
+}
+
+// Full detail returned by GET /v1/producers/{service_id}/{topic_id}
+export interface ProducerDetailView {
+    service_id: number;
+    service: string;
+    repository: string;
+    topic_id: number;
+    topic: string;
+    description?: string;
+    owner: boolean;
+    writes: boolean;
+    events: ProducerEventEntry[];
 }
 
 // ─── Consumer Types ─────────────────────────────────────────
 
 export interface ConsumerEvent {
+    id: number;
     name: string;
     version?: string;
 }
@@ -72,9 +136,54 @@ export interface UndocumentedGroup {
     updated_at: string;
 }
 
+export interface Pagination {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+}
+
 export interface ConsumerView {
-    groups_undocumented: UndocumentedGroup[];
     consumers: Consumer[];
+    pagination?: Pagination;
+}
+
+export interface UndocumentedConsumersView {
+    groups_undocumented: UndocumentedGroup[];
+}
+
+// ─── Topic View Types ──────────────────────────────────────
+
+export interface TopicProducerEntry {
+    service: string;
+    repository: string;
+    event: string;
+    writes: boolean;
+    owner: boolean;
+}
+
+export interface TopicConsumerEntry {
+    service: string;
+    repository: string;
+    event: string;
+    group: string;
+    version?: string;
+}
+
+export interface TopicView {
+    topic: string;
+    owner_service?: string;
+    events: Event[];
+    producers: TopicProducerEntry[];
+    consumers: TopicConsumerEntry[];
+}
+
+export interface TopicListView {
+    topics: TopicView[];
+    count_events: number;
+    count_unconsumed: number;
+    count_orphaned: number;
+    pagination?: Pagination;
 }
 
 // ─── Overview Types ─────────────────────────────────────────

@@ -7,6 +7,7 @@ interface SearchInputProps {
     placeholder?: string;
     resultCount?: number;
     totalCount?: number;
+    className?: string;
 }
 
 export function SearchInput({
@@ -15,14 +16,15 @@ export function SearchInput({
     placeholder = 'Search...',
     resultCount,
     totalCount,
+    className,
 }: SearchInputProps) {
     const showCount = value.trim().length > 0 && resultCount !== undefined && totalCount !== undefined;
 
     return (
-        <div className="relative">
+        <div className={`relative ${className || ''}`}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-                type="search"
+                type="text"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}

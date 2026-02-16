@@ -3,25 +3,26 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
     Code,
-    Database,
     Eye,
     FileCheck,
     Layers,
     Moon,
     Network,
+    NotebookPen,
     RefreshCw,
-    Stethoscope,
+    SatelliteDish,
     Sun,
     Zap
 } from "lucide-react";
 
-export type NavItem = "overview" | "producers" | "topics" | "consumers" | "validator" | "auditor";
+export type NavItem = "overview" | "producers" | "events" | "topics" | "consumers" | "validator" | "auditor";
 
 interface SidebarProps {
     activeItem: NavItem;
     onNavigate: (item: NavItem) => void;
     counts: {
         producers: number;
+        events: number;
         topics: number;
         consumers: number;
     };
@@ -35,14 +36,15 @@ interface SidebarProps {
 
 const navItems = [
     { id: "overview" as const, label: "Overview", icon: Eye },
-    { id: "producers" as const, label: "Producers", icon: Database, countKey: "producers" as const },
-    { id: "topics" as const, label: "Topics", icon: Zap, countKey: "topics" as const },
-    { id: "consumers" as const, label: "Consumers", icon: Network, countKey: "consumers" as const },
+    { id: "events" as const, label: "Events", icon: Zap, countKey: "events" as const },
+    { id: "topics" as const, label: "Topics", icon: Network, countKey: "topics" as const },
+    { id: "producers" as const, label: "Producers", icon: NotebookPen, countKey: "producers" as const },
+    { id: "consumers" as const, label: "Consumers", icon: SatelliteDish, countKey: "consumers" as const },
 ];
 
 const toolItems = [
     { id: "validator" as const, label: "Validator", icon: FileCheck },
-    { id: "auditor" as const, label: "Auditor", icon: Stethoscope },
+    // { id: "auditor" as const, label: "Auditor", icon: Stethoscope },
 ];
 
 export function Sidebar({

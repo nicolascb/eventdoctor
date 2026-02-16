@@ -1,4 +1,4 @@
-import type { ConsumerView, OverviewResponse, Producer, TopicWithEvents } from '@/types';
+import type { ConsumerView, EventsListView, EventView, OverviewResponse, ProducerDetailView, ProducersListView, TopicListView, UndocumentedConsumersView } from '@/types';
 
 // In Docker, __API_URL__ is replaced at container startup with the actual API_URL env var.
 // In development, VITE_API_URL takes precedence; the placeholder stays as-is and the fallback kicks in.
@@ -53,16 +53,55 @@ class ApiClient {
         return response.json();
     }
 
-    getProducers(): Promise<Producer[]> {
-        return this.request<Producer[]>('/producers');
+    getProducers(page?: number, pageSize?: number, search?: string): Promise<ProducersListView> {
+        const params = new URLSearchParams();
+        if (page) params.set('page', String(page));
+        if (pageSize) params.set('page_size', String(pageSize));
+        if (search) params.set('search', search);
+        const qs = params.toString();
+        return this.request<ProducersListView>(`/producers${qs ? `?${qs}` : ''}`);
     }
 
-    getEvents(): Promise<TopicWithEvents[]> {
-        return this.request<TopicWithEvents[]>('/events');
+    getProducerDetail(serviceId: number, topicId: number): Promise<ProducerDetailView> {
+        return this.request<ProducerDetailView>(`/producers/${serviceId}/${topicId}`);
     }
 
-    getConsumers(): Promise<ConsumerView> {
-        return this.request<ConsumerView>('/consumers');
+    getEvents(page?: number, pageSize?: number, search?: string): Promise<EventsListView> {
+        const params = new URLSearchParams();
+        if (page) params.set('page', String(page));
+        if (pageSize) params.set('page_size', String(pageSize));
+        if (search) params.set('search', search);
+        const qs = params.toString();
+        return this.request<EventsListView>(`/events${qs ? `?${qs}` : ''}`);
+    }
+
+    getEvent(id: number): Promise<EventView> {
+        return this.request<EventView>(`/events/${id}`);
+    }
+
+    getConsumers(page?: number, pageSize?: number, search?: string): Promise<ConsumerView> {
+        const params = new URLSearchParams();
+        if (page) params.set('page', String(page));
+        if (pageSize) params.set('page_size', String(pageSize));
+        if (search) params.set('search', search);
+        const qs = params.toString();
+        return this.request<ConsumerView>(`/consumers${qs ? `?${qs}` : ''}`);
+    }
+
+    getUndocumentedConsumers(): Promise<UndocumentedConsumersView> {
+        return this.request<UndocumentedConsumersView>('/consumers?undocumented_only=true');
+    }
+
+    getTopics(page?: number, pageSize?: number): Promise<TopicListView> {
+        const params = new URLSearchParams();
+        if (page) params.set('page', String(page));
+        if (pageSize) params.set('page_size', String(pageSize));
+        const qs = params.toString();
+        return this.request<TopicListView>(`/topics${qs ? `?${qs}` : ''}`);
+    }
+
+    getTopic(name: string): Promise<TopicListView> {
+        return this.request<TopicListView>(`/topics/${name}`);
     }
 
     getOverview(): Promise<OverviewResponse> {

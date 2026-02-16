@@ -71,3 +71,7 @@ CREATE TABLE IF NOT EXISTS missing_consumers (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(topic, consumer_group)
 );
+
+CREATE INDEX IF NOT EXISTS idx_producers_service_id ON producers(service_id);
+CREATE INDEX IF NOT EXISTS idx_consumers_service_id ON consumers(service_id);
+CREATE INDEX IF NOT EXISTS idx_topics_owner_service_id ON topics(owner_service_id);
