@@ -9,19 +9,28 @@ import (
 	"github.com/nicolascb/eventdoctor/internal/db/models"
 )
 
-func (s *Service) ListTopics(ctx context.Context, page, pageSize int) (*response.TopicListView, error) {
+func (s *Service) ListTopics(ctx context.Context, page, pageSize int, search string) (*response.TopicListView, error) {
 	var names []string
 	var pagination *response.Pagination
 	var err error
 
 	if page > 0 && pageSize > 0 {
-		total, err := db.CountTopics(ctx, s.db)
+		var total int
+		if search != "" {
+			total, err = db.CountTopicsSearch(ctx, s.db, search)
+		} else {
+			total, err = db.CountTopics(ctx, s.db)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to count topics: %w", err)
 		}
 
 		offset := (page - 1) * pageSize
-		names, err = db.ListTopicNamesPaginated(ctx, s.db, pageSize, offset)
+		if search != "" {
+			names, err = db.SearchTopicNamesPaginated(ctx, s.db, search, pageSize, offset)
+		} else {
+			names, err = db.ListTopicNamesPaginated(ctx, s.db, pageSize, offset)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to list topics: %w", err)
 		}

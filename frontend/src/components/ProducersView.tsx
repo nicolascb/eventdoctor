@@ -54,7 +54,7 @@ export function ProducersView() {
     return (
         <div className="space-y-6 animate-in">
             {/* Stats Cards */}
-            {!loading && (
+            {!loading && !search && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <StatCard
                         label="Producer Services"

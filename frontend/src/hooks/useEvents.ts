@@ -1,10 +1,10 @@
 import { api } from '@/lib/api';
 import type { EventsListView, Pagination } from '@/types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
 const DEFAULT_PAGE_SIZE = 15;
 const DEBOUNCE_MS = 500;
-const MIN_SEARCH_LENGTH = 3;
+const MIN_SEARCH_LENGTH = 1;
 
 export function useEvents() {
     const [data, setData] = useState<EventsListView | null>(null);
@@ -50,7 +50,7 @@ export function useEvents() {
         fetchEvents();
     }, [fetchEvents]);
 
-    const events = data?.events ?? [];
+    const events = useMemo(() => data?.events ?? [], [data?.events]);
     const pagination: Pagination | undefined = data?.pagination;
 
     return {

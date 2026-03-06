@@ -230,7 +230,8 @@ func (a *API) handlerGetService(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) handlerListTopics(w http.ResponseWriter, r *http.Request) {
 	pagination := getPaginationFromRequest(r)
-	topics, err := a.service.ListTopics(r.Context(), pagination.Page, pagination.PageSize)
+	search := r.URL.Query().Get("search")
+	topics, err := a.service.ListTopics(r.Context(), pagination.Page, pagination.PageSize, search)
 	if err != nil {
 		a.logger.Error("failed to list topics", slog.Any("error", err))
 		response.Write(w, http.StatusInternalServerError, response.ErrorResponse{

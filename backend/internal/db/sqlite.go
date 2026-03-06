@@ -746,12 +746,19 @@ func CountServices(ctx context.Context, executor SQLExecutor) (int, error) {
 	return count, nil
 }
 
-// CountServicesSearch returns the total number of services matching a search term.
+// CountServicesSearch returns the total number of services matching a search term across service name, events, or topics.
 func CountServicesSearch(ctx context.Context, executor SQLExecutor, search string) (int, error) {
-	query := "SELECT COUNT(*) FROM services WHERE name LIKE ?"
+	query := `
+		SELECT COUNT(DISTINCT s.id)
+		FROM services s
+		LEFT JOIN producers p ON p.service_id = s.id
+		LEFT JOIN events e ON p.event_id = e.id
+		LEFT JOIN topics t ON e.topic_id = t.id
+		WHERE s.name LIKE ? OR e.event_name LIKE ? OR t.name LIKE ?
+	`
 	pattern := "%" + search + "%"
 	var count int
-	if err := executor.QueryRowContext(ctx, query, pattern).Scan(&count); err != nil {
+	if err := executor.QueryRowContext(ctx, query, pattern, pattern, pattern).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -782,17 +789,24 @@ func ListServicesPaginated(ctx context.Context, executor SQLExecutor, limit, off
 	return results, rows.Err()
 }
 
-// SearchServicesPaginated returns services matching a search term for a specific page.
+// SearchServicesPaginated returns services matching a search term (by service, topic or event) for a specific page.
 func SearchServicesPaginated(ctx context.Context, executor SQLExecutor, search string, limit, offset int) ([]models.Service, error) {
 	query := `
-		SELECT id, name, repository
-		FROM services
-		WHERE name LIKE ?
-		ORDER BY name
+		SELECT s.id, s.name, s.repository
+		FROM services s
+		WHERE s.id IN (
+			SELECT DISTINCT s2.id 
+			FROM services s2
+			LEFT JOIN producers p ON p.service_id = s2.id
+			LEFT JOIN events e ON p.event_id = e.id
+			LEFT JOIN topics t ON e.topic_id = t.id
+			WHERE s2.name LIKE ? OR e.event_name LIKE ? OR t.name LIKE ?
+		)
+		ORDER BY s.name
 		LIMIT ? OFFSET ?
 	`
 	pattern := "%" + search + "%"
-	rows, err := executor.QueryContext(ctx, query, pattern, limit, offset)
+	rows, err := executor.QueryContext(ctx, query, pattern, pattern, pattern, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -807,6 +821,54 @@ func SearchServicesPaginated(ctx context.Context, executor SQLExecutor, search s
 		results = append(results, row)
 	}
 	return results, rows.Err()
+}
+
+// CountTopicsSearch returns the total number of topics matching a search term in topic name or their events.
+func CountTopicsSearch(ctx context.Context, executor SQLExecutor, search string) (int, error) {
+	query := `
+		SELECT COUNT(DISTINCT t.id)
+		FROM topics t
+		LEFT JOIN events e ON e.topic_id = t.id
+		WHERE t.name LIKE ? OR e.event_name LIKE ? OR e.description LIKE ?
+	`
+	pattern := "%" + search + "%"
+	var count int
+	if err := executor.QueryRowContext(ctx, query, pattern, pattern, pattern).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// SearchTopicNamesPaginated returns topics matching a search term for a specific page.
+func SearchTopicNamesPaginated(ctx context.Context, executor SQLExecutor, search string, limit, offset int) ([]string, error) {
+	query := `
+		SELECT t.name 
+		FROM topics t
+		WHERE t.id IN (
+			SELECT DISTINCT t2.id
+			FROM topics t2
+			LEFT JOIN events e ON e.topic_id = t2.id
+			WHERE t2.name LIKE ? OR e.event_name LIKE ? OR e.description LIKE ?
+		)
+		ORDER BY t.name
+		LIMIT ? OFFSET ?
+	`
+	pattern := "%" + search + "%"
+	rows, err := executor.QueryContext(ctx, query, pattern, pattern, pattern, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, rows.Err()
 }
 
 // ListTopicsForServices returns all topics produced by the given services.
@@ -1020,6 +1082,7 @@ func SearchConsumersPaginated(ctx context.Context, executor SQLExecutor, search 
 			c.consumer_group,
 			c.description,
 			t.name AS topic_name,
+			e.id AS event_id,
 			e.event_name,
 			c.event_version
 		FROM consumers c
@@ -1048,7 +1111,7 @@ func SearchConsumersPaginated(ctx context.Context, executor SQLExecutor, search 
 	var results []models.ConsumerRow
 	for rows.Next() {
 		var row models.ConsumerRow
-		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventName, &row.EventVersion); err != nil {
+		if err := rows.Scan(&row.ServiceName, &row.Repository, &row.ConsumerGroup, &row.Description, &row.TopicName, &row.EventID, &row.EventName, &row.EventVersion); err != nil {
 			return nil, err
 		}
 		results = append(results, row)

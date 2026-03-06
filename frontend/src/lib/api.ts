@@ -92,10 +92,11 @@ class ApiClient {
         return this.request<UndocumentedConsumersView>('/consumers?undocumented_only=true');
     }
 
-    getTopics(page?: number, pageSize?: number): Promise<TopicListView> {
+    getTopics(page?: number, pageSize?: number, search?: string): Promise<TopicListView> {
         const params = new URLSearchParams();
         if (page) params.set('page', String(page));
         if (pageSize) params.set('page_size', String(pageSize));
+        if (search) params.set('search', search);
         const qs = params.toString();
         return this.request<TopicListView>(`/topics${qs ? `?${qs}` : ''}`);
     }

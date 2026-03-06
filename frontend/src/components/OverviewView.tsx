@@ -5,22 +5,18 @@ import { Input } from "@/components/ui/input";
 import { useTopics } from "@/hooks/useTopics";
 import type { OverviewResponse, TopicView } from "@/types";
 import { Check, ChevronLeft, ChevronRight, Database, Layers, Network, Search, X, Zap } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 
 interface OverviewViewProps {
     overview: OverviewResponse;
 }
 
 export function OverviewView({ overview }: OverviewViewProps) {
-    const { topics, pagination, page, setPage, loading: topicsLoading } = useTopics();
+    const { topics, pagination, page, setPage, loading: topicsLoading, search: searchQuery, setSearch: setSearchQuery } = useTopics();
     const [selectedTopics, setSelectedTopics] = useState<TopicView[]>([]);
-    const [searchQuery, setSearchQuery] = useState("");
 
-    const filteredTopics = useMemo(() => {
-        if (!searchQuery) return topics;
-        const lower = searchQuery.toLowerCase();
-        return topics.filter(t => t.topic.toLowerCase().includes(lower));
-    }, [topics, searchQuery]);
+    // topics já vem filtrado do backend via useTopics
+    const filteredTopics = topics;
 
     const toggleTopic = (topic: TopicView) => {
         setSelectedTopics(prev =>
