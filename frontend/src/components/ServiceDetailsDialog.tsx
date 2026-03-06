@@ -1,10 +1,10 @@
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from "@/components/ui/sheet";
 
 interface ServiceDetailsDialogProps {
     open: boolean;
@@ -13,6 +13,7 @@ interface ServiceDetailsDialogProps {
     title: string;
     description?: string;
     children: React.ReactNode;
+    className?: string;
 }
 
 export function ServiceDetailsDialog({
@@ -22,33 +23,38 @@ export function ServiceDetailsDialog({
     title,
     description,
     children,
+    className,
 }: ServiceDetailsDialogProps) {
     if (!open) {
         return null;
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>
-                        <div className="flex items-center gap-2">
-                            {icon}
-                            <h3 className="text-base font-semibold">
-                                {title}
-                            </h3>
+        <Sheet open={open} onOpenChange={onOpenChange}>
+            <SheetContent className={`w-full overflow-y-auto p-0 flex flex-col ${className || "sm:max-w-xl"}`}>
+                <div className="p-6 pb-4 border-b border-border bg-muted/20">
+                    <SheetHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-md bg-primary/10 p-2 text-primary">
+                                {icon}
+                            </div>
+                            <div className="text-left">
+                                <SheetTitle className="text-xl font-mono">
+                                    {title}
+                                </SheetTitle>
+                                {description && (
+                                    <SheetDescription className="text-xs truncate max-w-[300px]" title={description}>
+                                        {description}
+                                    </SheetDescription>
+                                )}
+                            </div>
                         </div>
-                    </DialogTitle>
-                    {description && (
-                        <DialogDescription>
-                            {description}
-                        </DialogDescription>
-                    )}
-                </DialogHeader>
-                <div className="space-y-6">
+                    </SheetHeader>
+                </div>
+                <div className="p-6 flex-1 bg-background space-y-6">
                     {children}
                 </div>
-            </DialogContent>
-        </Dialog>
+            </SheetContent>
+        </Sheet>
     );
 }

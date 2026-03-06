@@ -60,18 +60,16 @@ export function Sidebar({
 }: SidebarProps) {
     return (
         <aside
-            className={`fixed left-0 top-0 z-40 h-screen border-r bg-sidebar transition-all duration-200 flex flex-col ${collapsed ? "w-[60px]" : "w-[240px]"
-                }`}
-            style={{ borderColor: "var(--sidebar-border)" }}
+            className={`fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border bg-sidebar transition-all duration-200 flex flex-col ${collapsed ? "w-[60px]" : "w-[240px]"}`}
         >
             {/* Logo */}
-            <div className="relative flex h-14 items-center px-4 border-b" style={{ borderColor: "var(--sidebar-border)" }}>
+            <div className="relative flex h-14 items-center px-4 border-b border-sidebar-border">
                 <div className="flex items-center gap-2.5 min-w-0">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                         <Layers className="h-4 w-4" />
                     </div>
                     {!collapsed && (
-                        <span className="text-sm font-semibold tracking-tight truncate" style={{ color: "var(--sidebar-accent-foreground)" }}>
+                        <span className="text-sm font-semibold tracking-tight truncate text-sidebar-accent-foreground">
                             EventDoctor
                         </span>
                     )}
@@ -80,8 +78,7 @@ export function Sidebar({
                     type="button"
                     onClick={onToggleCollapse}
                     title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    className="absolute -right-3 -bottom-3 z-50 flex h-6 w-6 items-center justify-center rounded-full border bg-sidebar hover:bg-accent transition-colors"
-                    style={{ borderColor: "var(--sidebar-border)", color: "var(--sidebar-foreground)" }}
+                    className="absolute -right-3 -bottom-3 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground hover:bg-accent transition-colors"
                 >
                     <Code className={`h-3.5 w-3.5 shrink-0 transition-transform ${collapsed ? "rotate-180" : ""}`} />
                 </button>
@@ -90,7 +87,7 @@ export function Sidebar({
             {/* Navigation */}
             <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
                 {!collapsed && (
-                    <p className="px-3 mb-2 text-[11px] font-medium uppercase tracking-wider" style={{ color: "var(--sidebar-muted)" }}>
+                    <p className="px-3 mb-2 text-[11px] font-medium uppercase tracking-wider text-sidebar-muted">
                         Dashboard
                     </p>
                 )}
@@ -126,7 +123,7 @@ export function Sidebar({
                 <Separator className="my-3" />
 
                 {!collapsed && (
-                    <p className="px-3 mb-2 text-[11px] font-medium uppercase tracking-wider" style={{ color: "var(--sidebar-muted)" }}>
+                    <p className="px-3 mb-2 text-[11px] font-medium uppercase tracking-wider text-sidebar-muted">
                         Tools
                     </p>
                 )}
@@ -150,15 +147,14 @@ export function Sidebar({
             </nav>
 
             {/* Bottom actions */}
-            <div className="border-t px-3 py-3 space-y-1" style={{ borderColor: "var(--sidebar-border)" }}>
+            <div className="border-t border-sidebar-border px-3 py-3 space-y-1">
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={onRefresh}
                     disabled={isLoading}
-                    className={`w-full justify-start gap-3 text-sm font-medium ${collapsed ? "px-2" : "px-3"}`}
+                    className={`w-full justify-start gap-3 text-sm font-medium text-sidebar-foreground ${collapsed ? "px-2" : "px-3"}`}
                     title={collapsed ? "Refresh data" : undefined}
-                    style={{ color: "var(--sidebar-foreground)" }}
                 >
                     <RefreshCw className={`h-4 w-4 shrink-0 ${isLoading ? "animate-spin" : ""}`} />
                     {!collapsed && <span>Refresh</span>}
@@ -168,9 +164,8 @@ export function Sidebar({
                     variant="ghost"
                     size="sm"
                     onClick={onToggleTheme}
-                    className={`w-full justify-start gap-3 text-sm font-medium ${collapsed ? "px-2" : "px-3"}`}
+                    className={`w-full justify-start gap-3 text-sm font-medium text-sidebar-foreground ${collapsed ? "px-2" : "px-3"}`}
                     title={collapsed ? (theme === "dark" ? "Light mode" : "Dark mode") : undefined}
-                    style={{ color: "var(--sidebar-foreground)" }}
                 >
                     {theme === "dark" ? (
                         <Sun className="h-4 w-4 shrink-0" />
@@ -179,7 +174,6 @@ export function Sidebar({
                     )}
                     {!collapsed && <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>}
                 </Button>
-
             </div>
         </aside>
     );
