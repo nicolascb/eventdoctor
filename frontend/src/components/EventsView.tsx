@@ -1,9 +1,5 @@
-import { EmptyState, SearchInput, StatCard } from "@/components/shared";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-} from "@/components/ui/dialog";
+import { Pagination, SearchInput, StatCard } from "@/components/shared";
+import { Sheet } from "@/components/ui/sheet";
 import {
     Table,
     TableBody,
@@ -14,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventView } from "@/types";
-import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
+import { Network, Zap } from "lucide-react";
 import { useState } from "react";
 import { EventDetails } from "./EventDetails";
 
@@ -59,65 +55,70 @@ export function EventsView() {
             {!loading && (
                 <>
                     {/* Events Table */}
-                    <div className="rounded-lg border border-border bg-card overflow-hidden">
+                    <div className="rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
                         {events.length === 0 ? (
-                            <div className="p-6">
-                                <EmptyState
-                                    title="No events found"
-                                    description="No events registered in the system."
-                                />
+                            <div className="flex flex-col items-center justify-center p-12 text-muted-foreground bg-muted/10">
+                                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4 border border-border/50">
+                                    <Zap className="h-6 w-6 text-muted-foreground/70" />
+                                </div>
+                                <p className="font-semibold text-foreground/80">No events found</p>
+                                <p className="text-sm mt-1">No events registered in the system.</p>
                             </div>
                         ) : (
                             <Table>
-                                <TableHeader>
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableHead className="text-[11px] font-medium">Event</TableHead>
-                                        <TableHead className="text-[11px] font-medium">Topic</TableHead>
-                                        <TableHead className="text-[11px] font-medium text-center">Consumers</TableHead>
-                                        <TableHead className="text-[11px] font-medium text-center">Producers</TableHead>
+                                <TableHeader className="bg-muted/30">
+                                    <TableRow className="hover:bg-transparent border-b border-border/60">
+                                        <TableHead className="h-11 text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-4">Event</TableHead>
+                                        <TableHead className="h-11 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Topic</TableHead>
+                                        <TableHead className="h-11 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Consumers</TableHead>
+                                        <TableHead className="h-11 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Producers</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {events.map((event) => (
                                         <TableRow
                                             key={event.id}
-                                            className="cursor-pointer group"
+                                            className="cursor-pointer group hover:bg-muted/30 transition-colors"
                                             onClick={() => setSelectedEvent(event)}
                                         >
-                                            <TableCell className="py-3">
-                                                <div className="flex flex-col gap-0.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <Zap className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                                                        <span className="font-medium text-sm font-mono">{event.name}</span>
-                                                        {event.version && (
-                                                            <span className="text-xs text-muted-foreground border px-1 rounded">v{event.version}</span>
+                                            <TableCell className="py-4 pl-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-10 w-10 shrink-0 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20 group-hover:bg-orange-500/20 group-hover:border-orange-500/30 transition-colors">
+                                                        <Zap className="h-5 w-5 text-orange-500/80" />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-semibold text-foreground/90 group-hover:text-primary transition-colors">{event.name}</span>
+                                                            {event.version && (
+                                                                <span className="text-[10px] font-medium text-muted-foreground border border-border/60 bg-muted/30 px-1.5 py-0.5 rounded-md">v{event.version}</span>
+                                                            )}
+                                                        </div>
+                                                        {event.description && (
+                                                            <span className="text-xs text-muted-foreground line-clamp-1 max-w-[300px]">
+                                                                {event.description}
+                                                            </span>
                                                         )}
                                                     </div>
-                                                    {event.description && (
-                                                        <span className="text-xs text-muted-foreground pl-5.5 line-clamp-1">
-                                                            {event.description}
-                                                        </span>
-                                                    )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="py-3">
+                                            <TableCell className="py-4">
                                                 <div className="flex items-center gap-2">
-                                                    <NetworkIcon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                                                    <span className="text-sm font-mono">{event.topic}</span>
+                                                    <Network className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                                    <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">{event.topic}</span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="py-3 text-center">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <Badge variant="secondary" className="text-[10px] font-normal tabular-nums">
+                                            <TableCell className="py-4 text-center">
+                                                <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-muted/40 border border-border/50 group-hover:bg-muted/60 transition-colors">
+                                                    <span className="text-xs font-semibold tabular-nums text-foreground/80">
                                                         {event.consumers.length}
-                                                    </Badge>
+                                                    </span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="py-3 text-center">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <Badge variant="secondary" className="text-[10px] font-normal tabular-nums">
+                                            <TableCell className="py-4 text-center">
+                                                <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-muted/40 border border-border/50 group-hover:bg-muted/60 transition-colors">
+                                                    <span className="text-xs font-semibold tabular-nums text-foreground/80">
                                                         {event.producers.length}
-                                                    </Badge>
+                                                    </span>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -127,68 +128,24 @@ export function EventsView() {
                         )}
                     </div>
 
-                    {/* Pagination Controls */}
-                    {pagination && pagination.total_pages > 1 && (
-                        <div className="flex items-center justify-between px-1">
-                            <span className="text-xs text-muted-foreground">
-                                Page {pagination.page} of {pagination.total_pages} ({pagination.total} events)
-                            </span>
-                            <div className="flex items-center gap-1">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 px-2 text-xs"
-                                    disabled={page <= 1}
-                                    onClick={() => setPage(page - 1)}
-                                >
-                                    <ChevronLeft className="h-3.5 w-3.5 mr-1" />
-                                    Previous
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 px-2 text-xs"
-                                    disabled={page >= pagination.total_pages}
-                                    onClick={() => setPage(page + 1)}
-                                >
-                                    Next
-                                    <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                                </Button>
-                            </div>
-                        </div>
+                    {pagination && (
+                        <Pagination
+                            pagination={pagination}
+                            page={page}
+                            onPageChange={setPage}
+                            label="events"
+                        />
                     )}
 
                     {/* Event Detail Dialog */}
-                    <Dialog open={!!selectedEvent} onOpenChange={(open) => { if (!open) setSelectedEvent(null); }}>
+                    <Sheet open={!!selectedEvent} onOpenChange={(open) => { if (!open) setSelectedEvent(null); }}>
                         {selectedEvent && (
                             <EventDetails eventId={selectedEvent.id} />
                         )}
-                    </Dialog>
+                    </Sheet>
                 </>
             )}
         </div>
     );
 }
 
-function NetworkIcon(props: React.SVGProps<SVGSVGElement>) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <rect x="16" y="16" width="6" height="6" rx="1" />
-            <rect x="2" y="16" width="6" height="6" rx="1" />
-            <rect x="9" y="2" width="6" height="6" rx="1" />
-            <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" />
-            <path d="M12 12V8" />
-        </svg>
-    );
-}

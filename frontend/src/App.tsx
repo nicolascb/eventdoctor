@@ -1,37 +1,26 @@
 import { ConfigValidator } from '@/components/ConfigValidator';
-import { ConsumersPage } from '@/components/ConsumersPage';
 import { EventsView } from '@/components/EventsView';
 import { OverviewView } from '@/components/OverviewView';
 import { ProducersView } from '@/components/ProducersView';
 import { ErrorState, LoadingState } from '@/components/shared';
 import { Sidebar, type NavItem } from '@/components/Sidebar';
 import { TopicsView } from '@/components/TopicsView';
+import { ConsumersView } from '@/components/ConsumersView';
 import { Separator } from '@/components/ui/separator';
 import { useOverview } from '@/hooks/useOverview';
 import { useTheme } from '@/hooks/useTheme';
 import { useState } from 'react';
 
-// Get the API URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8087/v1';
 
-const pageTitles: Record<NavItem, string> = {
-  overview: 'Overview',
-  producers: 'Producers',
-  events: 'Events',
-  topics: 'Topics',
-  consumers: 'Consumers',
-  validator: 'Validator',
-  auditor: 'Auditor',
-};
-
-const pageDescriptions: Record<NavItem, string> = {
-  overview: 'Monitor your event-driven architecture at a glance.',
-  producers: 'Services publishing events to topics.',
-  events: 'Registered event types in the system.',
-  topics: 'Message channels and their event types.',
-  consumers: 'Services consuming events from topics.',
-  validator: 'Validate your EventDoctor YAML configuration.',
-  auditor: 'Auditor consumer status',
+const pageConfig: Record<NavItem, { title: string; description: string }> = {
+  overview: { title: 'Overview', description: 'Monitor your event-driven architecture at a glance.' },
+  producers: { title: 'Producers', description: 'Services publishing events to topics.' },
+  events: { title: 'Events', description: 'Registered event types in the system.' },
+  topics: { title: 'Topics', description: 'Message channels and their event types.' },
+  consumers: { title: 'Consumers', description: 'Services consuming events from topics.' },
+  validator: { title: 'Validator', description: 'Validate your EventDoctor YAML configuration.' },
+  auditor: { title: 'Auditor', description: 'Auditor consumer status.' },
 };
 
 function App() {
@@ -66,7 +55,7 @@ function App() {
       case 'topics':
         return <TopicsView />;
       case 'consumers':
-        return <ConsumersPage />;
+        return <ConsumersView />;
       case 'validator':
         return <ConfigValidator />;
       case 'auditor':
@@ -102,11 +91,11 @@ function App() {
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
           <div className="flex flex-1 items-center gap-3">
             <h1 className="text-sm font-semibold text-foreground">
-              {pageTitles[activeView]}
+              {pageConfig[activeView].title}
             </h1>
             <Separator orientation="vertical" className="h-4" />
             <p className="text-sm text-muted-foreground hidden sm:block">
-              {pageDescriptions[activeView]}
+              {pageConfig[activeView].description}
             </p>
           </div>
         </header>

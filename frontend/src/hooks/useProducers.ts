@@ -50,8 +50,12 @@ export function useProducers() {
         fetchProducers();
     }, [fetchProducers]);
 
-    const producers = data?.producers ?? [];
+    const producers = useMemo(() => data?.producers ?? [], [data?.producers]);
     const pagination: Pagination | undefined = data?.pagination;
+
+    const totalTopics = useMemo(() => {
+        return producers.reduce((acc, service) => acc + service.topics.length, 0);
+    }, [producers]);
 
     const totalEvents = useMemo(() => {
         return producers.reduce((acc, service) => {
@@ -64,6 +68,7 @@ export function useProducers() {
         loading,
         error,
         refetch: fetchProducers,
+        totalTopics,
         totalEvents,
         pagination,
         page,

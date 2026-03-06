@@ -1,18 +1,21 @@
-import { SearchInput, StatCard } from "@/components/shared";
+import { EmptyState, Pagination, SearchInput, StatCard } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
 import {
-    Dialog,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useTopics } from "@/hooks/useTopics";
 import type { TopicConsumerEntry, TopicProducerEntry, TopicView } from "@/types";
-import { AlertCircle, ArrowRight, Box, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Code, FileJson, Filter, Layers, Search as SearchIcon, XCircle, Zap } from "lucide-react";
+import { AlertCircle, Box, CheckCircle2, ChevronRight, Filter, Layers, XCircle, Zap } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { EventDetails } from "./EventDetails";
+import { TopicDetailsPanel } from "./TopicDetailsPanel";
 
 type FilterMode = 'all' | 'orphaned' | 'unconsumed' | 'active';
 
@@ -28,9 +31,8 @@ export function TopicsView() {
         setPage
     } = useTopics();
     const [searchQuery, setSearchQuery] = useState("");
-    const [openTopics, setOpenTopics] = useState<Record<string, boolean>>({});
     const [filterMode, setFilterMode] = useState<FilterMode>('all');
-    const [expandAll, setExpandAll] = useState(false);
+    const [selectedTopic, setSelectedTopic] = useState<TopicView | null>(null);
 
     const getEventProducers = useCallback((topicData: TopicView, eventName: string): TopicProducerEntry[] => {
         return topicData.producers.filter(p => p.event === eventName);
@@ -39,13 +41,6 @@ export function TopicsView() {
     const getEventConsumers = useCallback((topicData: TopicView, eventName: string): TopicConsumerEntry[] => {
         return topicData.consumers.filter(c => c.event === eventName);
     }, []);
-
-    const toggleTopic = (topicName: string) => {
-        setOpenTopics(prev => ({
-            ...prev,
-            [topicName]: !prev[topicName]
-        }));
-    };
 
     const getEventStatus = useCallback((topicData: TopicView, eventName: string) => {
         const producers = getEventProducers(topicData, eventName);
@@ -103,47 +98,37 @@ export function TopicsView() {
         return filteredTopics.reduce((acc, t) => acc + t.events.length, 0);
     }, [filteredTopics]);
 
-    const toggleAllTopics = () => {
-        const newExpandAll = !expandAll;
-        setExpandAll(newExpandAll);
-        const newOpenTopics: Record<string, boolean> = {};
-        filteredTopics.forEach(topic => {
-            newOpenTopics[topic.topic] = newExpandAll;
-        });
-        setOpenTopics(newOpenTopics);
-    };
-
-    if (loading) return null;
-
     return (
         <div className="space-y-6 animate-in">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <StatCard
-                    label="Active Events"
-                    value={activeCount}
-                    description="With producers & consumers"
-                    icon={<CheckCircle2 className="h-4 w-4 text-muted-foreground" />}
-                    onClick={() => setFilterMode(filterMode === 'active' ? 'all' : 'active')}
-                    active={filterMode === 'active'}
-                />
-                <StatCard
-                    label="Unconsumed"
-                    value={countUnconsumed}
-                    description="No active consumers"
-                    icon={<AlertCircle className="h-4 w-4 text-muted-foreground" />}
-                    onClick={() => setFilterMode(filterMode === 'unconsumed' ? 'all' : 'unconsumed')}
-                    active={filterMode === 'unconsumed'}
-                />
-                <StatCard
-                    label="Orphaned"
-                    value={countOrphaned}
-                    description="No producers defined"
-                    icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
-                    onClick={() => setFilterMode(filterMode === 'orphaned' ? 'all' : 'orphaned')}
-                    active={filterMode === 'orphaned'}
-                />
-            </div>
+            {!loading && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <StatCard
+                        label="Active Events"
+                        value={activeCount}
+                        description="With producers & consumers"
+                        icon={<CheckCircle2 className="h-4 w-4 text-muted-foreground" />}
+                        onClick={() => setFilterMode(filterMode === 'active' ? 'all' : 'active')}
+                        active={filterMode === 'active'}
+                    />
+                    <StatCard
+                        label="Unconsumed"
+                        value={countUnconsumed}
+                        description="No active consumers"
+                        icon={<AlertCircle className="h-4 w-4 text-muted-foreground" />}
+                        onClick={() => setFilterMode(filterMode === 'unconsumed' ? 'all' : 'unconsumed')}
+                        active={filterMode === 'unconsumed'}
+                    />
+                    <StatCard
+                        label="Orphaned"
+                        value={countOrphaned}
+                        description="No producers defined"
+                        icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
+                        onClick={() => setFilterMode(filterMode === 'orphaned' ? 'all' : 'orphaned')}
+                        active={filterMode === 'orphaned'}
+                    />
+                </div>
+            )}
 
             {/* Search and Filter Bar */}
             <div className="flex flex-col sm:flex-row gap-3">
@@ -168,252 +153,125 @@ export function TopicsView() {
                         <Filter className="h-4 w-4" />
                         {filterMode === 'all' ? 'All Events' : `Filter: ${filterMode}`}
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="default"
-                        onClick={toggleAllTopics}
-                        className="gap-2"
-                    >
-                        {expandAll ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        {expandAll ? 'Collapse' : 'Expand'}
-                    </Button>
                 </div>
             </div>
 
-            {/* Events Layout */}
-            <div className="rounded-lg border border-border bg-card overflow-hidden">
-                {filteredTopics.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-10 text-muted-foreground">
-                        <SearchIcon className="h-8 w-8 mb-3" />
-                        <p className="font-medium text-sm">No events found</p>
-                        <p className="text-xs mt-1">Try adjusting your search or filter criteria</p>
-                    </div>
-                ) : (
-                    filteredTopics.map((topicData, topicIndex) => {
-                        const orphanedInTopic = topicData.events.filter(
-                            e => getEventStatus(topicData, e.name) === 'orphaned'
-                        ).length;
+            {/* Topics Layout (Master List) */}
+            <div className="rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
+                <Table>
+                    <TableHeader className="bg-muted/30">
+                        <TableRow className="hover:bg-transparent border-b border-border/60">
+                            <TableHead className="h-11 text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-4">Topic</TableHead>
+                            <TableHead className="h-11 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Events</TableHead>
+                            <TableHead className="h-11 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Producers</TableHead>
+                            <TableHead className="h-11 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Consumers</TableHead>
+                            <TableHead className="h-11 text-right pr-4"></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <TableRow key={i}>
+                                    <TableCell className="pl-4"><Skeleton className="h-12 w-[250px] rounded-md" /></TableCell>
+                                    <TableCell className="text-center"><Skeleton className="h-6 w-[60px] mx-auto rounded-md" /></TableCell>
+                                    <TableCell className="text-center"><Skeleton className="h-6 w-[50px] mx-auto rounded-md" /></TableCell>
+                                    <TableCell className="text-center"><Skeleton className="h-6 w-[50px] mx-auto rounded-md" /></TableCell>
+                                    <TableCell className="pr-4"><Skeleton className="h-8 w-8 ml-auto rounded-full" /></TableCell>
+                                </TableRow>
+                            ))
+                        ) : filteredTopics.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-32 text-center p-0">
+                                    <div className="py-8">
+                                        <EmptyState
+                                            title="No topics found"
+                                            description="Try adjusting your search or filter criteria"
+                                        />
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredTopics.map((topicData) => {
+                                const orphanedInTopic = topicData.events.filter(
+                                    e => getEventStatus(topicData, e.name) === 'orphaned'
+                                ).length;
 
-                        return (
-                            <div
-                                key={topicData.topic}
-                                className="border-b border-border last:border-b-0"
-                                style={{
-                                    animationDelay: `${topicIndex * 0.05}s`,
-                                    animationFillMode: 'backwards'
-                                }}
-                            >
-                                <button
-                                    type="button"
-                                    onClick={() => toggleTopic(topicData.topic)}
-                                    className="w-full flex items-center justify-between px-4 py-3 md:px-5 hover:bg-accent/30 transition-colors"
-                                >
-                                    <div className="flex items-center gap-2.5 font-medium text-left">
-                                        {openTopics[topicData.topic] ? (
-                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                        ) : (
-                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                        )}
-                                        <Box className="h-4 w-4 text-muted-foreground" />
-                                        <span className="font-mono text-sm font-medium">{topicData.topic}</span>
-                                        <Badge variant="secondary" className="ml-1 text-[10px] font-normal">
-                                            {topicData.events.length} {topicData.events.length === 1 ? 'event' : 'events'}
-                                        </Badge>
-                                        {orphanedInTopic > 0 && (
-                                            <Badge variant="destructive" className="ml-0.5 text-[10px] font-normal gap-1">
-                                                <XCircle className="h-3 w-3" />
-                                                Missing producer
+                                return (
+                                    <TableRow
+                                        key={topicData.topic}
+                                        className="cursor-pointer group hover:bg-muted/30 transition-colors"
+                                        onClick={() => { setSelectedTopic(topicData); }}
+                                    >
+                                        <TableCell className="py-4 pl-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-10 w-10 shrink-0 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 transition-colors">
+                                                    <Box className="h-5 w-5 text-indigo-500/80" />
+                                                </div>
+                                                <div className="flex flex-col gap-1.5">
+                                                    <span className="font-semibold text-foreground/90 group-hover:text-primary transition-colors">{topicData.topic}</span>
+                                                    {orphanedInTopic > 0 && (
+                                                        <Badge variant="destructive" className="font-medium text-[10px] bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 transition-colors gap-1 px-1.5 py-0 w-fit">
+                                                            <XCircle className="h-3 w-3" />
+                                                            Missing producer
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-4 text-center">
+                                            <Badge variant="secondary" className="font-medium text-[11px] bg-secondary/50 hover:bg-secondary transition-colors tabular-nums">
+                                                {topicData.events.length} {topicData.events.length === 1 ? 'event' : 'events'}
                                             </Badge>
-                                        )}
-                                    </div>
-                                    <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-                                        <span className="flex items-center gap-1"><Box className="h-3 w-3" /> Producers</span>
-                                        <ArrowRight className="h-3 w-3" />
-                                        <span className="flex items-center gap-1"><Layers className="h-3 w-3" /> Consumers</span>
-                                    </div>
-                                </button>
-
-                                {openTopics[topicData.topic] && (
-                                    <div className="px-4 pb-4 md:px-5 space-y-2 bg-muted/20">
-                                        {topicData.events.map((event, eventIndex) => {
-                                            const eventProducers = getEventProducers(topicData, event.name);
-                                            const eventConsumers = getEventConsumers(topicData, event.name);
-                                            const status = getEventStatus(topicData, event.name);
-
-                                            let statusIcon;
-                                            let statusColor;
-
-                                            if (status === 'orphaned') {
-                                                statusIcon = <XCircle className="h-3.5 w-3.5" />;
-                                                statusColor = 'text-destructive';
-                                            } else if (status === 'unconsumed') {
-                                                statusIcon = <AlertCircle className="h-3.5 w-3.5" />;
-                                                statusColor = 'text-muted-foreground';
-                                            } else {
-                                                statusIcon = <Zap className="h-3.5 w-3.5" />;
-                                                statusColor = 'text-foreground';
-                                            }
-
-                                            return (
-                                                <Dialog key={`${topicData.topic}-${event.name}`}>
-                                                    <DialogTrigger asChild>
-                                                        <button
-                                                            type="button"
-                                                            className="group rounded-lg border border-border bg-card p-4 hover:bg-accent/30 transition-colors cursor-pointer text-left w-full"
-                                                            style={{
-                                                                animationDelay: `${(topicIndex * 0.05) + (eventIndex * 0.03)}s`,
-                                                                animationFillMode: 'backwards'
-                                                            }}
-                                                        >
-                                                            <div className="flex flex-col gap-2.5">
-                                                                <div className="flex items-start justify-between gap-4">
-                                                                    <div className="flex flex-col gap-1.5">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className={statusColor}>{statusIcon}</span>
-                                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                                <span className="font-mono text-sm font-medium">{event.name}</span>
-                                                                                {event.version && (
-                                                                                    <Badge variant="outline" className="font-mono text-[10px] font-normal px-2 py-0.5">
-                                                                                        v{event.version}
-                                                                                    </Badge>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                        <span className="text-xs text-muted-foreground">
-                                                                            {event.description}
-                                                                        </span>
-                                                                    </div>
-
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                            title="View Details"
-                                                                        >
-                                                                            <FileJson className="h-3.5 w-3.5" />
-                                                                        </Button>
-
-                                                                        {event.schema_url && (
-                                                                            <div onClick={(e) => e.stopPropagation()}>
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    className="h-7 w-7 p-0"
-                                                                                    asChild
-                                                                                    title="Open Schema URL"
-                                                                                >
-                                                                                    <a
-                                                                                        href={event.schema_url}
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
-                                                                                    >
-                                                                                        <Code className="h-3.5 w-3.5" />
-                                                                                    </a>
-                                                                                </Button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] items-start pt-1">
-                                                                    <div className="flex flex-col gap-1.5">
-                                                                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                                                                            Producers
-                                                                        </span>
-                                                                        {eventProducers.length === 0 ? (
-                                                                            <span className="text-xs text-destructive italic">No producers</span>
-                                                                        ) : (
-                                                                            <div className="flex flex-wrap gap-1.5">
-                                                                                {eventProducers.slice(0, 3).map(p => (
-                                                                                    <span key={`${p.service}-${p.repository}`} className="text-xs bg-muted px-2 py-0.5 rounded font-medium">
-                                                                                        {p.service}
-                                                                                    </span>
-                                                                                ))}
-                                                                                {eventProducers.length > 3 && (
-                                                                                    <Badge variant="secondary" className="text-[10px] font-normal">
-                                                                                        +{eventProducers.length - 3}
-                                                                                    </Badge>
-                                                                                )}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-
-                                                                    <div className="hidden md:flex items-center justify-center">
-                                                                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                    </div>
-
-                                                                    <div className="flex flex-col gap-1.5">
-                                                                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                                                                            Consumers
-                                                                        </span>
-                                                                        {eventConsumers.length === 0 ? (
-                                                                            <span className="text-xs text-muted-foreground italic">No consumers</span>
-                                                                        ) : (
-                                                                            <div className="flex flex-wrap gap-1.5">
-                                                                                {eventConsumers.slice(0, 3).map(c => (
-                                                                                    <span key={`${c.service}-${c.repository}-${c.group}`} className="text-xs bg-muted px-2 py-0.5 rounded font-medium">
-                                                                                        {c.service}
-                                                                                    </span>
-                                                                                ))}
-                                                                                {eventConsumers.length > 3 && (
-                                                                                    <Badge variant="secondary" className="text-[10px] font-normal">
-                                                                                        +{eventConsumers.length - 3}
-                                                                                    </Badge>
-                                                                                )}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </button>
-                                                    </DialogTrigger>
-                                                    <EventDetails eventId={event.id} />
-
-                                                </Dialog>
-                                            );
-                                        })}
-                                    </div>
-                                )
-                                }
-                            </div>
-                        );
-                    })
-                )}
+                                        </TableCell>
+                                        <TableCell className="py-4 text-center">
+                                            <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-muted/40 border border-border/50 group-hover:bg-muted/60 transition-colors">
+                                                <Layers className="h-3.5 w-3.5 text-muted-foreground mr-1.5" />
+                                                <span className="text-xs font-semibold tabular-nums text-foreground/80">
+                                                    {topicData.producers.length}
+                                                </span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-4 text-center">
+                                            <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-muted/40 border border-border/50 group-hover:bg-muted/60 transition-colors">
+                                                <Zap className="h-3.5 w-3.5 text-muted-foreground mr-1.5" />
+                                                <span className="text-xs font-semibold tabular-nums text-foreground/80">
+                                                    {topicData.consumers.length}
+                                                </span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-4 text-right pr-4">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted"
+                                            >
+                                                <ChevronRight className="h-4 w-4" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
+                        )}
+                    </TableBody>
+                </Table>
             </div>
 
-            {/* Pagination Controls */}
-            {
-                pagination && pagination.total_pages > 1 && (
-                    <div className="flex items-center justify-between px-1">
-                        <span className="text-xs text-muted-foreground">
-                            Page {pagination.page} of {pagination.total_pages} ({pagination.total} topics)
-                        </span>
-                        <div className="flex items-center gap-1">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 px-2 text-xs"
-                                disabled={page <= 1}
-                                onClick={() => setPage(page - 1)}
-                            >
-                                <ChevronLeft className="h-3.5 w-3.5 mr-1" />
-                                Previous
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 px-2 text-xs"
-                                disabled={page >= pagination.total_pages}
-                                onClick={() => setPage(page + 1)}
-                            >
-                                Next
-                                <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                            </Button>
-                        </div>
-                    </div>
-                )
-            }
-        </div >
+            {pagination && (
+                <Pagination
+                    pagination={pagination}
+                    page={page}
+                    onPageChange={setPage}
+                    label="topics"
+                />
+            )}
+
+            <TopicDetailsPanel
+                topic={selectedTopic}
+                open={!!selectedTopic}
+                onOpenChange={(open) => {
+                    if (!open) setSelectedTopic(null);
+                }}
+            />
+        </div>
     );
 }

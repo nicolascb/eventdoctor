@@ -5,6 +5,7 @@ import type { TopicView } from "@/types";
 import {
     Check,
     ChevronDown,
+    ChevronUp,
     Database,
     Layers,
     Network,
@@ -29,15 +30,11 @@ interface EventFlowDiagramProps {
     hideSelector?: boolean;
 }
 
-interface FlowEvent {
-    name: string;
+interface TopicFlowData {
+    topic: string;
+    events: string[];
     producers: string[];
     consumers: string[];
-}
-
-interface FlowData {
-    topic: string;
-    flowEvents: FlowEvent[];
 }
 
 interface ConnLine {
@@ -170,25 +167,22 @@ function TopicSelect({
 }
 
 /* ────────────────────────────────────────────────────────── */
-/*  EventFlowLine – one event row with SVG connections        */
+/*  TopicFlowRow – a topic group                              */
 /* ────────────────────────────────────────────────────────── */
 
-function EventFlowLine({
-    event,
-    producerNames,
-    consumerNames,
-    rowIndex,
+function TopicFlowRow({
+    flow,
+    index,
 }: {
-    event: string;
-    producerNames: string[];
-    consumerNames: string[];
-    rowIndex: number;
+    flow: TopicFlowData;
+    index: number;
 }) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const eventRef = useRef<HTMLDivElement>(null);
+    const topicRef = useRef<HTMLDivElement>(null);
     const prodRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const consRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const [lines, setLines] = useState<ConnLine[]>([]);
+    const [expanded, setExpanded] = useState(false);
 
     const setProdRef = useCallback(
         (name: string) => (el: HTMLDivElement | null) => {
@@ -207,45 +201,47 @@ function EventFlowLine({
 
     const computeLines = useCallback(() => {
         const container = containerRef.current;
-        const eventEl = eventRef.current;
-        if (!container || !eventEl) return;
+        const topicEl = topicRef.current;
+        if (!container || !topicEl) return;
 
         const cr = container.getBoundingClientRect();
-        const er = eventEl.getBoundingClientRect();
-        const ex = er.left - cr.left + er.width / 2;
-        const ey = er.top - cr.top + er.height / 2;
+        const tr = topicEl.getBoundingClientRect();
+
+        // Topic block connection points
+        const ty = tr.top - cr.top + tr.height / 2;
 
         const result: ConnLine[] = [];
         let idx = 0;
 
-        // producer → event
+        // producer → topic block
         prodRefs.current.forEach((el, name) => {
             const r = el.getBoundingClientRect();
             const sx = r.right - cr.left;
             const sy = r.top - cr.top + r.height / 2;
-            const dx = (ex - sx) * 0.45;
-            const path = `M ${sx} ${sy} C ${sx + dx} ${sy}, ${ex - dx} ${ey}, ${ex} ${ey}`;
+            const tLeft = tr.left - cr.left;
+            const dx = (tLeft - sx) * 0.45;
+            const path = `M ${sx} ${sy} C ${sx + dx} ${sy}, ${tLeft - dx} ${ty}, ${tLeft} ${ty}`;
             result.push({
                 id: `p-${name}-${idx}`,
                 path,
-                color: "#6C757D",
+                color: "var(--muted-foreground)",
                 delay: idx * 0.3,
             });
             idx++;
         });
 
-        // event → consumer
+        // topic block → consumer
         consRefs.current.forEach((el, name) => {
             const r = el.getBoundingClientRect();
-            const tx = r.left - cr.left;
-            const ty = r.top - cr.top + r.height / 2;
-            const eRight = er.right - cr.left;
-            const dx = (tx - eRight) * 0.45;
-            const path = `M ${eRight} ${ey} C ${eRight + dx} ${ey}, ${tx - dx} ${ty}, ${tx} ${ty}`;
+            const cx = r.left - cr.left;
+            const cy = r.top - cr.top + r.height / 2;
+            const tRight = tr.right - cr.left;
+            const dx = (cx - tRight) * 0.45;
+            const path = `M ${tRight} ${ty} C ${tRight + dx} ${ty}, ${cx - dx} ${cy}, ${cx} ${cy}`;
             result.push({
                 id: `c-${name}-${idx}`,
                 path,
-                color: "#6C757D",
+                color: "var(--muted-foreground)",
                 delay: idx * 0.3,
             });
             idx++;
@@ -255,10 +251,10 @@ function EventFlowLine({
     }, []);
 
     useLayoutEffect(() => {
-        const delay = rowIndex * 100 + 400;
+        const delay = index * 100 + 400;
         const timer = setTimeout(computeLines, delay);
         return () => clearTimeout(timer);
-    }, [computeLines, rowIndex]);
+    }, [computeLines, index]);
 
     // Recalculate on resize
     useLayoutEffect(() => {
@@ -269,13 +265,15 @@ function EventFlowLine({
         return () => ro.disconnect();
     }, [computeLines]);
 
-    const baseDelay = rowIndex * 0.12;
+    const baseDelay = index * 0.12;
+    const MAX_EVENTS_VISIBLE = 4;
+    const hasMoreEvents = flow.events.length > MAX_EVENTS_VISIBLE;
+    const visibleEvents = expanded ? flow.events : flow.events.slice(0, MAX_EVENTS_VISIBLE);
 
     return (
         <div
-            ref={containerRef}
-            className="relative flex items-center gap-0 py-2"
-            style={{ minHeight: 48 }}
+            className="flow-row-enter rounded-lg border bg-card/60 p-4 relative"
+            style={{ animationDelay: `${index * 0.12}s` }}
         >
             {/* SVG overlay */}
             <svg
@@ -284,7 +282,6 @@ function EventFlowLine({
             >
                 {lines.map((l) => (
                     <g key={l.id}>
-                        {/* line */}
                         <path
                             d={l.path}
                             fill="none"
@@ -293,13 +290,12 @@ function EventFlowLine({
                             strokeDasharray="6 4"
                             opacity={0.5}
                         />
-                        {/* envelope */}
                         <g opacity={0}>
                             <text
                                 fontSize="12"
                                 textAnchor="middle"
                                 dominantBaseline="central"
-                                fill="#6C757D"
+                                fill="var(--muted-foreground)"
                             >
                                 ✉
                             </text>
@@ -325,114 +321,113 @@ function EventFlowLine({
                 ))}
             </svg>
 
-            {/* Producers column */}
-            <div
-                className="flex flex-col items-end gap-1 shrink-0"
-                style={{ width: "28%", zIndex: 2 }}
-            >
-                {producerNames.map((p, i) => (
-                    <div
-                        key={p}
-                        ref={setProdRef(p)}
-                        className="flow-node-enter flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium shadow-sm"
-                        style={{ animationDelay: `${baseDelay + i * 0.08}s` }}
-                    >
-                        <Database className="h-3 w-3 text-muted-foreground" />
-                        <span className="truncate max-w-[120px]">{p}</span>
+            <div ref={containerRef} className="relative z-10 w-full">
+                {/* Column labels */}
+                <div className="flex items-center mb-4 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                    <div style={{ width: "25%" }} className="text-right pr-4">
+                        Producers
                     </div>
-                ))}
-                {producerNames.length === 0 && (
-                    <span className="text-xs text-muted-foreground italic">—</span>
-                )}
-            </div>
-
-            {/* Center: Event pill */}
-            <div
-                className="flex justify-center shrink-0"
-                style={{ width: "44%", zIndex: 2 }}
-            >
-                <div
-                    ref={eventRef}
-                    className="flow-node-enter flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-4 py-1.5 text-xs font-semibold shadow-md"
-                    style={{ animationDelay: `${baseDelay + 0.15}s` }}
-                >
-                    <Zap className="h-3 w-3" />
-                    <span className="truncate max-w-[180px]">{event}</span>
-                </div>
-            </div>
-
-            {/* Consumers column */}
-            <div
-                className="flex flex-col items-start gap-1 shrink-0"
-                style={{ width: "28%", zIndex: 2 }}
-            >
-                {consumerNames.map((c, i) => (
-                    <div
-                        key={c}
-                        ref={setConsRef(c)}
-                        className="flow-node-enter flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium shadow-sm"
-                        style={{ animationDelay: `${baseDelay + 0.2 + i * 0.08}s` }}
-                    >
-                        <Network className="h-3 w-3 text-muted-foreground" />
-                        <span className="truncate max-w-[120px]">{c}</span>
+                    <div style={{ width: "50%" }} className="text-center">
+                        Topic & Events
                     </div>
-                ))}
-                {consumerNames.length === 0 && (
-                    <span className="text-xs text-muted-foreground italic">—</span>
-                )}
-            </div>
-        </div>
-    );
-}
-
-/* ────────────────────────────────────────────────────────── */
-/*  FlowRow – a topic group                                   */
-/* ────────────────────────────────────────────────────────── */
-
-function FlowRow({
-    flow,
-    index,
-}: {
-    flow: FlowData;
-    index: number;
-}) {
-    return (
-        <div
-            className="flow-row-enter rounded-lg border bg-card/60 p-4"
-            style={{ animationDelay: `${index * 0.12}s` }}
-        >
-            {/* Topic header */}
-            <div className="mb-3 flex items-center gap-2">
-                <Layers className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-semibold">{flow.topic}</span>
-                <Badge variant="outline" className="text-[10px] ml-auto">
-                    {flow.flowEvents.length} event{flow.flowEvents.length !== 1 ? "s" : ""}
-                </Badge>
-            </div>
-
-            {/* Column labels */}
-            <div className="flex items-center mb-1 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                <div style={{ width: "28%" }} className="text-right pr-4">
-                    Producers
+                    <div style={{ width: "25%" }} className="pl-4">
+                        Consumers
+                    </div>
                 </div>
-                <div style={{ width: "44%" }} className="text-center">
-                    Event
-                </div>
-                <div style={{ width: "28%" }} className="pl-4">
-                    Consumers
+
+                <div className="flex items-stretch gap-0 w-full min-h-[100px]">
+                    {/* Producers column */}
+                    <div
+                        className="flex flex-col items-end justify-center gap-2 shrink-0 py-4"
+                        style={{ width: "25%" }}
+                    >
+                        {flow.producers.map((p, i) => (
+                            <div
+                                key={p}
+                                ref={setProdRef(p)}
+                                className="flow-node-enter flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium shadow-sm transition-all hover:border-primary/50 hover:shadow-md"
+                                style={{ animationDelay: `${baseDelay + i * 0.08}s` }}
+                            >
+                                <Database className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="truncate max-w-[120px]">{p}</span>
+                            </div>
+                        ))}
+                        {flow.producers.length === 0 && (
+                            <span className="text-xs text-muted-foreground italic px-3 py-1.5">—</span>
+                        )}
+                    </div>
+
+                    {/* Center: Topic Block */}
+                    <div
+                        className="flex flex-col items-center justify-center shrink-0 px-6 py-2"
+                        style={{ width: "50%" }}
+                    >
+                        <div
+                            ref={topicRef}
+                            className="flow-node-enter flex flex-col w-full max-w-[340px] rounded-xl border-2 border-primary/20 bg-card shadow-sm overflow-hidden transition-all duration-300 hover:border-primary/40"
+                            style={{ animationDelay: `${baseDelay + 0.15}s` }}
+                        >
+                            {/* Topic Header */}
+                            <div className="bg-primary/5 px-4 py-2.5 flex items-center gap-2 border-b border-primary/10">
+                                <Layers className="h-4 w-4 text-primary" />
+                                <span className="text-sm font-semibold text-foreground truncate">{flow.topic}</span>
+                            </div>
+
+                            {/* Events list */}
+                            <div className="p-3.5 flex flex-wrap gap-1.5 justify-center bg-card/30">
+                                {visibleEvents.map((e) => (
+                                    <Badge
+                                        key={e}
+                                        variant="secondary"
+                                        className="font-mono text-[10px] flex items-center gap-1 bg-secondary/40 hover:bg-secondary/70 border-secondary-foreground/10 px-2 font-medium"
+                                    >
+                                        <Zap className="h-2.5 w-2.5 opacity-60" />
+                                        {e}
+                                    </Badge>
+                                ))}
+                                {visibleEvents.length === 0 && (
+                                    <span className="text-xs text-muted-foreground italic">No events mapped</span>
+                                )}
+                            </div>
+
+                            {/* Expand toggle */}
+                            {hasMoreEvents && (
+                                <button
+                                    className="w-full py-2 text-[10px] font-medium text-muted-foreground bg-muted/20 hover:bg-muted/50 hover:text-foreground transition-colors flex items-center justify-center gap-1 border-t border-border focus:outline-none"
+                                    onClick={() => setExpanded(!expanded)}
+                                >
+                                    {expanded ? (
+                                        <>Hide {flow.events.length - MAX_EVENTS_VISIBLE} events <ChevronUp className="h-3 w-3" /></>
+                                    ) : (
+                                        <>Show {flow.events.length - MAX_EVENTS_VISIBLE} more events <ChevronDown className="h-3 w-3" /></>
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Consumers column */}
+                    <div
+                        className="flex flex-col items-start justify-center gap-2 shrink-0 py-4"
+                        style={{ width: "25%" }}
+                    >
+                        {flow.consumers.map((c, i) => (
+                            <div
+                                key={c}
+                                ref={setConsRef(c)}
+                                className="flow-node-enter flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium shadow-sm transition-all hover:border-primary/50 hover:shadow-md"
+                                style={{ animationDelay: `${baseDelay + 0.2 + i * 0.08}s` }}
+                            >
+                                <Network className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="truncate max-w-[120px]">{c}</span>
+                            </div>
+                        ))}
+                        {flow.consumers.length === 0 && (
+                            <span className="text-xs text-muted-foreground italic px-3 py-1.5">—</span>
+                        )}
+                    </div>
                 </div>
             </div>
-
-            {/* Event rows */}
-            {flow.flowEvents.map((fe, i) => (
-                <EventFlowLine
-                    key={fe.name}
-                    event={fe.name}
-                    producerNames={fe.producers}
-                    consumerNames={fe.consumers}
-                    rowIndex={i}
-                />
-            ))}
         </div>
     );
 }
@@ -451,7 +446,7 @@ export function EventFlowDiagram({
     );
     const [selected, setSelected] = useState<string[]>([]);
 
-    const flows: FlowData[] = useMemo(() => {
+    const flows: TopicFlowData[] = useMemo(() => {
         const visible =
             selected.length === 0
                 ? topics
@@ -460,33 +455,21 @@ export function EventFlowDiagram({
         if (visible.length === 0) return [];
 
         return visible.map((t) => {
-            const flowEvents: FlowEvent[] = t.events.map((e) => {
-                const prods = t.producers
-                    .filter((p) => p.event === e.name)
-                    .map((p) => p.service);
-                const cons = t.consumers
-                    .filter((c) => c.event === e.name)
-                    .map((c) => c.service);
-                return {
-                    name: e.name,
-                    producers: [...new Set(prods)],
-                    consumers: [...new Set(cons)],
-                };
-            });
+            const events = t.events.map(e => e.name);
+            const producers = [...new Set(t.producers.map(p => p.service))];
+            const consumers = [...new Set(t.consumers.map(c => c.service))];
 
-            return { topic: t.topic, flowEvents };
+            return { topic: t.topic, events, producers, consumers };
         });
     }, [topics, selected]);
 
-    if (topics.length === 0) return null;
-
     return (
         <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 border-b border-border/50 bg-muted/5">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
                     <CardTitle className="text-base font-semibold flex items-center gap-2">
-                        <Zap className="h-4 w-4" />
-                        Event Flow
+                        <Zap className="h-4 w-4 text-primary" />
+                        Architecture Flow
                     </CardTitle>
                     {!hideSelector && (
                         <TopicSelect
@@ -497,18 +480,27 @@ export function EventFlowDiagram({
                     )}
                 </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-                {(selected.length === 0 && !hideSelector) ? (
-                    <p className="text-center text-sm text-muted-foreground py-8">
-                        Select a topic above to visualize its event flow.
-                    </p>
+            <CardContent className="space-y-6 pt-6">
+                {((!hideSelector && selected.length === 0) || (hideSelector && topics.length === 0)) ? (
+                    <div className="h-full min-h-[500px] w-full rounded-2xl border-2 border-dashed border-border/60 flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-muted/5 to-muted/20">
+                        <div className="relative mb-6">
+                            <div className="absolute inset-0 animate-ping rounded-full bg-primary/10 opacity-75" />
+                            <div className="relative rounded-full bg-background border shadow-sm p-6">
+                                <Layers className="h-10 w-10 text-primary/60" />
+                            </div>
+                        </div>
+                        <h3 className="text-xl font-semibold text-foreground tracking-tight mb-2">Visualize Everything</h3>
+                        <p className="max-w-[420px] text-sm text-muted-foreground leading-relaxed">
+                            No topics selected yet. Pick one or multiple topics from the list on the left to instantly map and visualize their flow between producers and consumers.
+                        </p>
+                    </div>
                 ) : flows.length === 0 ? (
                     <p className="text-center text-sm text-muted-foreground py-8">
                         No topics match the current selection.
                     </p>
                 ) : (
                     flows.map((f, i) => (
-                        <FlowRow key={f.topic} flow={f} index={i} />
+                        <TopicFlowRow key={f.topic} flow={f} index={i} />
                     ))
                 )}
             </CardContent>
