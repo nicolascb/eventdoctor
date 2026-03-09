@@ -1,8 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Sheet,
-} from "@/components/ui/sheet";
+import { Dialog } from "@/components/ui/dialog";
 import {
     Table,
     TableBody,
@@ -206,11 +204,11 @@ export function ProducersView() {
             />
 
             {/* Event Details Dialog */}
-            <Sheet open={!!selectedEvent} onOpenChange={(open) => { if (!open) setSelectedEvent(null); }}>
+            <Dialog open={!!selectedEvent} onOpenChange={(open) => { if (!open) setSelectedEvent(null); }}>
                 {selectedEvent && (
-                    <EventDetails eventId={selectedEvent.id} />
+                    <EventDetails eventId={selectedEvent.id} mode="dialog" />
                 )}
-            </Sheet>
+            </Dialog>
         </div>
     );
 }

@@ -15,7 +15,48 @@ Components:
 | Auditor Consumer | Consumes events and records undocumented events and consumers   |
 | Frontend UI      | Web interface for browsing events, topics, producers, consumers |
 
-![Architecture Overview](./docs/images/architecture_overview.png)
+```mermaid
+flowchart LR
+    subgraph EventDoctor
+        direction TB
+        
+        %% Definição dos nós
+        User([User])
+        ui([ui])
+        CICD([CI/CD])
+        cli([cli])
+        spec([spec])
+        api([api])
+        sqlite([sqlite])
+        auditor([auditor consumer])
+        Kafka([Kafka topics])
+
+        %% Conexões Verticais (User -> UI -> API)
+        User --> ui
+        ui --> api
+        
+        %% Conexões Horizontais Principais
+        CICD --> cli
+        cli --> spec
+        spec --> api
+        api -- store --> sqlite
+
+        %% Conexões do Auditor
+        auditor -- records undocumented<br>events and consumers --> api
+        auditor -- sub --> Kafka
+    end
+
+    %% Estilização baseada nas cores da imagem
+    classDef green fill:#b5e6b5,stroke:#333,stroke-width:2px,color:#000;
+    classDef blueLine fill:#fff,stroke:#3273f6,stroke-width:2px,color:#3273f6;
+    classDef yellow fill:#fce588,stroke:#3273f6,stroke-width:2px,color:#3273f6;
+    classDef grey fill:#d9d9d9,stroke:#333,stroke-width:2px,color:#000;
+
+    class User,CICD green;
+    class ui,cli,api,auditor blueLine;
+    class spec yellow;
+    class sqlite,Kafka grey;
+```
 
 ## UI Screenshot
 

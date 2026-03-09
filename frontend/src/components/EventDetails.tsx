@@ -15,6 +15,12 @@ import {
     SheetTitle,
     SheetDescription,
 } from "@/components/ui/sheet";
+import {
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
 import type { EventView } from "@/types";
 import { ExternalLink, Zap, Server, Workflow, FileJson, Loader2, AlertCircle, Network, Code } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -23,12 +29,18 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface EventDetailsProps {
     eventId: number;
+    mode?: 'sheet' | 'dialog';
 }
 
-export function EventDetails({ eventId }: EventDetailsProps) {
+export function EventDetails({ eventId, mode = 'sheet' }: EventDetailsProps) {
     const [event, setEvent] = useState<EventView | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const ContentWrapper = mode === 'dialog' ? DialogContent : SheetContent;
+    const HeaderWrapper = mode === 'dialog' ? DialogHeader : SheetHeader;
+    const TitleWrapper = mode === 'dialog' ? DialogTitle : SheetTitle;
+    const DescriptionWrapper = mode === 'dialog' ? DialogDescription : SheetDescription;
 
     useEffect(() => {
         let mounted = true;
@@ -63,67 +75,67 @@ export function EventDetails({ eventId }: EventDetailsProps) {
 
     if (loading) {
         return (
-            <SheetContent className="sm:max-w-xl w-[90vw] overflow-y-auto">
-                <SheetHeader>
-                    <SheetTitle>
+            <ContentWrapper className="sm:max-w-xl w-[90vw] overflow-y-auto">
+                <HeaderWrapper>
+                    <TitleWrapper>
                         <div className="flex items-center gap-2">
                             <Zap className="h-4 w-4 text-muted-foreground" />
                             <h3 className="text-base font-semibold font-mono">
                                 Loading...
                             </h3>
                         </div>
-                    </SheetTitle>
-                </SheetHeader>
+                    </TitleWrapper>
+                </HeaderWrapper>
                 <div className="flex h-40 items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-            </SheetContent>
+            </ContentWrapper>
         );
     }
 
     if (error) {
         return (
-            <SheetContent className="sm:max-w-xl w-[90vw] overflow-y-auto">
-                <SheetHeader>
-                    <SheetTitle>
+            <ContentWrapper className="sm:max-w-xl w-[90vw] overflow-y-auto">
+                <HeaderWrapper>
+                    <TitleWrapper>
                         <div className="flex items-center gap-2">
                             <Zap className="h-4 w-4 text-muted-foreground" />
                             <h3 className="text-base font-semibold font-mono">
                                 Error
                             </h3>
                         </div>
-                    </SheetTitle>
-                </SheetHeader>
+                    </TitleWrapper>
+                </HeaderWrapper>
                 <Alert variant="destructive" className="mt-4">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
-            </SheetContent>
+            </ContentWrapper>
         );
     }
 
     if (!event) {
         return (
-            <SheetContent className="sm:max-w-xl w-[90vw] overflow-y-auto">
+            <ContentWrapper className="sm:max-w-xl w-[90vw] overflow-y-auto">
                 <div className="flex h-40 items-center justify-center text-muted-foreground">
                     Event not found
                 </div>
-            </SheetContent>
+            </ContentWrapper>
         );
     }
 
     return (
-        <SheetContent className="sm:max-w-xl w-[90vw] overflow-y-auto p-0 flex flex-col">
+        <ContentWrapper className="sm:max-w-xl w-[90vw] overflow-y-auto p-0 flex flex-col">
             <div className="p-6 pb-4 border-b border-border bg-muted/20">
-                <SheetHeader>
+                <HeaderWrapper>
                     <div className="flex items-center gap-3 mb-2">
                         <div className="rounded-md bg-orange-500/10 p-2 text-orange-500">
                             <Zap className="h-5 w-5" />
                         </div>
                         <div className="flex-1 text-left">
                             <div className="flex flex-row items-center gap-2">
-                                <SheetTitle className="text-xl font-mono">{event.name}</SheetTitle>
+                                <TitleWrapper className="text-xl font-mono">{event.name}</TitleWrapper>
                                 {event.version && (
                                     <Badge variant="outline" className="text-[10px] bg-background">
                                         v{event.version}
@@ -131,13 +143,13 @@ export function EventDetails({ eventId }: EventDetailsProps) {
                                 )}
                             </div>
                             {event.description ? (
-                                <SheetDescription className="mt-1">{event.description}</SheetDescription>
+                                <DescriptionWrapper className="mt-1">{event.description}</DescriptionWrapper>
                             ) : (
-                                <SheetDescription className="mt-1">Event Details</SheetDescription>
+                                <DescriptionWrapper className="mt-1">Event Details</DescriptionWrapper>
                             )}
                         </div>
                     </div>
-                </SheetHeader>
+                </HeaderWrapper>
 
                 {/* Quick Stats Banner */}
                 <div className="flex items-center gap-4 mt-6">
@@ -289,6 +301,6 @@ export function EventDetails({ eventId }: EventDetailsProps) {
                     </>
                 )}
             </div>
-        </SheetContent>
+        </ContentWrapper>
     );
 }

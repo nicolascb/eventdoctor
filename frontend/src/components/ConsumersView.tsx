@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { ConsumerDetails } from "./ConsumerDetails";
 import { EventDetails } from "./EventDetails";
-import { Sheet } from "@/components/ui/sheet";
+import { Dialog } from "@/components/ui/dialog";
 
 export function ConsumersView() {
     const {
@@ -181,11 +181,11 @@ export function ConsumersView() {
             />
 
             {/* Event Details Dialog */}
-            <Sheet open={!!selectedEventId} onOpenChange={(open) => { if (!open) setSelectedEventId(null); }}>
+            <Dialog open={!!selectedEventId} onOpenChange={(open) => { if (!open) setSelectedEventId(null); }}>
                 {selectedEventId && (
-                    <EventDetails eventId={selectedEventId} />
+                    <EventDetails eventId={selectedEventId} mode="dialog" />
                 )}
-            </Sheet>
+            </Dialog>
         </div>
     );
 }

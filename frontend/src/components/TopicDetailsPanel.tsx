@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { TopicView } from "@/types";
 import { EventDetails } from "./EventDetails";
-// Removed Dialog and DialogTrigger import
+import { Dialog } from "@/components/ui/dialog";
 import {
     Layers,
     Database,
@@ -187,14 +187,14 @@ export function TopicDetailsPanel({ topic, open, onOpenChange }: TopicDetailsPan
                                                 </div>
                                             </div>
                                         </div>
-                                        {/* Event Details Sheet */}
-                                        <Sheet open={selectedEventId === event.name} onOpenChange={(open) => {
+                                        {/* Event Details Dialog */}
+                                        <Dialog open={selectedEventId === event.name} onOpenChange={(open) => {
                                             if (!open) setSelectedEventId(null);
                                         }}>
                                             {selectedEventId === event.name && (
-                                                <EventDetails eventId={event.id} />
+                                                <EventDetails eventId={event.id} mode="dialog" />
                                             )}
-                                        </Sheet>
+                                        </Dialog>
                                     </div>
                                 );
                             })}
