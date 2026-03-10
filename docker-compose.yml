@@ -27,7 +27,7 @@ services:
     environment:
       VITE_API_URL: http://localhost:8087/v1
     ports:
-      - "5173:5173"
+      - "5193:5173"
     depends_on:
       - api
 

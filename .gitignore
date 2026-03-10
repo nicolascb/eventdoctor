@@ -41,3 +41,4 @@ frontend/dist
 frontend/build
 backend/data
 .agents
+plans
