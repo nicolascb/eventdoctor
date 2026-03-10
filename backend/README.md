@@ -47,7 +47,6 @@ go build -o eventdoctor-consumer ./cmd/consumer/main.go
 
 - [CLI Documentation](./CLI.md)
 - [Consumer Documentation](./CONSUMER.md)
-- [Database Migration](./migration.sql)
 
 ## Testing
 

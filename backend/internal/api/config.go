@@ -9,6 +9,7 @@ var conf *APIConfig
 type APIConfig struct {
 	Port       string `env:"PORT,default=:8087"`
 	SQLitePath string `env:"SQLITE_PATH,default=./data.db"`
+	WithMock   bool   `env:"WITH_MOCK,default=false"`
 }
 
 func LoadConfig() (*APIConfig, error) {

@@ -32,7 +32,7 @@ export function EventsView() {
     return (
         <div className="space-y-4 animate-in">
             {/* Stats Cards */}
-            {!loading && (
+            {!loading && !search && (
                 <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
                     <StatCard
                         label="Total Events"

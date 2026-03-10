@@ -1,8 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Sheet,
-} from "@/components/ui/sheet";
+import { Dialog } from "@/components/ui/dialog";
 import {
     Table,
     TableBody,
@@ -54,7 +52,7 @@ export function ProducersView() {
     return (
         <div className="space-y-6 animate-in">
             {/* Stats Cards */}
-            {!loading && (
+            {!loading && !search && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <StatCard
                         label="Producer Services"
@@ -206,11 +204,11 @@ export function ProducersView() {
             />
 
             {/* Event Details Dialog */}
-            <Sheet open={!!selectedEvent} onOpenChange={(open) => { if (!open) setSelectedEvent(null); }}>
+            <Dialog open={!!selectedEvent} onOpenChange={(open) => { if (!open) setSelectedEvent(null); }}>
                 {selectedEvent && (
-                    <EventDetails eventId={selectedEvent.id} />
+                    <EventDetails eventId={selectedEvent.id} mode="dialog" />
                 )}
-            </Sheet>
+            </Dialog>
         </div>
     );
 }

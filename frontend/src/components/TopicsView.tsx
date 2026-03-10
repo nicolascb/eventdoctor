@@ -28,9 +28,10 @@ export function TopicsView() {
         loading,
         pagination,
         page,
-        setPage
+        setPage,
+        search,
+        setSearch
     } = useTopics();
-    const [searchQuery, setSearchQuery] = useState("");
     const [filterMode, setFilterMode] = useState<FilterMode>('all');
     const [selectedTopic, setSelectedTopic] = useState<TopicView | null>(null);
 
@@ -56,26 +57,6 @@ export function TopicsView() {
     const filteredTopics = useMemo(() => {
         let result = topics;
 
-        // Apply search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.map(topic => {
-                const matchesTopic = topic.topic.toLowerCase().includes(query);
-                const matchingEvents = topic.events.filter(event =>
-                    event.name.toLowerCase().includes(query) ||
-                    event.description.toLowerCase().includes(query)
-                );
-
-                if (matchesTopic || matchingEvents.length > 0) {
-                    return {
-                        ...topic,
-                        events: matchingEvents.length > 0 ? matchingEvents : topic.events
-                    };
-                }
-                return null;
-            }).filter((t): t is TopicView => t !== null);
-        }
-
         // Apply status filter
         if (filterMode !== 'all') {
             result = result.map(topic => {
@@ -92,16 +73,12 @@ export function TopicsView() {
         }
 
         return result;
-    }, [topics, searchQuery, filterMode, getEventStatus]);
-
-    const filteredEventsCount = useMemo(() => {
-        return filteredTopics.reduce((acc, t) => acc + t.events.length, 0);
-    }, [filteredTopics]);
+    }, [topics, filterMode, getEventStatus]);
 
     return (
         <div className="space-y-6 animate-in">
-            {/* Stats Cards */}
-            {!loading && (
+            {/* Stats Cards - ocultos durante pesquisa ativa para evitar dados enganosos */}
+            {!loading && !search && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <StatCard
                         label="Active Events"
@@ -134,13 +111,10 @@ export function TopicsView() {
             <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1">
                     <SearchInput
-                        value={searchQuery}
-                        onChange={setSearchQuery}
+                        value={search}
+                        onChange={setSearch}
                         placeholder="Search topics, event types, or descriptions..."
-                        resultCount={searchQuery || filterMode !== 'all'
-                            ? filteredEventsCount
-                            : undefined}
-                        totalCount={searchQuery || filterMode !== 'all' ? countEvents : undefined}
+                        resultCount={search && !loading ? (pagination?.total ?? topics.length) : undefined}
                     />
                 </div>
                 <div className="flex gap-2">

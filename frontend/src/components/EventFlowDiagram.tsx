@@ -272,6 +272,7 @@ function TopicFlowRow({
 
     return (
         <div
+            ref={containerRef}
             className="flow-row-enter rounded-lg border bg-card/60 p-4 relative"
             style={{ animationDelay: `${index * 0.12}s` }}
         >
@@ -282,37 +283,54 @@ function TopicFlowRow({
             >
                 {lines.map((l) => (
                     <g key={l.id}>
+                        {/* Animated flowing dashed line */}
                         <path
                             d={l.path}
                             fill="none"
                             stroke={l.color}
                             strokeWidth={1.5}
                             strokeDasharray="6 4"
-                            opacity={0.5}
-                        />
+                            opacity={0.4}
+                        >
+                            <animate
+                                attributeName="stroke-dashoffset"
+                                values="10;0"
+                                dur="1.2s"
+                                repeatCount="indefinite"
+                                calcMode="linear"
+                            />
+                        </path>
+
+                        {/* Moving glowing particle (represents event payload) */}
                         <g opacity={0}>
-                            <text
-                                fontSize="12"
-                                textAnchor="middle"
-                                dominantBaseline="central"
-                                fill="var(--muted-foreground)"
-                            >
-                                ✉
-                            </text>
+                            {/* Inner dot */}
+                            <circle r="3.5" className="fill-primary" />
+                            {/* Outer glow aura */}
+                            <circle r="8" className="fill-primary" opacity="0.25">
+                                <animate
+                                    attributeName="r"
+                                    values="6;9;6"
+                                    dur="1.5s"
+                                    repeatCount="indefinite"
+                                />
+                            </circle>
+
+                            {/* Ease in/out motion path */}
                             <animateMotion
                                 path={l.path}
-                                dur="4s"
+                                dur="2.5s"
                                 repeatCount="indefinite"
                                 begin={`${l.delay}s`}
                                 keyPoints="0;1"
                                 keyTimes="0;1"
-                                calcMode="linear"
+                                calcMode="spline"
+                                keySplines="0.4 0 0.2 1"
                             />
                             <animate
                                 attributeName="opacity"
                                 values="0;1;1;0"
-                                keyTimes="0;0.1;0.85;1"
-                                dur="4s"
+                                keyTimes="0;0.1;0.9;1"
+                                dur="2.5s"
                                 repeatCount="indefinite"
                                 begin={`${l.delay}s`}
                             />
@@ -321,7 +339,7 @@ function TopicFlowRow({
                 ))}
             </svg>
 
-            <div ref={containerRef} className="relative z-10 w-full">
+            <div className="relative z-10 w-full">
                 {/* Column labels */}
                 <div className="flex items-center mb-4 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
                     <div style={{ width: "25%" }} className="text-right pr-4">

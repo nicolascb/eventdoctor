@@ -18,6 +18,6 @@ type Service interface {
 	GetTopicView(ctx context.Context, topicName string) (*response.TopicView, error)
 	GetServiceView(ctx context.Context, serviceName string) (*response.ServiceView, error)
 
-	ListTopics(ctx context.Context, page, pageSize int) (*response.TopicListView, error)
+	ListTopics(ctx context.Context, page, pageSize int, search string) (*response.TopicListView, error)
 	GetEvent(ctx context.Context, id int64) (*response.EventView, error)
 }

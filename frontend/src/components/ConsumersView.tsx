@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { ConsumerDetails } from "./ConsumerDetails";
 import { EventDetails } from "./EventDetails";
-import { Sheet } from "@/components/ui/sheet";
+import { Dialog } from "@/components/ui/dialog";
 
 export function ConsumersView() {
     const {
@@ -40,7 +40,7 @@ export function ConsumersView() {
     return (
         <div className="space-y-6 animate-in">
             {/* Stats Cards */}
-            {!loading && (
+            {!loading && !search && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <StatCard
                         label="Consumer Groups"
@@ -181,11 +181,11 @@ export function ConsumersView() {
             />
 
             {/* Event Details Dialog */}
-            <Sheet open={!!selectedEventId} onOpenChange={(open) => { if (!open) setSelectedEventId(null); }}>
+            <Dialog open={!!selectedEventId} onOpenChange={(open) => { if (!open) setSelectedEventId(null); }}>
                 {selectedEventId && (
-                    <EventDetails eventId={selectedEventId} />
+                    <EventDetails eventId={selectedEventId} mode="dialog" />
                 )}
-            </Sheet>
+            </Dialog>
         </div>
     );
 }

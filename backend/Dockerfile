@@ -20,7 +20,6 @@ RUN apk --no-cache add ca-certificates sqlite-libs
 WORKDIR /app
 
 COPY --from=builder /app/eventdoctor .
-COPY --from=builder /app/migration.sql .
 
 EXPOSE 8087
 

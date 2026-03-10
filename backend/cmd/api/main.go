@@ -43,7 +43,7 @@ func getServer(log *slog.Logger) (*api.API, *sql.DB, error) {
 		return nil, nil, err
 	}
 
-	database, err := db.NewSQLiteDB(cfg.SQLitePath)
+	database, err := db.NewSQLiteDB(cfg.SQLitePath, cfg.WithMock)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -4,23 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTopics } from "@/hooks/useTopics";
 import type { OverviewResponse, TopicView } from "@/types";
-import { Check, ChevronLeft, ChevronRight, Database, Layers, Network, Search, X, Zap } from "lucide-react";
-import { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Database, Layers, Network, Search, X, Zap, Check } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface OverviewViewProps {
     overview: OverviewResponse;
 }
 
 export function OverviewView({ overview }: OverviewViewProps) {
-    const { topics, pagination, page, setPage, loading: topicsLoading } = useTopics();
+    const { topics, pagination, page, setPage, loading: topicsLoading, search: searchQuery, setSearch: setSearchQuery } = useTopics();
     const [selectedTopics, setSelectedTopics] = useState<TopicView[]>([]);
-    const [searchQuery, setSearchQuery] = useState("");
 
-    const filteredTopics = useMemo(() => {
-        if (!searchQuery) return topics;
-        const lower = searchQuery.toLowerCase();
-        return topics.filter(t => t.topic.toLowerCase().includes(lower));
-    }, [topics, searchQuery]);
+    // topics já vem filtrado do backend via useTopics
+    const filteredTopics = topics;
 
     const toggleTopic = (topic: TopicView) => {
         setSelectedTopics(prev =>
@@ -47,6 +43,16 @@ export function OverviewView({ overview }: OverviewViewProps) {
             });
         }
     };
+
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'SELECT_ALL_TOPICS') {
+                setSelectedTopics(filteredTopics);
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [filteredTopics]);
 
     return (
         <div className="space-y-6 animate-in">

@@ -9,7 +9,7 @@ import { ConsumersView } from '@/components/ConsumersView';
 import { Separator } from '@/components/ui/separator';
 import { useOverview } from '@/hooks/useOverview';
 import { useTheme } from '@/hooks/useTheme';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8087/v1';
 
@@ -29,6 +29,16 @@ function App() {
   const { theme, toggleTheme } = useTheme();
 
   const { overview, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useOverview();
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'NAVIGATE' && event.data.view) {
+        setActiveView(event.data.view as NavItem);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const renderContent = () => {
     if (overviewLoading) {
