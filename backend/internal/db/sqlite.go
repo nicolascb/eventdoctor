@@ -3,17 +3,24 @@ package db
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nicolascb/eventdoctor/internal/db/models"
 )
 
-func NewSQLiteDB(dbPath string) (*sql.DB, error) {
-	if os.Getenv("WITH_MOCK") == "1" {
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
+
+func NewSQLiteDB(dbPath string, withMock bool) (*sql.DB, error) {
+	if withMock {
 		os.Remove(dbPath)
 	}
 
@@ -35,7 +42,7 @@ func NewSQLiteDB(dbPath string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	if os.Getenv("WITH_MOCK") == "1" {
+	if withMock {
 		if err := mockData(context.Background(), db); err != nil {
 			return nil, err
 		}
@@ -45,15 +52,23 @@ func NewSQLiteDB(dbPath string) (*sql.DB, error) {
 }
 
 func createTables(db *sql.DB) error {
-	migrationBytes, err := os.ReadFile("migration.sql")
+	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
-		return fmt.Errorf("failed to read migration file: %w", err)
+		return fmt.Errorf("failed to create sqlite3 driver: %w", err)
 	}
 
-	// Execute the migration script
-	_, err = db.Exec(string(migrationBytes))
+	sourceDriver, err := iofs.New(migrationsFS, "migrations")
 	if err != nil {
-		return fmt.Errorf("failed to execute migrations: %w", err)
+		return fmt.Errorf("failed to create iofs source driver: %w", err)
+	}
+
+	m, err := migrate.NewWithInstance("iofs", sourceDriver, "sqlite3", driver)
+	if err != nil {
+		return fmt.Errorf("failed to create migration instance: %w", err)
+	}
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("failed to apply migrations: %w", err)
 	}
 
 	return nil
@@ -61,111 +76,153 @@ func createTables(db *sql.DB) error {
 
 func mockData(ctx context.Context, db *sql.DB) error {
 	now := time.Now()
-	fakeRepository := "https://github.com/org/fake-repo"
 
-	serviceNames := []string{
-		"user-service", "checkout-service", "logistics-service", "payment-service",
-		"analytics-service", "email-service", "notification-service", "inventory-service",
-		"fraud-service", "billing-service",
+	// Create Services
+	services := []struct {
+		Name string
+		Repo string
+	}{
+		{Name: "user-service", Repo: "https://github.com/org/user-service"},
+		{Name: "order-service", Repo: "https://github.com/org/order-service"},
+		{Name: "payment-service", Repo: "https://github.com/org/payment-service"},
+		{Name: "notification-service", Repo: "https://github.com/org/notification-service"},
+		{Name: "inventory-service", Repo: "https://github.com/org/inventory-service"},
 	}
 
-	serviceIDs := make(map[int]int64)
-	for i, name := range serviceNames {
-		s, err := GetOrCreateService(ctx, db, name, fakeRepository)
+	svcMap := make(map[string]int64)
+	for _, s := range services {
+		svc, err := GetOrCreateService(ctx, db, s.Name, s.Repo)
 		if err != nil {
 			return err
 		}
-		serviceIDs[i] = s.ID
+		svcMap[s.Name] = svc.ID
 	}
 
 	schemaVersion := "1.0.0"
 
-	// Vocabulary for random names without numbers
-	adjectives := []string{"alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa"}
-	nouns := []string{"falcon", "eagle", "hawk", "owl", "raven", "wolf", "bear", "lion", "tiger", "shark"}
-	actions := []string{
-		"Born", "Died", "Awake", "Asleep", "Moving", "Stopped", "Eating", "Drinking",
-		"Flying", "Swimming", "Hunting", "Hiding", "Singing", "Running", "Jumping",
-		"Climbing", "Falling", "Rising", "Growing", "Shrinking",
+	type EventMock struct {
+		Name      string
+		Desc      string
+		Consumers []string
 	}
 
-	// 100 topics (10 * 10)
-	serviceIndex := 0
-	for _, adj := range adjectives {
-		for _, noun := range nouns {
-			topicName := fmt.Sprintf("%s.%s.events", adj, noun)
-			ownerID := serviceIDs[serviceIndex%len(serviceIDs)]
-			serviceIndex++
+	topics := []struct {
+		Name   string
+		Desc   string
+		Owner  string
+		Events []EventMock
+	}{
+		{
+			Name:  "users.lifecycle.v1",
+			Desc:  "Events related to user account lifecycle",
+			Owner: "user-service",
+			Events: []EventMock{
+				{Name: "UserRegistered", Desc: "Fired when a new user registers", Consumers: []string{"notification-service", "order-service"}},
+				{Name: "UserUpdated", Desc: "Fired when user details are updated", Consumers: []string{"order-service"}},
+				{Name: "UserDeleted", Desc: "Fired when a user deletes their account", Consumers: []string{"notification-service"}},
+			},
+		},
+		{
+			Name:  "orders.processing.v1",
+			Desc:  "Events related to order placement and status updates",
+			Owner: "order-service",
+			Events: []EventMock{
+				{Name: "OrderCreated", Desc: "Fired when a new order is received", Consumers: []string{"payment-service", "inventory-service"}},
+				{Name: "OrderCancelled", Desc: "Fired when an order is cancelled", Consumers: []string{"payment-service", "inventory-service", "notification-service"}},
+				{Name: "OrderFulfilled", Desc: "Fired when an order has been shipped", Consumers: []string{"notification-service"}},
+			},
+		},
+		{
+			Name:  "payments.transactions.v1",
+			Desc:  "Events related to payment processing",
+			Owner: "payment-service",
+			Events: []EventMock{
+				{Name: "PaymentAuthorized", Desc: "Fired when a payment is authorized", Consumers: []string{"order-service"}},
+				{Name: "PaymentCaptured", Desc: "Fired when payment is successfully captured", Consumers: []string{"order-service", "notification-service"}},
+				{Name: "PaymentFailed", Desc: "Fired when a payment fails", Consumers: []string{"order-service", "notification-service"}},
+			},
+		},
+		{
+			Name:  "inventory.stock.v1",
+			Desc:  "Events related to stock level changes",
+			Owner: "inventory-service",
+			Events: []EventMock{
+				{Name: "StockReserved", Desc: "Fired when stock is reserved for an order", Consumers: []string{"order-service"}},
+				{Name: "StockDepleted", Desc: "Fired when an item goes out of stock", Consumers: []string{"notification-service"}},
+			},
+		},
+	}
 
-			topic := models.Topic{
-				Name:           topicName,
-				Description:    fmt.Sprintf("Events for the %s %s domain", adj, noun),
-				OwnerServiceID: &ownerID,
-				CreatedAt:      now,
+	for _, devTopic := range topics {
+		ownerID := svcMap[devTopic.Owner]
+		topic := models.Topic{
+			Name:           devTopic.Name,
+			Description:    devTopic.Desc,
+			OwnerServiceID: &ownerID,
+			CreatedAt:      now,
+		}
+		topicID, err := InsertTopic(ctx, db, topic)
+		if err != nil {
+			return err
+		}
+
+		for _, devEvent := range devTopic.Events {
+			event := models.Event{
+				TopicID:       topicID,
+				EventName:     devEvent.Name,
+				Description:   devEvent.Desc,
+				SchemaURL:     fmt.Sprintf("https://schemas.company.internal/%s/%s.json", devTopic.Name, devEvent.Name),
+				SchemaVersion: &schemaVersion,
+				Deprecated:    false,
+				CreatedAt:     now,
 			}
-			topicID, err := InsertTopic(ctx, db, topic)
+			eventID, err := InsertEvent(ctx, db, event)
 			if err != nil {
 				return err
 			}
 
-			// 20 events per topic
-			for _, action := range actions {
-				eventName := action
-				event := models.Event{
-					TopicID:       topicID,
-					EventName:     eventName,
-					Description:   fmt.Sprintf("Fired when %s %s is %s", adj, noun, action),
-					SchemaURL:     fmt.Sprintf("https://schemas.local/%s-%s/%s.json", adj, noun, action),
-					SchemaVersion: &schemaVersion,
-					Deprecated:    false,
+			// Producer is the owner service
+			prod := models.Producer{
+				EventID:   eventID,
+				ServiceID: ownerID,
+				Writes:    true,
+				CreatedAt: now,
+			}
+			if _, err := InsertProducer(ctx, db, prod); err != nil {
+				return err
+			}
+
+			// Consumers
+			for _, consumerName := range devEvent.Consumers {
+				consumerSvcID := svcMap[consumerName]
+				cons := models.Consumer{
+					EventID:       eventID,
+					ServiceID:     consumerSvcID,
+					ConsumerGroup: fmt.Sprintf("%s-group", consumerName),
+					Description:   fmt.Sprintf("Consumes %s to update internal state", devEvent.Name),
 					CreatedAt:     now,
 				}
-				eventID, err := InsertEvent(ctx, db, event)
-				if err != nil {
+				if _, err := InsertConsumer(ctx, db, cons); err != nil {
 					return err
-				}
-
-				// Producer for each event (using the owner service)
-				prod := models.Producer{
-					EventID:   eventID,
-					ServiceID: ownerID,
-					Writes:    true,
-					CreatedAt: now,
-				}
-				if _, err := InsertProducer(ctx, db, prod); err != nil {
-					return err
-				}
-
-				// Add a consumer sometimes to make it realistic
-				if serviceIndex%3 == 0 {
-					consumerSvcID := serviceIDs[(serviceIndex)%len(serviceIDs)]
-					cons := models.Consumer{
-						EventID:       eventID,
-						ServiceID:     consumerSvcID,
-						ConsumerGroup: fmt.Sprintf("%s-group", serviceNames[serviceIndex%len(serviceNames)]),
-						Description:   fmt.Sprintf("Consumer for %s events", eventName),
-						CreatedAt:     now,
-					}
-					if _, err := InsertConsumer(ctx, db, cons); err != nil {
-						return err
-					}
 				}
 			}
 		}
 	}
 
-	// 100 undocumented consumers (10 * 10)
-	secretAdjs := []string{"secret", "hidden", "ghost", "shadow", "dark", "phantom", "stray", "lost", "void", "null"}
-	secretNouns := []string{"watcher", "listener", "sniffer", "prowler", "lurker", "stalker", "scout", "spy", "agent", "wraith"}
+	// A few missing consumers for realism
+	missing := []struct {
+		Topic string
+		Group string
+	}{
+		{"users.lifecycle.v1", "legacy-reporting-group"},
+		{"orders.processing.v1", "fraud-detection-group"},
+		{"payments.transactions.v1", "data-lake-ingestion-group"},
+	}
 
-	for _, adj := range secretAdjs {
-		for _, noun := range secretNouns {
-			topicName := fmt.Sprintf("untracked.%s.%s", adj, noun)
-			consumerGroup := fmt.Sprintf("%s-%s-group", adj, noun)
-			query := `INSERT INTO missing_consumers (topic, consumer_group, created_at, updated_at) VALUES (?, ?, ?, ?)`
-			if _, err := db.ExecContext(ctx, query, topicName, consumerGroup, now, now); err != nil {
-				return fmt.Errorf("failed to insert missing consumer: %w", err)
-			}
+	for _, m := range missing {
+		query := `INSERT INTO missing_consumers (topic, consumer_group, created_at, updated_at) VALUES (?, ?, ?, ?)`
+		if _, err := db.ExecContext(ctx, query, m.Topic, m.Group, now, now); err != nil {
+			return fmt.Errorf("failed to insert missing consumer: %w", err)
 		}
 	}
 
