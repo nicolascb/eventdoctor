@@ -1,0 +1,149 @@
+---
+title: Spec File Reference
+description: Complete reference for the eventdoctor.yaml specification.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The `eventdoctor.yaml` file is the heart of EventDoctor. Each service in your architecture maintains one of these files to declare the events it produces and/or consumes.
+
+## Full Example
+
+```yaml
+version: "1.0"
+
+service: "order-microservice"
+config:
+  servers:
+    - environment: "development"
+      url: "http://localhost:8087"
+    - environment: "production"
+      url: "https://eventdoctor.mycompany.com"
+  repository: "https://github.com/mycompany/order-microservice"
+
+producers:
+  - topic: "order.events"
+    owner: true
+    writes: true
+    description: "Events related to the order system"
+    events:
+      - name: "OrderCreated"
+        version: "1.0.0"
+        description: "Fired when a new order is created"
+        schema_url: "https://schemas.mycompany.com/order_created.json"
+        headers:
+          - name: "X-Request-ID"
+            description: "Unique request identifier"
+          - name: "X-Customer-ID"
+            description: "Identifier of the customer who placed the order"
+      - name: "OrderCancelled"
+        version: "1.0.0"
+        description: "Fired when an order is cancelled"
+        schema_url: "https://schemas.mycompany.com/order_cancelled.json"
+
+consumers:
+  - group: "notification-group"
+    description: "Service responsible for push notifications"
+    topics:
+      - name: "order.events"
+        events:
+          - name: "OrderCreated"
+            version: "1.0.0"
+          - name: "OrderCancelled"
+            version: "1.0.0"
+      - name: "inventory.events"
+        events:
+          - name: "StockUpdated"
+            version: "1.0.0"
+```
+
+## Top-Level Fields
+
+| Field | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+| `version` | `string` | ✅ | Spec format version. Currently `"1.0"`. |
+| `service` | `string` | ✅ | Unique name for this service (e.g. `"order-microservice"`). |
+| `config` | `object` | ✅ | Configuration block with servers and repository. |
+| `producers` | `array` | — | List of topics this service produces events on. |
+| `consumers` | `array` | — | List of consumer groups this service uses to consume events. |
+
+## `config`
+
+| Field | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+| `servers` | `array` | ✅ | At least one server entry is required. |
+| `repository` | `string (url)` | ✅ | URL of the service's source code repository. |
+
+### `config.servers[]`
+
+| Field | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+| `environment` | `string` | ✅ | Environment name (e.g. `"development"`, `"production"`). Must be unique. |
+| `url` | `string (url)` | ✅ | EventDoctor API URL for this environment. |
+
+## `producers[]`
+
+Each producer declares one topic and the events published to it.
+
+| Field | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+| `topic` | `string` | ✅ | Topic name (e.g. `"order.events"`). |
+| `owner` | `boolean` | — | Whether this service owns the topic. |
+| `writes` | `boolean` | — | Whether this service actively writes to the topic. |
+| `description` | `string` | — | Human-readable description. |
+| `events` | `array` | ✅ | Events published to this topic. |
+
+### `producers[].events[]`
+
+| Field | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+| `name` | `string` | ✅ | Event name (e.g. `"OrderCreated"`). |
+| `version` | `string (semver)` | — | Semantic version of the event schema. |
+| `description` | `string` | — | What this event represents. |
+| `schema_url` | `string (url)` | Conditional | URL to the JSON Schema. **Required** when `owner: true`. |
+| `headers` | `array` | — | Custom headers included with this event. |
+
+### `producers[].events[].headers[]`
+
+| Field | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+| `name` | `string` | ✅ | Header name (e.g. `"X-Request-ID"`). |
+| `description` | `string` | — | Purpose of this header. |
+
+## `consumers[]`
+
+Each consumer declares a consumer group and the topics/events it listens to.
+
+| Field | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+| `group` | `string` | ✅ | Consumer group name. |
+| `description` | `string` | — | Human-readable description. |
+| `topics` | `array` | ✅ | Topics this consumer subscribes to. |
+
+### `consumers[].topics[]`
+
+| Field | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+| `name` | `string` | ✅ | Topic name. |
+| `events` | `array` | ✅ | Events consumed from this topic. |
+
+### `consumers[].topics[].events[]`
+
+| Field | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+| `name` | `string` | ✅ | Event name to consume. |
+| `version` | `string (semver)` | — | Expected version. |
+
+## Validation Rules
+
+The CLI enforces the following rules when you run `config validate`:
+
+1. **Required fields** — `version`, `service`, `config.servers`, and `config.repository` must be present.
+2. **Unique environments** — no two entries in `config.servers` can share the same `environment` value.
+3. **Schema URL for owners** — if a producer has `owner: true`, every event must have a valid `schema_url`.
+4. **Semantic versioning** — the `version` field on events must follow [SemVer](https://semver.org/) format.
+5. **Valid URLs** — all `url` and `schema_url` fields must be well-formed URLs.
+
+<Aside type="tip">
+Run `eventdoctor-cli config validate -f ./eventdoctor.yaml` to check your spec locally before pushing to CI.
+</Aside>

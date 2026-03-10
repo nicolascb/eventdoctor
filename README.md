@@ -1,66 +1,28 @@
 # EventDoctor
 
-**Status**: 🚧 Early Prototype (in active development, not production-ready) 🚧
+[![CI Backend](https://github.com/nicolascb/eventdoctor/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/nicolascb/eventdoctor/actions/workflows/ci-backend.yml)
+[![CI Frontend](https://github.com/nicolascb/eventdoctor/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/nicolascb/eventdoctor/actions/workflows/ci-frontend.yml)
+[![License](https://img.shields.io/github/license/nicolascb/eventdoctor)](LICENSE)
+[![Go version](https://img.shields.io/badge/go-1.22+-blue)](https://go.dev/dl/)
+[![GitHub release](https://img.shields.io/github/v/release/nicolascb/eventdoctor?label=release)](https://github.com/nicolascb/eventdoctor/releases)
+
+> **Status**: 🚧 Early Prototype — in active development, not yet production-ready.
 
 EventDoctor keeps your event-driven architecture documentation alive. Beyond cataloging, it connects specs, services, and runtime signals so producers, consumers, and architects always share the same view of the system.
 
 ## Architecture Overview
 
-Components:
+EventDoctor consists of four main components:
+1. **API** — a Go server that provides a RESTful interface for managing event specs, validating them, and storing them in a PostgreSQL database.
+2. **Web UI** — a React frontend built with Vite that visualizes the event mesh, shows documentation, and surfaces issues like orphaned events.
+3. **CLI** — a command-line tool for validating and publishing `eventdoctor.yaml` specs from your local environment or CI/CD pipelines.
+4. **Auditor** — a background service that monitors the event mesh for undocumented events and consumers.
 
-| Component        | Description                                                     |
-| ---------------- | --------------------------------------------------------------- |
-| API              | REST API for managing event specs                               |
-| CLI              | Command-line tool for validating and publishing specs           |
-| Auditor Consumer | Consumes events and records undocumented events and consumers   |
-| Frontend UI      | Web interface for browsing events, topics, producers, consumers |
+## Web UI
 
-```mermaid
-flowchart LR
-    subgraph EventDoctor
-        direction TB
-        
-        %% Definição dos nós
-        User([User])
-        ui([ui])
-        CICD([CI/CD])
-        cli([cli])
-        spec([spec])
-        api([api])
-        sqlite([sqlite])
-        auditor([auditor consumer])
-        Kafka([Kafka topics])
+Browse topics, events, producers, and consumers in real-time. See orphaned events and schema details at a glance.
 
-        %% Conexões Verticais (User -> UI -> API)
-        User --> ui
-        ui --> api
-        
-        %% Conexões Horizontais Principais
-        CICD --> cli
-        cli --> spec
-        spec --> api
-        api -- store --> sqlite
-
-        %% Conexões do Auditor
-        auditor -- records undocumented<br>events and consumers --> api
-        auditor -- sub --> Kafka
-    end
-
-    %% Estilização baseada nas cores da imagem
-    classDef green fill:#b5e6b5,stroke:#333,stroke-width:2px,color:#000;
-    classDef blueLine fill:#fff,stroke:#3273f6,stroke-width:2px,color:#3273f6;
-    classDef yellow fill:#fce588,stroke:#3273f6,stroke-width:2px,color:#3273f6;
-    classDef grey fill:#d9d9d9,stroke:#333,stroke-width:2px,color:#000;
-
-    class User,CICD green;
-    class ui,cli,api,auditor blueLine;
-    class spec yellow;
-    class sqlite,Kafka grey;
-```
-
-## UI Screenshot
-
-![EventDoctor UI](./docs/images/readme.png)
+![EventDoctor UI](./docs/images/home.gif)
 
 ## What You Get
 
@@ -69,18 +31,30 @@ flowchart LR
 - **Validation & Governance**: enforces ownership, versioning, and schema rules before they reach production.
 - **Monitoring Hooks**: surfaces orphaned, unconsumed, or drifting events.
 
-## Project Pieces
+## Quick Start
 
-- `backend/`: REST API, spec persistence, validation pipeline, Kafka monitors.
-- `frontend/`: UI for browsing topics, events, producers, and consumers.
-- `cli/`: developer tooling for validating and publishing `eventdoctor.yaml`.
+No Go installation required. Clone and run the full stack:
 
-Each submodule ships its own README with setup and usage details.
+```bash
+git clone https://github.com/nicolascb/eventdoctor.git
+cd eventdoctor
+docker-compose up
+```
 
-## Run demo lab
+- API: http://localhost:8087
+- Web UI: http://localhost:5193
+- Docs: http://localhost:4321
 
-1. Start API with `cd backend && WITH_MOCK=1 go run ./cmd/api/main.go`.
-2. Start UI with `cd frontend && npm install && npm run dev`.
-3. Open the web UI to explore live documentation.
+Or run directly with the published Docker images:
+
+```bash
+# API (with demo data)
+docker run -p 8087:8087 -e WITH_MOCK=1 ghcr.io/nicolascb/eventdoctor:latest
+
+# Web UI
+docker run -p 5173:80 -e VITE_API_URL=http://localhost:8087 ghcr.io/nicolascb/eventdoctor-ui:latest
+```
+
+For full setup, CLI usage, and CI/CD integration see the **[documentation](https://nicolascb.github.io/eventdoctor)**.
 
 EventDoctor keeps teams aligned as your event mesh evolves.

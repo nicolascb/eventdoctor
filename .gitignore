@@ -42,3 +42,4 @@ frontend/build
 backend/data
 .agents
 plans
+website/node_modules

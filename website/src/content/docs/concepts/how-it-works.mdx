@@ -1,0 +1,43 @@
+---
+title: How It Works
+description: Understand the EventDoctor workflow from spec to dashboard.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+EventDoctor follows a simple pipeline: **define → validate → publish → visualize**.
+
+## The Workflow
+
+<Steps>
+
+1. **Define** — Each service maintains an `eventdoctor.yaml` file in its repository root that describes the events it produces and consumes.
+
+2. **Validate** — During development or in CI/CD, the CLI validates the spec against schema rules, versioning constraints, and ownership requirements.
+
+3. **Publish** — The CLI sends the validated spec to the EventDoctor API, which stores it in the central database.
+
+4. **Visualize** — The Web UI and CLI queries let anyone browse the complete event mesh — topics, events, schemas, producers, and consumers.
+
+</Steps>
+
+## Spec-as-Code
+
+The `eventdoctor.yaml` file lives alongside your application code. This means:
+
+- **Version control** — changes to your event contracts go through Pull Requests.
+- **Code review** — team members can review schema changes before merge.
+- **CI/CD enforcement** — broken specs fail the build, not production.
+- **Traceability** — `git blame` tells you who changed what and when.
+
+## Central Registry
+
+The EventDoctor API acts as a **central registry** that aggregates specs from all services. When a service publishes its spec, the API:
+
+1. Parses the `eventdoctor.yaml` into topics, events, producers, and consumers.
+2. Stores them with relationships (which service produces to which topic, who consumes what).
+3. Makes everything queryable via REST endpoints and the Web UI.
+
+## Real-Time Auditing
+
+The **Auditor Consumer** is an optional component that connects directly to your message broker (e.g., Kafka). It watches live traffic and compares it against the specs in EventDoctor. When it finds events or consumers that aren't documented, it records them as **undocumented** — so you can fix the gap.

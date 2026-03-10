@@ -1,0 +1,129 @@
+---
+title: CLI Usage
+description: How to use the EventDoctor CLI to validate and publish specs.
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+The EventDoctor CLI (`eventdoctor-cli`) is a command-line tool for validating and publishing `eventdoctor.yaml` spec files.
+
+## Installation
+
+<Tabs>
+<TabItem label="Pre-built binary">
+
+Download the binary for your platform from the [GitHub Releases page](https://github.com/nicolascb/eventdoctor/releases):
+
+```bash
+# Linux amd64
+curl -L https://github.com/nicolascb/eventdoctor/releases/latest/download/eventdoctor-cli_linux_amd64.tar.gz | tar xz
+chmod +x eventdoctor-cli
+sudo mv eventdoctor-cli /usr/local/bin/
+```
+
+Binaries are available for **Linux**, **macOS**, and **Windows** (amd64 and arm64).
+
+</TabItem>
+<TabItem label="Docker image">
+
+Use the CLI via Docker — no installation required:
+
+```bash
+docker run --rm \
+  -v $(pwd):/workspace \
+  ghcr.io/nicolascb/eventdoctor-cli:latest \
+  config validate -f /workspace/eventdoctor.yaml
+```
+
+</TabItem>
+<TabItem label="Build from source">
+
+Requires [Go](https://go.dev/dl/) 1.22+.
+
+```bash
+cd backend
+CGO_ENABLED=0 go build -o eventdoctor-cli ./cmd/cli/*.go
+sudo mv eventdoctor-cli /usr/local/bin/
+```
+
+</TabItem>
+</Tabs>
+
+## Commands
+
+### `config validate`
+
+Validates an `eventdoctor.yaml` file locally without contacting the API.
+
+```bash
+eventdoctor-cli config validate -f ./eventdoctor.yaml
+```
+
+**Flags:**
+
+| Flag | Alias | Default | Description |
+| :-- | :-- | :-- | :-- |
+| `--file` | `-f` | `./eventdoctor.yml` | Path to the spec file. |
+
+This will check:
+- Required fields are present.
+- URLs are well-formed.
+- Semver format on event versions.
+- Schema URLs exist when `owner: true`.
+- No duplicate environments in `config.servers`.
+
+### `config apply`
+
+Validates and publishes the spec to the EventDoctor API.
+
+```bash
+eventdoctor-cli config apply -e development -f ./eventdoctor.yaml
+```
+
+**Flags:**
+
+| Flag | Alias | Default | Description |
+| :-- | :-- | :-- | :-- |
+| `--file` | `-f` | `./eventdoctor.yml` | Path to the spec file. |
+| `--env` | `-e` | `development` | Environment to resolve the server URL from. |
+
+The CLI reads the `config.servers` section from your spec file and sends the payload to the matching environment's URL.
+
+### `get topic`
+
+Queries the API for all producers and consumers on a given topic.
+
+```bash
+eventdoctor-cli get topic order.events -e development
+```
+
+**Flags:**
+
+| Flag | Alias | Default | Description |
+| :-- | :-- | :-- | :-- |
+| `--file` | `-f` | `./eventdoctor.yml` | Path to the spec file (for URL resolution). |
+| `--env` | `-e` | `development` | Environment name. |
+| `--url` | `-u` | — | Direct server URL (overrides `--file` and `--env`). |
+
+### `get service`
+
+Queries the API for all producers and consumers of a given service.
+
+```bash
+eventdoctor-cli get service order-microservice -u http://localhost:8087
+```
+
+**Flags:** Same as `get topic`.
+
+<Aside type="tip">
+Use `--url` to skip the spec file entirely and point directly to the API server.
+</Aside>
+
+## URL Resolution
+
+The CLI resolves the API server URL in this order:
+
+1. **`--url`** flag, if provided (takes priority).
+2. The `config.servers` entry matching the `--env` flag in the spec file.
+
+This means you can use the same spec file for both validation and publishing across environments.

@@ -31,6 +31,16 @@ services:
     depends_on:
       - api
 
+  website:
+    build:
+      context: ./website
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./website:/app
+      - /app/node_modules
+    ports:
+      - "4321:4321"
+
 volumes:
   go-build-cache:
   go-modules:
