@@ -1,0 +1,49 @@
+---
+title: Introduction
+description: What is EventDoctor and why does it exist.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**EventDoctor** is an open-source platform for managing and documenting event-driven architectures. It provides a **living catalog** of event specifications, automates documentation generation, enforces validation and governance, and includes monitoring hooks to identify issues like orphaned or unconsumed events.
+
+## The Problem
+
+In a microservices world, dozens (or hundreds) of services exchange events through message brokers like Kafka, RabbitMQ, or NATS. Over time:
+
+- **Documentation drifts** — the wiki says one thing, production does another.
+- **Schema changes break consumers** — nobody knows who's listening to what.
+- **Orphaned events pile up** — topics keep running with no consumer, wasting resources.
+- **Onboarding is painful** — new engineers spend days mapping event flows.
+
+## The Solution
+
+EventDoctor treats event specifications as **code**. Each service keeps an `eventdoctor.yaml` file that declares:
+
+- Which **topics** the service produces events on.
+- Which **events** it publishes (with versions, schemas, headers).
+- Which **topics** and events it consumes.
+
+Those specs are validated locally via the **CLI**, published to the **API**, and visualized in the **Web UI** — creating a single source of truth that stays in sync with your codebase via CI/CD.
+
+<Aside type="tip">
+Think of EventDoctor as "Swagger / OpenAPI, but for event-driven architectures."
+</Aside>
+
+## Key Features
+
+| Feature | Description |
+| :-- | :-- |
+| **Living Catalog** | Centralizes `eventdoctor.yaml` specs from every service. |
+| **Schema Validation** | Enforces `schema_url`, semantic versioning, and required fields. |
+| **CI/CD Integration** | Validates and publishes specs automatically on every deploy. |
+| **Web Dashboard** | Browse topics, events, producers, and consumers in real-time. |
+| **Orphan Detection** | Identifies events with no producers or no consumers. |
+| **CLI Queries** | Query topics and services directly from the terminal. |
+| **Auditor Consumer** | Connects to your message broker to surface undocumented events and consumers. |
+
+## Next Steps
+
+- [Quick Start](/getting-started/quick-start/) — run EventDoctor locally in under 2 minutes.
+- [Spec File Reference](/getting-started/spec-reference/) — understand the `eventdoctor.yaml` format.
+- [Architecture Overview](/architecture/overview/) — see how the components fit together.

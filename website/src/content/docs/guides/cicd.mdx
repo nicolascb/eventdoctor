@@ -1,0 +1,146 @@
+---
+title: CI/CD Integration
+description: Automate spec validation and publishing in your CI/CD pipeline.
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+## Overview
+
+The recommended way to keep EventDoctor in sync is to validate and publish specs automatically as part of your CI/CD pipeline. Every deploy should:
+
+1. **Validate** the `eventdoctor.yaml` to catch errors early.
+2. **Apply** the spec to the EventDoctor API so the catalog stays current.
+
+## GitHub Actions Example
+
+<Tabs>
+<TabItem label="Using Docker image (recommended)">
+
+No Go installation or build step needed — use the published CLI image directly:
+
+```yaml
+name: EventDoctor Spec
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'eventdoctor.yaml'
+
+jobs:
+  publish-spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate spec
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            ghcr.io/nicolascb/eventdoctor-cli:latest \
+            config validate -f /workspace/eventdoctor.yaml
+
+      - name: Publish spec
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            ghcr.io/nicolascb/eventdoctor-cli:latest \
+            config apply -e production -f /workspace/eventdoctor.yaml
+```
+
+</TabItem>
+<TabItem label="Using pre-built binary">
+
+```yaml
+name: EventDoctor Spec
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'eventdoctor.yaml'
+
+jobs:
+  publish-spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CLI
+        run: |
+          curl -L https://github.com/nicolascb/eventdoctor/releases/latest/download/eventdoctor-cli_linux_amd64.tar.gz | tar xz
+          chmod +x eventdoctor-cli
+          sudo mv eventdoctor-cli /usr/local/bin/
+
+      - name: Validate spec
+        run: eventdoctor-cli config validate -f ./eventdoctor.yaml
+
+      - name: Publish spec
+        run: eventdoctor-cli config apply -e production -f ./eventdoctor.yaml
+```
+
+</TabItem>
+<TabItem label="Build from source">
+
+```yaml
+name: EventDoctor Spec
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'eventdoctor.yaml'
+
+jobs:
+  publish-spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build CLI
+        run: |
+          cd backend
+          CGO_ENABLED=0 go build -o eventdoctor-cli ./cmd/cli/*.go
+
+      - name: Validate spec
+        run: ./backend/eventdoctor-cli config validate -f ./eventdoctor.yaml
+
+      - name: Publish spec
+        run: ./backend/eventdoctor-cli config apply -e production -f ./eventdoctor.yaml
+```
+
+</TabItem>
+</Tabs>
+
+<Aside type="tip">
+Trigger the workflow on changes to `eventdoctor.yaml` only. This avoids unnecessary publishes on unrelated commits.
+</Aside>
+
+## Generic Pipeline (any CI)
+
+The steps are the same regardless of the CI system:
+
+```bash
+# 1. Validate
+docker run --rm -v $(pwd):/workspace \
+  ghcr.io/nicolascb/eventdoctor-cli:latest \
+  config validate -f /workspace/eventdoctor.yaml
+
+# 2. Publish
+docker run --rm -v $(pwd):/workspace \
+  ghcr.io/nicolascb/eventdoctor-cli:latest \
+  config apply -e production -f /workspace/eventdoctor.yaml
+```
+
+## Best Practices
+
+- **Validate on PRs** — run `config validate` on every pull request to catch schema errors before merge.
+- **Apply on merge to main** — run `config apply` only after the PR is merged so the catalog reflects production state.
+- **Pin the environment** — always specify `-e production` (or your target environment) explicitly.
+- **Store the spec at the repo root** — keep `eventdoctor.yaml` at the root of each service repository for consistency.

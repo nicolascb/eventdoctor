@@ -1,0 +1,198 @@
+---
+title: Quick Start
+description: Get EventDoctor running locally in under 2 minutes.
+---
+
+import { Steps, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+No Go installation required — pre-built binaries and Docker images are available for all components.
+
+## Running the Stack
+
+<Tabs>
+<TabItem label="Docker Compose (recommended)">
+
+The fastest way to run the full stack — API, database, and Web UI — with a single command.
+
+**Prerequisite:** [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
+
+<Steps>
+
+1. Clone the repository:
+
+    ```bash
+    git clone https://github.com/nicolascb/eventdoctor.git
+    cd eventdoctor
+    ```
+
+2. Start all services:
+
+    ```bash
+    docker-compose up
+    ```
+
+3. Open the Web UI at [http://localhost:5173](http://localhost:5173) and the API at [http://localhost:8087](http://localhost:8087).
+
+</Steps>
+
+</TabItem>
+<TabItem label="Docker images">
+
+Run each component individually using the published Docker images from [GitHub Container Registry](https://github.com/nicolascb/eventdoctor/pkgs/container/eventdoctor).
+
+**Prerequisite:** [Docker](https://docs.docker.com/get-docker/).
+
+**API server:**
+
+```bash
+docker run -p 8087:8087 \
+  -e WITH_MOCK=1 \
+  -v $(pwd)/data:/data \
+  ghcr.io/nicolascb/eventdoctor:latest
+```
+
+**Web UI:**
+
+```bash
+docker run -p 5173:80 \
+  -e VITE_API_URL=http://localhost:8087 \
+  ghcr.io/nicolascb/eventdoctor-ui:latest
+```
+
+Open the Web UI at [http://localhost:5173](http://localhost:5173).
+
+<Aside>
+The `WITH_MOCK=1` environment variable seeds the database with sample data so you can explore the UI right away.
+</Aside>
+
+</TabItem>
+<TabItem label="Pre-built binaries">
+
+Download the latest binaries from the [GitHub Releases page](https://github.com/nicolascb/eventdoctor/releases).
+
+| Binary | OS | Description |
+|--------|----|-------------|
+| `eventdoctor` | Linux (amd64, arm64) | HTTP API server |
+| `eventdoctor-cli` | Linux, macOS, Windows (amd64, arm64) | CLI client |
+
+**Example (Linux amd64):**
+
+```bash
+# Download and extract the API server
+curl -L https://github.com/nicolascb/eventdoctor/releases/latest/download/eventdoctor_linux_amd64.tar.gz | tar xz
+
+# Run with mock data
+WITH_MOCK=1 ./eventdoctor
+```
+
+The API will start at `http://localhost:8087`.
+
+</TabItem>
+<TabItem label="Local Development">
+
+For contributors or those who prefer building from source.
+
+**Prerequisites:** [Go](https://go.dev/dl/) 1.22+ and [Node.js](https://nodejs.org/) 20+.
+
+**Backend:**
+
+```bash
+cd backend
+
+# Run with mock data pre-loaded
+CGO_ENABLED=1 WITH_MOCK=1 go run ./cmd/api/main.go
+```
+
+**Frontend:**
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The API runs at `http://localhost:8087` and the Web UI at `http://localhost:5173`.
+
+</TabItem>
+</Tabs>
+
+## Install the CLI
+
+The CLI is used to validate and publish your service's spec to the API.
+
+<Tabs>
+<TabItem label="Pre-built binary">
+
+Download `eventdoctor-cli` for your platform from the [GitHub Releases page](https://github.com/nicolascb/eventdoctor/releases).
+
+```bash
+# Example: Linux amd64
+curl -L https://github.com/nicolascb/eventdoctor/releases/latest/download/eventdoctor-cli_linux_amd64.tar.gz | tar xz
+chmod +x eventdoctor-cli
+```
+
+</TabItem>
+<TabItem label="Docker image">
+
+Use the CLI directly via Docker — no installation needed:
+
+```bash
+docker run --rm \
+  -v $(pwd):/workspace \
+  ghcr.io/nicolascb/eventdoctor-cli:latest \
+  config validate -f /workspace/eventdoctor.yaml
+```
+
+</TabItem>
+<TabItem label="Build from source">
+
+Requires [Go](https://go.dev/dl/) 1.22+.
+
+```bash
+cd backend
+CGO_ENABLED=0 go build -o eventdoctor-cli ./cmd/cli/*.go
+```
+
+</TabItem>
+</Tabs>
+
+## Publish Your First Spec
+
+Once the API is running and the CLI is installed:
+
+<Steps>
+
+1. Create an `eventdoctor.yaml` in your service's root:
+
+    ```yaml
+    version: "1.0"
+
+    service: "my-service"
+    config:
+      servers:
+        - environment: "development"
+          url: "http://localhost:8087"
+      repository: "https://github.com/myorg/my-service"
+
+    producers:
+      - topic: "user.events"
+        owner: true
+        writes: true
+        description: "User lifecycle events"
+        events:
+          - name: "UserCreated"
+            version: "1.0.0"
+            description: "Fired when a new user signs up"
+            schema_url: "https://example.com/schemas/user_created.json"
+    ```
+
+2. Validate and apply:
+
+    ```bash
+    ./eventdoctor-cli config validate -f ./eventdoctor.yaml
+    ./eventdoctor-cli config apply -e development -f ./eventdoctor.yaml
+    ```
+
+3. Open the Web UI — your spec is now live!
+
+</Steps>

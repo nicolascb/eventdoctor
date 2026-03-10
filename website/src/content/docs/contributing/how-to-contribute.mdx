@@ -1,0 +1,129 @@
+---
+title: How to Contribute
+description: Guidelines for contributing to EventDoctor.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Thank you for your interest in contributing to EventDoctor! This guide covers everything you need to get started.
+
+## Ways to Contribute
+
+- **Report bugs** — found something broken? [Open an issue](https://github.com/nicolascb/eventdoctor/issues).
+- **Suggest features** — have an idea? Open a feature request issue.
+- **Fix bugs** — browse [open issues](https://github.com/nicolascb/eventdoctor/issues) labeled `bug`.
+- **Improve documentation** — typos, clarifications, and examples are always welcome.
+- **Write code** — pick up an issue or propose a new change.
+
+## Getting Started
+
+<Steps>
+
+1. **Fork** the repository on GitHub.
+
+2. **Clone** your fork locally:
+
+    ```bash
+    git clone git@github.com:<your-username>/eventdoctor.git
+    cd eventdoctor
+    ```
+
+3. **Add the upstream remote**:
+
+    ```bash
+    git remote add upstream git@github.com:nicolascb/eventdoctor.git
+    ```
+
+4. **Create a branch** for your work:
+
+    ```bash
+    git checkout -b feature/my-change
+    ```
+
+</Steps>
+
+## Prerequisites
+
+- **Go** 1.22+ (with CGO for the API)
+- **Node.js** 20+ and npm
+- **Docker & Docker Compose** (optional)
+
+## Running Locally
+
+### Backend
+
+```bash
+cd backend
+WITH_MOCK=1 go run ./cmd/api/main.go         # Run API with mock data
+CGO_ENABLED=1 go test -v -race ./...          # Run all tests
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev     # Start dev server
+npm run lint    # Check code quality
+```
+
+## Branch Naming
+
+Use descriptive branch names with a prefix:
+
+- `feature/` — new features
+- `fix/` — bug fixes
+- `docs/` — documentation changes
+- `refactor/` — code refactoring
+
+## Commit Messages
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+feat(api): add topic search endpoint
+
+Implements full-text search across topic names and descriptions.
+```
+
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`.
+
+## Pull Request Process
+
+<Steps>
+
+1. Push your branch and open a PR against `main`.
+
+2. Fill in the PR template with what, why, and how to test.
+
+3. A maintainer will add the `ci-approved` label to trigger CI.
+
+4. Address review feedback and push additional commits.
+
+5. Once approved, a maintainer will merge your PR.
+
+</Steps>
+
+<Aside>
+CI workflows for pull requests are triggered only when the `ci-approved` label is added.
+</Aside>
+
+## Style Guidelines
+
+### Go
+
+- Follow `gofmt` formatting.
+- Use `internal/logger` for logging.
+- Database functions should accept the `SQLExecutor` interface.
+- Add endpoint methods to the `api.Service` interface first.
+
+### TypeScript / React
+
+- Follow ESLint configuration.
+- Use TypeScript types — avoid `any`.
+- API calls go in `src/lib/api.ts`, types in `src/types/index.ts`.
+- Data fetching hooks go in `src/hooks/`.
+
+## License
+
+By contributing to EventDoctor, you agree that your contributions will be licensed under the [Apache License 2.0](https://github.com/nicolascb/eventdoctor/blob/main/LICENSE).

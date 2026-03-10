@@ -1,0 +1,181 @@
+---
+title: API Reference
+description: REST API endpoints provided by the EventDoctor API.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The EventDoctor API is a REST service that runs on port `8087` by default. All endpoints are prefixed with `/v1`.
+
+## Base URL
+
+```
+http://localhost:8087/v1
+```
+
+## Endpoints
+
+### Health
+
+#### `GET /health`
+
+Returns the API health status. Useful for container health checks and load balancer probes.
+
+```bash
+curl http://localhost:8087/health
+```
+
+**Response:**
+
+```json
+{ "status": "ok" }
+```
+
+---
+
+### Config
+
+#### `POST /v1/config`
+
+Receives and processes an `eventdoctor.yaml` spec. The API parses the spec, extracts all topics, events, producers, and consumers, and stores them.
+
+**Request Body:** JSON representation of the `eventdoctor.yaml` spec.
+
+```bash
+curl -X POST http://localhost:8087/v1/config \
+  -H "Content-Type: application/json" \
+  -d @spec.json
+```
+
+---
+
+### Overview
+
+#### `GET /v1/overview`
+
+Returns a high-level summary of the system: total topics, events, producers, consumers, and recent activity.
+
+```bash
+curl http://localhost:8087/v1/overview
+```
+
+---
+
+### Topics
+
+#### `GET /v1/topics`
+
+Lists all topics with pagination and search.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+| :-- | :-- | :-- | :-- |
+| `page` | `int` | `1` | Page number. |
+| `page_size` | `int` | `20` | Items per page. |
+| `search` | `string` | — | Filter by topic name or description. |
+
+```bash
+curl "http://localhost:8087/v1/topics?page=1&page_size=10&search=order"
+```
+
+#### `GET /v1/topics/{name}`
+
+Returns detailed information about a specific topic, including its events, producers, and consumers.
+
+```bash
+curl http://localhost:8087/v1/topics/order.events
+```
+
+---
+
+### Events
+
+#### `GET /v1/events`
+
+Lists all events with pagination and search.
+
+**Query Parameters:** Same as Topics (`page`, `page_size`, `search`).
+
+```bash
+curl "http://localhost:8087/v1/events?search=OrderCreated"
+```
+
+#### `GET /v1/events/{id}`
+
+Returns details of a specific event by its ID.
+
+```bash
+curl http://localhost:8087/v1/events/1
+```
+
+---
+
+### Producers
+
+#### `GET /v1/producers`
+
+Lists all producers with pagination and search.
+
+**Query Parameters:** Same as Topics (`page`, `page_size`, `search`).
+
+```bash
+curl "http://localhost:8087/v1/producers?page=1"
+```
+
+#### `GET /v1/producers/{service_id}/{topic_id}`
+
+Returns details for a specific producer (by service and topic IDs).
+
+```bash
+curl http://localhost:8087/v1/producers/1/2
+```
+
+---
+
+### Consumers
+
+#### `GET /v1/consumers`
+
+Lists all consumers with pagination and search.
+
+**Query Parameters:** Same as Topics (`page`, `page_size`, `search`).
+
+```bash
+curl "http://localhost:8087/v1/consumers?search=notification"
+```
+
+---
+
+### Services
+
+#### `GET /v1/services/{name}`
+
+Returns all producers and consumers for a specific service.
+
+```bash
+curl http://localhost:8087/v1/services/order-microservice
+```
+
+<Aside type="tip">
+All list endpoints support `page`, `page_size`, and `search` query parameters for pagination and filtering.
+</Aside>
+
+## Response Format
+
+All endpoints return JSON. List endpoints include pagination metadata:
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "page_size": 20,
+    "total": 42
+  }
+}
+```
+
+## CORS
+
+The API includes CORS middleware that allows requests from any origin (`Access-Control-Allow-Origin: *`). This enables the frontend to communicate with the API from any host during development.

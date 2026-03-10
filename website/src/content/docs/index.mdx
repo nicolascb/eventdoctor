@@ -1,0 +1,49 @@
+---
+title: EventDoctor
+description: Keep your event-driven architecture documentation alive.
+template: splash
+hero:
+  tagline: The open-source platform that keeps your event-driven architecture documentation alive. Beyond cataloging, it connects specs, services, and runtime signals — so producers, consumers, and architects always share the same view of the system.
+  image:
+    file: ../../assets/images/ui_screenshot.png
+  actions:
+    - text: Get Started
+      link: /getting-started/introduction/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/nicolascb/eventdoctor
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Why EventDoctor?
+
+In event-driven architectures, documentation drifts from reality fast. Schemas change, new consumers appear, topics multiply — and suddenly nobody knows what's connected to what. **EventDoctor** closes that gap.
+
+<CardGrid stagger>
+	<Card title="Living Catalog" icon="document">
+		Centralizes `eventdoctor.yaml` specs from every service into a single source of truth. No more stale wiki pages.
+	</Card>
+	<Card title="Documentation Automation" icon="rocket">
+		Generates up-to-date documentation for events, schemas, and relationships automatically from your specs.
+	</Card>
+	<Card title="Validation & Governance" icon="approve-check">
+		Enforces ownership, semantic versioning, and schema rules in your CI/CD pipeline — before bad specs reach production.
+	</Card>
+	<Card title="Monitoring Hooks" icon="warning">
+		Surfaces orphaned, unconsumed, or undocumented events by connecting to your message broker in real-time.
+	</Card>
+</CardGrid>
+
+## How It Works
+
+Each service in your architecture maintains an `eventdoctor.yaml` that declares the events it produces and consumes. The CLI validates and publishes those specs to the EventDoctor API. The Web UI and the CLI itself let you explore the full event mesh — topics, schemas, producers, consumers — in one place.
+
+<CardGrid>
+	<LinkCard title="Quick Start" href="/getting-started/quick-start/" description="Get EventDoctor running locally in under 2 minutes with Docker Compose." />
+	<LinkCard title="Spec File Reference" href="/getting-started/spec-reference/" description="Learn the full eventdoctor.yaml format and all its options." />
+	<LinkCard title="CLI Usage" href="/guides/cli/" description="Validate and publish specs from the terminal or CI/CD." />
+	<LinkCard title="Architecture Overview" href="/architecture/overview/" description="Understand how API, CLI, Frontend and Auditor fit together." />
+</CardGrid>

@@ -1,0 +1,59 @@
+---
+title: Topics & Events
+description: Understanding topics and events in EventDoctor.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Topics
+
+A **topic** represents a logical channel on your message broker (e.g., a Kafka topic). In EventDoctor, topics are discovered automatically from the `eventdoctor.yaml` specs that services publish.
+
+Each topic aggregates:
+
+- The **events** available on it (names, versions, schemas).
+- Which **producers** write to it.
+- Which **consumers** read from it.
+
+### Topic Naming
+
+EventDoctor doesn't enforce a naming convention, but a common pattern is:
+
+```
+<domain>.<type>
+```
+
+Examples: `order.events`, `inventory.commands`, `user.notifications`.
+
+## Events
+
+An **event** is a specific message type published to a topic. Events have:
+
+| Property | Description |
+| :-- | :-- |
+| **name** | The event identifier (e.g. `OrderCreated`). |
+| **version** | Semantic version of the event schema. |
+| **description** | A human-readable description of when the event fires. |
+| **schema_url** | A URL pointing to the JSON Schema for the event payload. |
+| **headers** | Optional custom headers included with the event. |
+
+### Versioning
+
+EventDoctor uses [Semantic Versioning](https://semver.org/) for events:
+
+- **Major** — breaking changes to the payload.
+- **Minor** — additive, backward-compatible changes.
+- **Patch** — fixes with no schema impact.
+
+<Aside type="caution">
+When the producer owns the topic (`owner: true`), a `schema_url` is required for every event. This ensures that owned schemas are always documented.
+</Aside>
+
+### Orphaned Events
+
+An event is considered **orphaned** when:
+
+- It has **no producers** defined (the topic exists but nobody claims to write to it).
+- It has **no consumers** defined (the event is produced but nobody listens).
+
+The Web UI highlights orphaned events so you can investigate and clean up.
