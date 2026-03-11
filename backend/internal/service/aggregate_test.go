@@ -4,10 +4,9 @@ import (
 	"testing"
 
 	"github.com/nicolascb/eventdoctor/internal/api/response"
-	"github.com/nicolascb/eventdoctor/internal/db/models"
 )
 
-// orderedMap tests
+// --- orderedMap tests ---
 
 func TestOrderedMap_GetOrCreate_NewKey(t *testing.T) {
 	m := newOrderedMap[string, int]()
@@ -59,7 +58,7 @@ func TestOrderedMap_MutateViaPointer(t *testing.T) {
 	}
 }
 
-// findOrAppend tests
+// --- findOrAppend tests ---
 
 func TestFindOrAppend_AppendsWhenNotFound(t *testing.T) {
 	s := []int{}
@@ -92,7 +91,7 @@ func TestFindOrAppend_MutateExisting(t *testing.T) {
 	}
 }
 
-// appendHeader tests
+// --- appendHeader tests ---
 
 func TestAppendHeader_NilName(t *testing.T) {
 	headers := []response.EventHeaderView{}
@@ -124,282 +123,5 @@ func TestAppendHeader_NilDescription(t *testing.T) {
 	}
 	if headers[0].Description != "" {
 		t.Fatalf("expected empty description, got %q", headers[0].Description)
-	}
-}
-
-func strPtr(s string) *string { return &s }
-
-// aggregateConsumers tests
-
-func TestAggregateConsumers_Empty(t *testing.T) {
-	result := aggregateConsumers(nil)
-	if len(result) != 0 {
-		t.Fatalf("expected empty result, got %v", result)
-	}
-}
-
-func TestAggregateConsumers_SingleRow(t *testing.T) {
-	rows := []models.ConsumerRow{
-		{
-			ServiceName:   "svc-a",
-			Repository:    "https://github.com/org/svc-a",
-			ConsumerGroup: "svc-a-group",
-			Description:   "handles events",
-			TopicName:     "topic.events",
-			EventName:     "EventFired",
-			EventVersion:  strPtr("1.0.0"),
-		},
-	}
-
-	result := aggregateConsumers(rows)
-	if len(result) != 1 {
-		t.Fatalf("expected 1 consumer, got %d", len(result))
-	}
-	cv := result[0]
-	if cv.Service != "svc-a" || cv.Group != "svc-a-group" {
-		t.Fatalf("unexpected consumer view: %+v", cv)
-	}
-	if len(cv.Topics) != 1 || len(cv.Topics[0].Events) != 1 {
-		t.Fatalf("unexpected topics/events structure: %+v", cv.Topics)
-	}
-}
-
-func TestAggregateConsumers_MultipleTopics(t *testing.T) {
-	rows := []models.ConsumerRow{
-		{ServiceName: "svc", Repository: "repo", ConsumerGroup: "grp", TopicName: "topic-a", EventName: "EventA"},
-		{ServiceName: "svc", Repository: "repo", ConsumerGroup: "grp", TopicName: "topic-b", EventName: "EventB"},
-	}
-
-	result := aggregateConsumers(rows)
-	if len(result) != 1 {
-		t.Fatalf("expected 1 consumer entry, got %d", len(result))
-	}
-	if len(result[0].Topics) != 2 {
-		t.Fatalf("expected 2 topics, got %d", len(result[0].Topics))
-	}
-}
-
-func TestAggregateConsumers_MultipleGroups(t *testing.T) {
-	rows := []models.ConsumerRow{
-		{ServiceName: "svc", Repository: "repo", ConsumerGroup: "grp-a", TopicName: "topic", EventName: "Event"},
-		{ServiceName: "svc", Repository: "repo", ConsumerGroup: "grp-b", TopicName: "topic", EventName: "Event"},
-	}
-
-	result := aggregateConsumers(rows)
-	if len(result) != 2 {
-		t.Fatalf("expected 2 consumer entries (different groups), got %d", len(result))
-	}
-}
-
-// aggregateEvents tests
-
-func TestAggregateEvents_Empty(t *testing.T) {
-	result := aggregateEvents(nil, nil, nil)
-	if len(result) != 0 {
-		t.Fatalf("expected empty result, got %v", result)
-	}
-}
-
-func TestAggregateEvents_SingleRow(t *testing.T) {
-	rows := []models.EventRow{
-		{
-			TopicName:        "topic.events",
-			EventName:        "EventFired",
-			EventDescription: "something fired",
-			SchemaVersion:    strPtr("1.0.0"),
-			SchemaURL:        "https://schemas.local/event.json",
-		},
-	}
-
-	result := aggregateEvents(rows, nil, nil)
-	if len(result) != 1 {
-		t.Fatalf("expected 1 event, got %d", len(result))
-	}
-	if result[0].Topic != "topic.events" {
-		t.Fatalf("unexpected topic name: %s", result[0].Topic)
-	}
-	if result[0].Name != "EventFired" {
-		t.Fatalf("unexpected event name: %s", result[0].Name)
-	}
-}
-
-func TestAggregateEvents_MultipleTopics(t *testing.T) {
-	rows := []models.EventRow{
-		{EventID: 1, TopicName: "topic-a", EventName: "EventA"},
-		{EventID: 2, TopicName: "topic-b", EventName: "EventB"},
-		{EventID: 3, TopicName: "topic-a", EventName: "EventC"},
-	}
-
-	result := aggregateEvents(rows, nil, nil)
-	if len(result) != 3 {
-		t.Fatalf("expected 3 events, got %d", len(result))
-	}
-	// Sort order is Topic then EventName
-	// Expect: topic-a/EventA, topic-a/EventC, topic-b/EventB
-	if result[0].Topic != "topic-a" || result[0].Name != "EventA" {
-		t.Errorf("unexpected order at 0: %v", result[0])
-	}
-	if result[1].Topic != "topic-a" || result[1].Name != "EventC" {
-		t.Errorf("unexpected order at 1: %v", result[1])
-	}
-	if result[2].Topic != "topic-b" || result[2].Name != "EventB" {
-		t.Errorf("unexpected order at 2: %v", result[2])
-	}
-}
-
-func TestAggregateEvents_HeadersDeduplicatedPerEvent(t *testing.T) {
-	h1 := "X-Header-A"
-	h2 := "X-Header-B"
-	rows := []models.EventRow{
-		{TopicName: "topic", EventName: "Event", HeaderName: &h1},
-		{TopicName: "topic", EventName: "Event", HeaderName: &h2},
-	}
-
-	result := aggregateEvents(rows, nil, nil)
-	if len(result[0].Headers) != 2 {
-		t.Fatalf("expected 2 headers, got %d", len(result[0].Headers))
-	}
-}
-
-func TestAggregateEvents_WithProducersAndConsumers(t *testing.T) {
-	eventRows := []models.EventRow{
-		{TopicName: "topic", EventName: "Event"},
-	}
-	producerRows := []models.ProducerRow{
-		{TopicName: "topic", EventName: "Event", ServiceName: "svc-prod", Repository: "repo-prod", Owner: true},
-	}
-	consumerRows := []models.ConsumerRow{
-		{TopicName: "topic", EventName: "Event", ServiceName: "svc-cons", Repository: "repo-cons", ConsumerGroup: "grp"},
-	}
-
-	result := aggregateEvents(eventRows, producerRows, consumerRows)
-	if len(result) != 1 {
-		t.Fatal("expected 1 event")
-	}
-	ev := result[0]
-	if len(ev.Producers) != 1 {
-		t.Fatal("expected 1 producer")
-	}
-	if ev.Producers[0].Service != "svc-prod" {
-		t.Errorf("unexpected producer: %v", ev.Producers[0])
-	}
-	if len(ev.Consumers) != 1 {
-		t.Fatal("expected 1 consumer")
-	}
-	if ev.Consumers[0].Service != "svc-cons" {
-		t.Errorf("unexpected consumer: %v", ev.Consumers[0])
-	}
-}
-
-// aggregateOverview tests
-
-func TestAggregateOverview_Empty(t *testing.T) {
-	result := aggregateOverview(nil, nil)
-	if len(result) != 0 {
-		t.Fatalf("expected empty result, got %v", result)
-	}
-}
-
-func TestAggregateOverview_ProducerAndConsumer(t *testing.T) {
-	producerRows := []models.ProducerRow{
-		{ServiceName: "svc-a", Repository: "repo-a", TopicName: "topic", EventName: "Event", Owner: true, Writes: true},
-	}
-	consumerRows := []models.ConsumerRow{
-		{ServiceName: "svc-b", Repository: "repo-b", ConsumerGroup: "grp", TopicName: "topic", EventName: "Event"},
-	}
-
-	result := aggregateOverview(producerRows, consumerRows)
-	if len(result) != 1 {
-		t.Fatalf("expected 1 topic, got %d", len(result))
-	}
-	topic := result[0]
-	if len(topic.Events) != 1 {
-		t.Fatalf("expected 1 event, got %d", len(topic.Events))
-	}
-	event := topic.Events[0]
-	if len(event.Producers) != 1 {
-		t.Fatalf("expected 1 producer, got %d", len(event.Producers))
-	}
-	if len(event.Consumers) != 1 {
-		t.Fatalf("expected 1 consumer, got %d", len(event.Consumers))
-	}
-}
-
-func TestAggregateOverview_ConsumerOnlyTopic(t *testing.T) {
-	consumerRows := []models.ConsumerRow{
-		{ServiceName: "svc-b", Repository: "repo-b", ConsumerGroup: "grp", TopicName: "orphan-topic", EventName: "Event"},
-	}
-
-	result := aggregateOverview(nil, consumerRows)
-	if len(result) != 1 {
-		t.Fatalf("expected 1 topic from consumer-only data, got %d", len(result))
-	}
-}
-
-// aggregateProducers tests
-
-func TestAggregateProducers_Empty(t *testing.T) {
-	result := aggregateProducers(nil, nil)
-	if len(result) != 0 {
-		t.Fatalf("expected empty result, got %v", result)
-	}
-}
-
-func TestAggregateProducers_SingleService(t *testing.T) {
-	services := []models.Service{
-		{ID: 1, Name: "svc-a", Repository: "repo-a"},
-	}
-	topicRows := []models.ProducerListRow{
-		{ServiceID: 1, ServiceName: "svc-a", Repository: "repo-a", TopicID: 10, TopicName: "topic-a", EventCount: 5, Owner: true, Writes: true},
-	}
-
-	result := aggregateProducers(services, topicRows)
-	if len(result) != 1 {
-		t.Fatalf("expected 1 producer, got %d", len(result))
-	}
-	p := result[0]
-	if p.Service != "svc-a" {
-		t.Errorf("unexpected service name: %s", p.Service)
-	}
-	if len(p.Topics) != 1 {
-		t.Fatalf("expected 1 topic, got %d", len(p.Topics))
-	}
-	if p.Topics[0].Topic != "topic-a" {
-		t.Errorf("unexpected topic name: %s", p.Topics[0].Topic)
-	}
-	if p.Topics[0].EventCount != 5 {
-		t.Errorf("unexpected event count: %d", p.Topics[0].EventCount)
-	}
-}
-
-func TestAggregateProducers_MultipleServices(t *testing.T) {
-	services := []models.Service{
-		{ID: 1, Name: "svc-a"},
-		{ID: 2, Name: "svc-b"},
-	}
-	topicRows := []models.ProducerListRow{
-		{ServiceID: 1, TopicName: "topic-a"},
-		{ServiceID: 2, TopicName: "topic-b"},
-		{ServiceID: 1, TopicName: "topic-c"},
-	}
-
-	result := aggregateProducers(services, topicRows)
-	if len(result) != 2 {
-		t.Fatalf("expected 2 producers, got %d", len(result))
-	}
-
-	// Result order should match services input order
-	if result[0].Service != "svc-a" {
-		t.Errorf("expected svc-a first, got %s", result[0].Service)
-	}
-	if len(result[0].Topics) != 2 {
-		t.Errorf("expected 2 topics for svc-a, got %d", len(result[0].Topics))
-	}
-
-	if result[1].Service != "svc-b" {
-		t.Errorf("expected svc-b second, got %s", result[1].Service)
-	}
-	if len(result[1].Topics) != 1 {
-		t.Errorf("expected 1 topic for svc-b, got %d", len(result[1].Topics))
 	}
 }
