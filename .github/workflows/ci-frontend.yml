@@ -57,3 +57,4 @@ jobs:
           scan-ref: ./frontend
           exit-code: "1"
           severity: CRITICAL,HIGH
+          trivy-version: "v0.68.2"
