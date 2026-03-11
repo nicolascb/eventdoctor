@@ -67,10 +67,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.34.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: fs
           scan-ref: ./backend
           exit-code: "1"
           severity: CRITICAL,HIGH
-          trivy-version: "v0.68.2"
