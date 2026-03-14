@@ -44,7 +44,6 @@ archives:
     formats:
       - tar.gz
     files:
-      - migration.sql
       - README.md
 
   - id: cli-archive
