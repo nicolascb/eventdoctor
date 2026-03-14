@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 520" width="700" height="650" fill="none">
+  <defs>
+    <!-- Arrow marker -->
+    <marker id="arrow" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 3.5L0 7z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-indigo" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 3.5L0 7z" fill="#818cf8"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 3.5L0 7z" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 3.5L0 7z" fill="#34d399"/>
+    </marker>
+    <marker id="arrow-rose" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 3.5L0 7z" fill="#fb7185"/>
+    </marker>
+
+    <!-- Glow filters -->
+    <filter id="glow-indigo" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feFlood flood-color="#6366f1" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-amber" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feFlood flood-color="#f59e0b" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-emerald" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feFlood flood-color="#10b981" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-rose" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feFlood flood-color="#f43f5e" flood-opacity="0.15" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- ============================================ -->
+  <!-- NODE 1: Your Services (top)                  -->
+  <!-- ============================================ -->
+  <g filter="url(#glow-indigo)">
+    <rect x="120" y="20" width="230" height="90" rx="14" fill="#0f172a" stroke="#6366f1" stroke-width="1.5"/>
+    <!-- YAML file icon -->
+    <g transform="translate(140, 44)">
+      <rect width="18" height="22" rx="2" fill="none" stroke="#818cf8" stroke-width="1.2"/>
+      <line x1="4" y1="8" x2="14" y2="8" stroke="#818cf8" stroke-width="1" opacity="0.6"/>
+      <line x1="4" y1="12" x2="11" y2="12" stroke="#818cf8" stroke-width="1" opacity="0.6"/>
+      <line x1="4" y1="16" x2="13" y2="16" stroke="#818cf8" stroke-width="1" opacity="0.6"/>
+    </g>
+    <text x="168" y="53" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#e0e7ff">Your Services</text>
+    <text x="168" y="72" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">Producers &amp; Consumers</text>
+    <text x="168" y="88" font-family="ui-monospace, monospace" font-size="10" fill="#818cf8">eventdoctor.yaml</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- ARROW: Services → EventDoctor (specs)        -->
+  <!-- ============================================ -->
+  <line x1="235" y1="110" x2="235" y2="195" stroke="#818cf8" stroke-width="1.5" marker-end="url(#arrow-indigo)" stroke-dasharray="6 3"/>
+  <rect x="195" y="140" width="80" height="20" rx="10" fill="#1e1b4b" stroke="#6366f1" stroke-width="0.5" opacity="0.8"/>
+  <text x="235" y="154" font-family="system-ui, sans-serif" font-size="9" fill="#a5b4fc" text-anchor="middle" font-weight="500">yaml specs</text>
+
+  <!-- ============================================ -->
+  <!-- NODE 2: EventDoctor API (center)             -->
+  <!-- ============================================ -->
+  <g filter="url(#glow-amber)">
+    <rect x="110" y="200" width="250" height="90" rx="14" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5"/>
+    <!-- Hexagon/hub icon -->
+    <g transform="translate(130, 224)">
+      <polygon points="11,0 22,6 22,18 11,24 0,18 0,6" fill="none" stroke="#fbbf24" stroke-width="1.2"/>
+      <circle cx="11" cy="12" r="4" fill="none" stroke="#fbbf24" stroke-width="1"/>
+    </g>
+    <text x="162" y="243" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#fef3c7">EventDoctor</text>
+    <text x="162" y="262" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">API Server + CLI</text>
+    <text x="162" y="278" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#fbbf24" opacity="0.7">Central event catalog</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- ARROW: EventDoctor → Web UI (data)           -->
+  <!-- ============================================ -->
+  <line x1="235" y1="290" x2="235" y2="385" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrow-amber)" stroke-dasharray="6 3"/>
+  <rect x="192" y="324" width="86" height="20" rx="10" fill="#451a03" stroke="#f59e0b" stroke-width="0.5" opacity="0.8"/>
+  <text x="235" y="338" font-family="system-ui, sans-serif" font-size="9" fill="#fcd34d" text-anchor="middle" font-weight="500">event data</text>
+
+  <!-- ============================================ -->
+  <!-- NODE 3: Web UI (bottom)                      -->
+  <!-- ============================================ -->
+  <g filter="url(#glow-emerald)">
+    <rect x="120" y="390" width="230" height="90" rx="14" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
+    <!-- Dashboard/grid icon -->
+    <g transform="translate(140, 414)">
+      <rect width="9" height="9" rx="1.5" fill="none" stroke="#34d399" stroke-width="1.2"/>
+      <rect x="12" width="9" height="9" rx="1.5" fill="none" stroke="#34d399" stroke-width="1.2"/>
+      <rect y="12" width="9" height="9" rx="1.5" fill="none" stroke="#34d399" stroke-width="1.2"/>
+      <rect x="12" y="12" width="9" height="9" rx="1.5" fill="none" stroke="#34d399" stroke-width="1.2"/>
+    </g>
+    <text x="168" y="433" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#d1fae5">Web UI</text>
+    <text x="168" y="452" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">Event mesh dashboard</text>
+    <text x="168" y="468" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#34d399" opacity="0.7">Topics, schemas, flows</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- RETURN ARROW: Web UI → Services (insights)   -->
+  <!-- Curved arrow going up on the left side       -->
+  <!-- ============================================ -->
+  <path d="M120 440 Q50 440 50 260 Q50 65 120 65" stroke="#34d399" stroke-width="1.5" fill="none" marker-end="url(#arrow-emerald)" stroke-dasharray="6 3"/>
+  <g transform="translate(16, 230)">
+    <rect x="0" y="0" width="60" height="36" rx="10" fill="#052e16" stroke="#10b981" stroke-width="0.5" opacity="0.8"/>
+    <text x="30" y="15" font-family="system-ui, sans-serif" font-size="9" fill="#6ee7b7" text-anchor="middle" font-weight="500">insights</text>
+    <text x="30" y="28" font-family="system-ui, sans-serif" font-size="8" fill="#6ee7b7" text-anchor="middle" opacity="0.7">&amp; evolve</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- NODE 4: Auditor (side)                       -->
+  <!-- ============================================ -->
+  <g filter="url(#glow-rose)">
+    <rect x="395" y="315" width="150" height="76" rx="14" fill="#0f172a" stroke="#f43f5e" stroke-width="1.5"/>
+    <!-- Radar/signal icon -->
+    <g transform="translate(413, 333)">
+      <circle cx="10" cy="10" r="3" fill="#fb7185"/>
+      <path d="M3 3 A10 10 0 0 1 17 3" fill="none" stroke="#fb7185" stroke-width="1" opacity="0.5"/>
+      <path d="M0 0 A14 14 0 0 1 20 0" fill="none" stroke="#fb7185" stroke-width="1" opacity="0.3"/>
+    </g>
+    <text x="437" y="349" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#ffe4e6">Auditor</text>
+    <text x="437" y="366" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#94a3b8">Monitors broker</text>
+    <text x="437" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#fb7185" opacity="0.7">Runtime signals</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- ARROW: Auditor → EventDoctor                 -->
+  <!-- ============================================ -->
+  <path d="M430 315 Q430 270 360 255" stroke="#fb7185" stroke-width="1.5" fill="none" marker-end="url(#arrow-rose)" stroke-dasharray="5 3"/>
+  <rect x="375" y="270" width="82" height="20" rx="10" fill="#4c0519" stroke="#f43f5e" stroke-width="0.5" opacity="0.8"/>
+  <text x="416" y="284" font-family="system-ui, sans-serif" font-size="8.5" fill="#fda4af" text-anchor="middle" font-weight="500">undocumented</text>
+
+  <!-- ============================================ -->
+  <!-- Subtle circular flow indicator               -->
+  <!-- ============================================ -->
+  <g opacity="0.12">
+    <circle cx="235" cy="260" r="200" fill="none" stroke="#818cf8" stroke-width="0.5" stroke-dasharray="4 8"/>
+  </g>
+</svg>

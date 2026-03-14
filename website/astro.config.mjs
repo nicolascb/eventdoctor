@@ -10,6 +10,10 @@ export default defineConfig({
 		starlight({
 			title: 'EventDoctor',
 			description: 'Keep your event-driven architecture documentation alive.',
+			components: {
+				ThemeProvider: './src/components/ThemeProvider.astro',
+				ThemeSelect: './src/components/ThemeSelect.astro',
+			},
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/nicolascb/eventdoctor' }],
 			sidebar: [
 				{
