@@ -65,7 +65,7 @@ dockers:
     image_templates:
       - "ghcr.io/nicolascb/eventdoctor:{{ .Tag }}"
       - "ghcr.io/nicolascb/eventdoctor:latest"
-    dockerfile: Dockerfile
+    dockerfile: Dockerfile.goreleaser
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--label=org.opencontainers.image.title=eventdoctor"
@@ -78,7 +78,7 @@ dockers:
     image_templates:
       - "ghcr.io/nicolascb/eventdoctor-cli:{{ .Tag }}"
       - "ghcr.io/nicolascb/eventdoctor-cli:latest"
-    dockerfile: Dockerfile.cli
+    dockerfile: Dockerfile.cli.goreleaser
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--label=org.opencontainers.image.title=eventdoctor-cli"

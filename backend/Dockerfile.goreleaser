@@ -1,0 +1,6 @@
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates sqlite-libs
+WORKDIR /app
+COPY eventdoctor .
+EXPOSE 8087
+CMD ["./eventdoctor"]
